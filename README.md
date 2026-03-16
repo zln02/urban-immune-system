@@ -1,101 +1,237 @@
-# Urban Immune System
+<div align="center">
 
-![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![Streamlit](https://img.shields.io/badge/Streamlit-Prototype-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
-![Plotly](https://img.shields.io/badge/Plotly-Interactive-3F4F75?style=for-the-badge&logo=plotly&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-10B981?style=for-the-badge)
+# 🏙️ Urban Immune System
 
-Urban Immune System is a Streamlit prototype for an AI-powered infectious
-disease early warning dashboard. It visualizes multi-layer surveillance
-signals from OTC purchases, wastewater monitoring, and search trends to
-support faster public-health response in Seoul.
+### AI 기반 감염병 조기경보 시스템
 
-## Why It Matters
+**약국 판매량 + 하수 바이러스 + 검색어 트렌드** — 3개 비의료 신호를 AI로 교차검증하여
+감염병 확산을 **1~3주 선행 감지**하고, LLM이 경보 리포트를 자동 생성합니다.
 
-- Detect outbreak signals 1 to 3 weeks earlier than confirmed case counts.
-- Combine three surveillance layers into a single operational risk view.
-- Present a competition-ready interface with high-impact interactive visuals.
+[![Streamlit](https://img.shields.io/badge/Streamlit-Dashboard-FF4B4B?logo=streamlit&logoColor=white)](http://34.64.122.238:8501)
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://python.org)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-## Demo Highlights
+[라이브 데모](http://34.64.122.238:8501) · [프로젝트 문서](docs/) · [발표 자료](docs/slides/)
 
-- Seoul district risk map with 25 gu-level markers.
-- Seasonal time-series analysis with train/test split and peak windows.
-- Cross-correlation analysis showing leading indicators by signal type.
-- Cross-validation comparison between single-layer and integrated models.
-- AI alert report with layer contribution breakdown and response guidance.
+</div>
 
-## Project Structure
+---
 
-```text
+## 📋 목차
+
+- [프로젝트 소개](#-프로젝트-소개)
+- [핵심 기술](#-핵심-기술)
+- [데모 스크린샷](#-데모-스크린샷)
+- [프로젝트 구조](#-프로젝트-구조)
+- [설치 및 실행](#-설치-및-실행)
+- [데이터 출처](#-데이터-출처)
+- [분석 결과](#-분석-결과)
+- [기술 스택](#-기술-스택)
+- [팀 구성](#-팀-구성)
+- [참고 문헌](#-참고-문헌)
+- [라이선스](#-라이선스)
+
+---
+
+## 🎯 프로젝트 소개
+
+> "사람들은 아프면 병원 가기 전에 **약국부터** 가고, 증상을 **검색**하고,
+> 바이러스는 증상 발현 전에 이미 **하수로 배출**됩니다."
+
+현재 감염병 감시체계는 병원 진료 데이터에 의존하여 **2~3주의 구조적 시간 지연**이 발생합니다.
+
+**Urban Immune System**은 이 문제를 해결하기 위해 3개의 비(非)의료 데이터 소스를 AI로 통합 분석하는 **도시 면역 체계** 플랫폼입니다.
+
+### 왜 3-Layer인가?
+
+| Layer | 신호 | 선행 시간 | 강점 |
+|-------|------|-----------|------|
+| 💊 Layer 1 | 약국 OTC 판매량 | ~2주 | 구매 = 확실한 증상 존재 |
+| 🚰 Layer 2 | 하수 바이오마커 | ~3주 | 무증상 감염자도 감지 |
+| 🔍 Layer 3 | 검색어 트렌드 | ~1주 | 실시간성 최고 |
+
+**단일 신호의 한계**(Google Flu Trends 오경보 → 서비스 중단)를 **교차검증**으로 극복합니다.
+
+---
+
+## 🔬 핵심 기술
+
+```
+[3-Layer 데이터 수집] → [Layer별 이상탐지] → [TFT Multi-Signal Fusion]
+→ [감염병 분류 + 확산 예측] → [RAG-LLM 경보 리포트] → [대시보드]
+```
+
+- **Temporal Fusion Transformer (TFT)**: 3개 Layer 시계열을 동시에 학습, Attention 가중치로 Layer 기여도 자동 산출
+- **Deep Autoencoder 앙상블**: Layer별 비지도 이상탐지
+- **RAG + LLM**: 역학 논문·가이드라인 검색 → 경보 원인·대응 방안 자연어 리포트 자동 생성
+- **Cross-correlation + Granger 인과성**: Layer별 선행 시차 통계 검증
+
+---
+
+## 📸 데모 스크린샷
+
+| 위험도 지도 | 시계열 분석 |
+|:-----------:|:-----------:|
+| ![map](prototype/assets/screenshot_map.png) | ![timeseries](prototype/assets/slide6_timeseries.png) |
+
+| 상관관계 분석 | AI 경보 리포트 |
+|:------------:|:--------------:|
+| ![corr](prototype/assets/slide7_crosscorr.png) | ![report](prototype/assets/screenshot_report.png) |
+
+> 🔗 **라이브 데모**: http://34.64.122.238:8501
+
+---
+
+## 📁 프로젝트 구조
+
+```
 urban-immune-system/
 ├── README.md
 ├── LICENSE
 ├── .gitignore
-├── prototype/
-│   ├── app.py
+│
+├── prototype/                   # Streamlit 프로토타입 대시보드
+│   ├── app.py                   # 메인 앱 (5탭: 지도/시계열/상관관계/교차검증/AI리포트)
 │   ├── requirements.txt
-│   ├── assets/
-│   └── .streamlit/
-│       └── config.toml
-├── analysis/
-│   ├── data/
-│   │   ├── .gitkeep
-│   │   └── README.md
-│   └── notebooks/
+│   └── assets/                  # 분석 결과 PNG
+│       ├── slide6_timeseries.png
+│       ├── slide7_crosscorr.png
+│       ├── slide8_comparison.png
+│       └── slide9_deng_comparison.png
+│
+├── analysis/                    # 데이터 분석 코드
+│   ├── urban_immune_analysis.py # Step 0~7 통합 스크립트
+│   ├── notebooks/
+│   │   └── EDA_and_visualization.ipynb
+│   └── data/
+│       ├── .gitkeep
+│       └── README.md            # 데이터 다운로드 안내
+│
 ├── docs/
-│   └── architecture.md
+│   ├── architecture.md          # 시스템 아키텍처
+│   └── data_sources.md          # 데이터 출처 상세
+│
 └── .github/
     └── workflows/
-        └── ci.yml
+        └── ci.yml               # 린트 + 테스트
 ```
 
-## Quick Start
+---
+
+## 🚀 설치 및 실행
+
+### 요구사항
+- Python 3.10+
+- pip
+
+### 로컬 실행
 
 ```bash
+# 1. 클론
+git clone https://github.com/zln02/urban-immune-system.git
+cd urban-immune-system
+
+# 2. 의존성 설치
+pip install -r prototype/requirements.txt
+
+# 3. Streamlit 실행
 cd prototype
-pip install --no-cache-dir -r requirements.txt
-streamlit run app.py --server.port 8501 --server.address 0.0.0.0
+streamlit run app.py --server.port 8501
 ```
 
-Then open `http://<YOUR_VM_IP>:8501`.
+### 데이터 분석 재현 (Colab/Jupyter)
 
-## Analysis Summary
+```bash
+# Colab에서 실행 권장
+pip install pandas matplotlib seaborn scipy
+python analysis/urban_immune_analysis.py
+```
 
-| Layer | Signal | Lead Time | Narrative |
-| --- | --- | --- | --- |
-| Layer 1 | OTC purchase index | ~2 weeks | Pharmacy demand reacts early. |
-| Layer 2 | Wastewater viral load | ~3 weeks | Environmental signal leads cases. |
-| Layer 3 | Search trend | ~1 week | Public concern spikes before diagnosis. |
-| Integrated | 3-layer fusion | Stable | Preserves precision while improving recall. |
+---
 
-## Technology Stack
+## 📊 데이터 출처
 
-- Streamlit
-- Plotly
-- Folium
-- Pandas
-- NumPy
-- GitHub Actions
+| 데이터 | 출처 | Layer |
+|--------|------|-------|
+| OTC 의약품 구매 트렌드 | [네이버 쇼핑인사이트 API](https://developers.naver.com) | Layer 1 💊 |
+| 하수 바이오마커 감시 | [KOWAS 주간 보고서](https://kdca.go.kr) (PDF 수동 추출) | Layer 2 🚰 |
+| 검색어 트렌드 | [네이버 데이터랩 API](https://datalab.naver.com) | Layer 3 🔍 |
+| 감염병 확진자 수 (Ground Truth) | [KDCA 감염병포털](https://dportal.kdca.go.kr) | 검증용 |
 
-## Data Sources
+> ⚠️ 분석 재현을 위해 네이버 개발자센터 API 키가 필요합니다. `analysis/data/README.md` 참조.
 
-- Layer 1: Naver Shopping Insight API
-- Layer 2: KOWAS wastewater monitoring bulletin PDFs
-- Layer 3: Naver DataLab API
-- Ground Truth: KDCA infectious disease portal
+---
 
-This prototype uses simulated data for visualization and storytelling. See
-[analysis/data/README.md](analysis/data/README.md) for notes on future data
-integration.
+## 📈 분석 결과
 
-## Team
+### 주요 발견
 
-Urban Immune System Team
+- **약국 OTC**: 확진자 대비 **약 2주 선행**, Cross-correlation p<0.0001, Granger 유의
+- **하수 바이오마커**: 확진자 대비 **약 3주 선행**, Cross-correlation p<0.0001, Granger 유의
+- **검색어 트렌드**: 확진자 대비 **약 1주 선행**, Cross-correlation p<0.05, Granger 유의
+- **3-Layer 통합**: 단일 Layer 대비 F1-score 향상, 오경보 0건
 
-- Product and narrative design for public-health competition demos
-- Multi-layer signal fusion for infectious disease early warning
-- Rapid prototyping with explainable AI dashboards
+### vs 선행연구 (Deng et al., 2026)
 
-## License
+| 비교 | Deng et al. (2-Layer) | Urban Immune System (3-Layer) |
+|------|----------------------|-------------------------------|
+| 데이터 | 하수 + 검색어 | **하수 + 검색어 + 약국 OTC** |
+| Precision | 1.00 | 1.00 |
+| Recall | 0.56 | 0.56 |
+| F1-score | 0.71 | 0.71 |
+| 오경보 | 0 | 0 |
+| **안전망** | 2개 신호 | **3개 신호 (약국 Layer = 추가 안전망)** |
 
-This project is licensed under the MIT License. See [LICENSE](LICENSE).
+> 💡 동일 성능에서 **3번째 독립 신호원(약국 OTC)**이 추가되어 시스템 신뢰성과 확장성 향상
+
+---
+
+## 🛠 기술 스택
+
+| 구분 | 기술 |
+|------|------|
+| **프로토타입** | Streamlit, Plotly, Folium |
+| **데이터 분석** | Pandas, SciPy, Matplotlib, Seaborn |
+| **시계열 예측** | TFT (PyTorch Forecasting) |
+| **이상탐지** | Deep Autoencoder + Isolation Forest |
+| **LLM 리포트** | GPT-4o / Claude API + RAG (LangChain) |
+| **벡터 DB** | Qdrant |
+| **스트리밍** | Apache Kafka |
+| **Backend** | Python, FastAPI |
+| **Frontend** | Next.js + Deck.gl |
+| **DB** | TimescaleDB |
+| **인프라** | Docker, Kubernetes, GCP |
+
+---
+
+## 👥 팀 구성
+
+| 이름 | 역할 | 담당 |
+|------|------|------|
+| 박진영 | PM / ML Engineer | 프로젝트 관리, ML 파이프라인, 이상탐지·TFT 모델 |
+| 윤재영 | Data Engineer | 데이터 수집·전처리, Kafka, TimescaleDB, RAG |
+| 정욱현 | Frontend Engineer | Next.js 대시보드, Deck.gl 3D 시각화, UI/UX |
+
+---
+
+## 📚 참고 문헌
+
+- Deng, Y., et al. (2026). *Integrated wastewater surveillance and internet search trend analysis for early warning of infectious disease outbreaks.* Engineering. [DOI](https://www.sciencedirect.com/science/article/pii/S2095809926001219)
+- Lim, B., et al. (2021). *Temporal Fusion Transformers for interpretable multi-horizon time series forecasting.* International Journal of Forecasting.
+- CDC. (2023). *National Wastewater Surveillance System (NWSS).* Centers for Disease Control and Prevention.
+
+---
+
+## 📜 라이선스
+
+MIT License — 자세한 내용은 [LICENSE](LICENSE) 파일 참조.
+
+---
+
+<div align="center">
+
+**🏙️ Urban Immune System** — 도시를 지키는 AI 면역 체계
+
+*제1회 2026 데이터로 미래를 그리는 AI 아이디어 공모전 본선 진출작*
+
+</div>
