@@ -654,21 +654,22 @@ def has_asset(filename: str) -> bool:
 def render_asset_or_plotly(
     *,
     asset_name: str,
-    figure: go.Figure | None = None,
     caption: str,
-) -> None:
+    figure: go.Figure | None = None,
+) -> bool:
     if has_asset(asset_name):
         st.markdown('<div class="asset-image-shell">', unsafe_allow_html=True)
-        st.image(get_asset_path(asset_name), use_container_width=True)
+        st.image(get_asset_path(asset_name), width="stretch")
         st.markdown(
             f'<div class="asset-caption">{caption}</div>',
             unsafe_allow_html=True,
         )
         st.markdown("</div>", unsafe_allow_html=True)
-        return
+        return True
 
     if figure is not None:
-        st.plotly_chart(figure, use_container_width=True)
+        st.plotly_chart(figure, width="stretch")
+    return False
 
 
 def render_sidebar() -> tuple[str, str, int, bool]:
@@ -892,16 +893,16 @@ def render_kpi_cards() -> None:
     for idx, card in enumerate(cards):
         level_class = "level-four" if idx == 0 else ""
         cards_html.append(
-            f"""
-            <div class="kpi-card {level_class}"
-                 style="--glow-color:{card.glow};
-                        --accent-color:{card.accent};
-                        --card-delay:{idx * 0.5:.1f}s;">
-                <div class="kpi-label">{card.title}</div>
-                <div class="kpi-value">{card.value}</div>
-                <div class="kpi-delta">{card.delta}</div>
-            </div>
-            """
+            (
+                f'<div class="kpi-card {level_class}" '
+                f'style="--glow-color:{card.glow}; '
+                f'--accent-color:{card.accent}; '
+                f'--card-delay:{idx * 0.5:.1f}s;">'
+                f'<div class="kpi-label">{card.title}</div>'
+                f'<div class="kpi-value">{card.value}</div>'
+                f'<div class="kpi-delta">{card.delta}</div>'
+                "</div>"
+            )
         )
     st.markdown(
         f'<div class="kpi-grid">{"".join(cards_html)}</div>',
@@ -1040,13 +1041,29 @@ def time_series_figure(frame: pd.DataFrame, show_split: bool) -> go.Figure:
     if show_split:
         split_idx = frame.index[frame["week_label"] == "2024-W36"][0]
         split_label = frame.loc[split_idx, "week_label"]
-        fig.add_vline(
+        fig.add_shape(
+            type="line",
+            x0=split_label,
+            x1=split_label,
+            y0=0,
+            y1=1,
+            xref="x",
+            yref="paper",
+            line={
+                "color": "rgba(255,255,255,0.9)",
+                "width": 2,
+                "dash": "dot",
+            },
+        )
+        fig.add_annotation(
             x=split_label,
-            line_color="rgba(255,255,255,0.9)",
-            line_width=2,
-            line_dash="dot",
-            annotation_text="Train/Test Split",
-            annotation_position="top left",
+            y=1.02,
+            xref="x",
+            yref="paper",
+            text="Train/Test Split",
+            showarrow=False,
+            font={"color": TEXT_COLOR, "size": 11},
+            xanchor="left",
         )
 
     peak_windows = [
@@ -1111,11 +1128,12 @@ def render_time_series_tab(frame: pd.DataFrame, show_split: bool) -> None:
         """,
         unsafe_allow_html=True,
     )
-    render_asset_or_plotly(
+    used_asset = render_asset_or_plotly(
         asset_name="slide6_timeseries.png",
-        figure=time_series_figure(frame, show_split),
         caption="Slide 6 PNG detected in assets. Falling back to Plotly when absent.",
     )
+    if not used_asset:
+        st.plotly_chart(time_series_figure(frame, show_split), width="stretch")
     st.markdown(
         """
         <div class="insight-callout">
@@ -1259,11 +1277,12 @@ def render_correlation_tab() -> None:
         """,
         unsafe_allow_html=True,
     )
-    render_asset_or_plotly(
+    used_asset = render_asset_or_plotly(
         asset_name="slide7_crosscorr.png",
-        figure=correlation_figure(),
         caption="Slide 7 PNG detected in assets. Falling back to Plotly when absent.",
     )
+    if not used_asset:
+        st.plotly_chart(correlation_figure(), width="stretch")
     render_correlation_stats()
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -1345,6 +1364,14 @@ def build_results_table() -> pd.DataFrame:
     )
 
 
+def metric_cell_style(value: float) -> str:
+    alpha = min(max(float(value), 0.0), 1.0) * 0.55 + 0.08
+    return (
+        "background-color: rgba(59, 130, 246, "
+        f"{alpha:.2f}); color: #F8FAFC; font-weight: 600;"
+    )
+
+
 def render_validation_tab() -> None:
     st.markdown('<div class="tab-pane">', unsafe_allow_html=True)
     st.markdown(
@@ -1360,26 +1387,28 @@ def render_validation_tab() -> None:
     )
     left, right = st.columns(2)
     with left:
-        render_asset_or_plotly(
+        used_left_asset = render_asset_or_plotly(
             asset_name="slide8_comparison.png",
-            figure=single_vs_integrated_figure(),
             caption="Slide 8 PNG detected in assets. Falling back to Plotly when absent.",
         )
+        if not used_left_asset:
+            st.plotly_chart(single_vs_integrated_figure(), width="stretch")
     with right:
-        render_asset_or_plotly(
+        used_right_asset = render_asset_or_plotly(
             asset_name="slide9_deng_comparison.png",
-            figure=deng_comparison_figure(),
             caption="Slide 9 PNG detected in assets. Falling back to Plotly when absent.",
         )
+        if not used_right_asset:
+            st.plotly_chart(deng_comparison_figure(), width="stretch")
 
     result_df = build_results_table()
     styled = result_df.style.format(
         {"Precision": "{:.2f}", "Recall": "{:.2f}", "F1": "{:.2f}"}
-    ).background_gradient(
+    ).map(
+        metric_cell_style,
         subset=["Precision", "Recall", "F1"],
-        cmap="Blues",
     )
-    st.dataframe(styled, use_container_width=True, hide_index=True)
+    st.dataframe(styled, width="stretch", hide_index=True)
     st.markdown(
         """
         <div class="success-callout">
@@ -1542,7 +1571,7 @@ def render_ai_report_tab(selected_district: str) -> None:
     render_contribution_cards()
     left, right = st.columns([1.05, 1.25])
     with left:
-        st.plotly_chart(contribution_donut(), use_container_width=True)
+        st.plotly_chart(contribution_donut(), width="stretch")
     with right:
         render_ai_report_text()
     render_forecast_metrics()
