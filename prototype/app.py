@@ -1,4 +1,5 @@
 import os
+from html import escape
 from dataclasses import dataclass
 
 import folium
@@ -135,7 +136,7 @@ def inject_global_styles() -> None:
             .block-container {
                 padding-top: 1.25rem;
                 padding-bottom: 2rem;
-                max-width: 1480px;
+                max-width: min(1480px, calc(100vw - 2rem));
             }
 
             [data-testid="stSidebar"] {
@@ -252,6 +253,7 @@ def inject_global_styles() -> None:
                 padding: 1.2rem 1.1rem;
                 min-height: 170px;
                 animation: fadeSlideUp 0.8s ease both;
+                animation-delay: var(--card-delay, 0s);
             }
 
             .kpi-card::before {
@@ -267,7 +269,9 @@ def inject_global_styles() -> None:
             }
 
             .kpi-card.level-four {
-                animation: pulseGlow 2.4s ease-in-out infinite;
+                animation:
+                    fadeSlideUp 0.8s ease both,
+                    heartbeatGlow 2.2s ease-in-out infinite 1.6s;
             }
 
             .kpi-label {
@@ -305,6 +309,37 @@ def inject_global_styles() -> None:
                 box-shadow: var(--shadow-soft);
                 backdrop-filter: blur(10px);
                 animation: fadeSlideUp 0.8s ease both;
+            }
+
+            .kpi-grid {
+                display: grid;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                gap: 1rem;
+            }
+
+            .tab-pane {
+                animation: tabFadeIn 0.45s ease both;
+            }
+
+            .map-shell iframe {
+                height: clamp(360px, 62vh, 620px) !important;
+                border-radius: 24px;
+            }
+
+            .asset-image-shell {
+                padding: 0.6rem;
+                border-radius: 24px;
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                backdrop-filter: blur(10px);
+                animation: tabFadeIn 0.45s ease both;
+            }
+
+            .asset-caption {
+                margin-top: 0.65rem;
+                color: var(--muted);
+                font-size: 0.88rem;
+                text-align: center;
             }
 
             .section-title {
@@ -407,6 +442,14 @@ def inject_global_styles() -> None:
                 white-space: pre-line;
             }
 
+            .report-line {
+                display: block;
+                opacity: 0;
+                transform: translateY(12px);
+                animation: lineReveal 0.55s ease forwards;
+                animation-delay: var(--line-delay, 0s);
+            }
+
             .sidebar-brand {
                 margin-bottom: 1rem;
             }
@@ -501,12 +544,85 @@ def inject_global_styles() -> None:
                 }
             }
 
+            @keyframes heartbeatGlow {
+                0%, 100% {
+                    transform: translateY(0) scale(1);
+                    box-shadow:
+                        0 0 0 rgba(239, 68, 68, 0),
+                        0 24px 70px rgba(15, 23, 42, 0.35);
+                }
+                14% {
+                    transform: translateY(-2px) scale(1.015);
+                    box-shadow:
+                        0 0 30px rgba(239, 68, 68, 0.18),
+                        0 24px 70px rgba(15, 23, 42, 0.35);
+                }
+                28% {
+                    transform: translateY(0) scale(0.995);
+                }
+                42% {
+                    transform: translateY(-4px) scale(1.03);
+                    box-shadow:
+                        0 0 42px rgba(239, 68, 68, 0.28),
+                        0 24px 70px rgba(15, 23, 42, 0.35);
+                }
+                58% {
+                    transform: translateY(0) scale(1);
+                }
+            }
+
+            @keyframes tabFadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(8px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            @keyframes lineReveal {
+                from {
+                    opacity: 0;
+                    transform: translateY(12px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
             @media (max-width: 980px) {
                 .gradient-title {
                     font-size: 2.1rem;
                 }
                 .hero-shell {
                     padding: 1.6rem;
+                }
+                .kpi-grid {
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                }
+                .map-shell iframe {
+                    height: clamp(320px, 52vh, 520px) !important;
+                }
+                .block-container {
+                    max-width: calc(100vw - 1rem);
+                    padding-left: 0.75rem;
+                    padding-right: 0.75rem;
+                }
+            }
+
+            @media (max-width: 560px) {
+                .kpi-grid {
+                    gap: 0.75rem;
+                }
+                .kpi-card {
+                    min-height: 150px;
+                    padding: 1rem 0.95rem;
+                }
+                .kpi-value {
+                    font-size: 1.45rem;
                 }
             }
         </style>
@@ -525,6 +641,34 @@ def get_asset_manifest() -> list[str]:
         if lower.endswith(".png") and os.path.isfile(os.path.join(asset_dir, name)):
             files.append(name)
     return files
+
+
+def get_asset_path(filename: str) -> str:
+    return os.path.join(os.path.dirname(__file__), "assets", filename)
+
+
+def has_asset(filename: str) -> bool:
+    return os.path.exists(get_asset_path(filename))
+
+
+def render_asset_or_plotly(
+    *,
+    asset_name: str,
+    figure: go.Figure | None = None,
+    caption: str,
+) -> None:
+    if has_asset(asset_name):
+        st.markdown('<div class="asset-image-shell">', unsafe_allow_html=True)
+        st.image(get_asset_path(asset_name), use_container_width=True)
+        st.markdown(
+            f'<div class="asset-caption">{caption}</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
+        return
+
+    if figure is not None:
+        st.plotly_chart(figure, use_container_width=True)
 
 
 def render_sidebar() -> tuple[str, str, int, bool]:
@@ -744,20 +888,25 @@ def render_kpi_cards() -> None:
         ),
     ]
 
-    cols = st.columns(4)
-    for idx, (col, card) in enumerate(zip(cols, cards)):
+    cards_html = []
+    for idx, card in enumerate(cards):
         level_class = "level-four" if idx == 0 else ""
-        col.markdown(
+        cards_html.append(
             f"""
             <div class="kpi-card {level_class}"
-                 style="--glow-color:{card.glow}; --accent-color:{card.accent};">
+                 style="--glow-color:{card.glow};
+                        --accent-color:{card.accent};
+                        --card-delay:{idx * 0.5:.1f}s;">
                 <div class="kpi-label">{card.title}</div>
                 <div class="kpi-value">{card.value}</div>
                 <div class="kpi-delta">{card.delta}</div>
             </div>
-            """,
-            unsafe_allow_html=True,
+            """
         )
+    st.markdown(
+        f'<div class="kpi-grid">{"".join(cards_html)}</div>',
+        unsafe_allow_html=True,
+    )
 
 
 def build_map() -> folium.Map:
@@ -820,6 +969,7 @@ def build_map() -> folium.Map:
 
 
 def render_map_tab() -> None:
+    st.markdown('<div class="tab-pane">', unsafe_allow_html=True)
     st.markdown(
         """
         <div class="section-card">
@@ -831,7 +981,9 @@ def render_map_tab() -> None:
         """,
         unsafe_allow_html=True,
     )
+    st.markdown('<div class="map-shell">', unsafe_allow_html=True)
     st_folium(build_map(), use_container_width=True, height=560)
+    st.markdown("</div>", unsafe_allow_html=True)
     st.markdown(
         """
         <div class="legend">
@@ -851,6 +1003,7 @@ def render_map_tab() -> None:
         """,
         unsafe_allow_html=True,
     )
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def time_series_figure(frame: pd.DataFrame, show_split: bool) -> go.Figure:
@@ -945,6 +1098,7 @@ def time_series_figure(frame: pd.DataFrame, show_split: bool) -> go.Figure:
 
 
 def render_time_series_tab(frame: pd.DataFrame, show_split: bool) -> None:
+    st.markdown('<div class="tab-pane">', unsafe_allow_html=True)
     st.markdown(
         """
         <div class="section-card">
@@ -957,7 +1111,11 @@ def render_time_series_tab(frame: pd.DataFrame, show_split: bool) -> None:
         """,
         unsafe_allow_html=True,
     )
-    st.plotly_chart(time_series_figure(frame, show_split), use_container_width=True)
+    render_asset_or_plotly(
+        asset_name="slide6_timeseries.png",
+        figure=time_series_figure(frame, show_split),
+        caption="Slide 6 PNG detected in assets. Falling back to Plotly when absent.",
+    )
     st.markdown(
         """
         <div class="insight-callout">
@@ -969,6 +1127,7 @@ def render_time_series_tab(frame: pd.DataFrame, show_split: bool) -> None:
         """,
         unsafe_allow_html=True,
     )
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def build_correlation_curve(best_lag: int, best_r: float) -> pd.DataFrame:
@@ -1088,6 +1247,7 @@ def render_correlation_stats() -> None:
 
 
 def render_correlation_tab() -> None:
+    st.markdown('<div class="tab-pane">', unsafe_allow_html=True)
     st.markdown(
         """
         <div class="section-card">
@@ -1099,8 +1259,13 @@ def render_correlation_tab() -> None:
         """,
         unsafe_allow_html=True,
     )
-    st.plotly_chart(correlation_figure(), use_container_width=True)
+    render_asset_or_plotly(
+        asset_name="slide7_crosscorr.png",
+        figure=correlation_figure(),
+        caption="Slide 7 PNG detected in assets. Falling back to Plotly when absent.",
+    )
     render_correlation_stats()
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def single_vs_integrated_figure() -> go.Figure:
@@ -1181,6 +1346,7 @@ def build_results_table() -> pd.DataFrame:
 
 
 def render_validation_tab() -> None:
+    st.markdown('<div class="tab-pane">', unsafe_allow_html=True)
     st.markdown(
         """
         <div class="section-card">
@@ -1194,9 +1360,17 @@ def render_validation_tab() -> None:
     )
     left, right = st.columns(2)
     with left:
-        st.plotly_chart(single_vs_integrated_figure(), use_container_width=True)
+        render_asset_or_plotly(
+            asset_name="slide8_comparison.png",
+            figure=single_vs_integrated_figure(),
+            caption="Slide 8 PNG detected in assets. Falling back to Plotly when absent.",
+        )
     with right:
-        st.plotly_chart(deng_comparison_figure(), use_container_width=True)
+        render_asset_or_plotly(
+            asset_name="slide9_deng_comparison.png",
+            figure=deng_comparison_figure(),
+            caption="Slide 9 PNG detected in assets. Falling back to Plotly when absent.",
+        )
 
     result_df = build_results_table()
     styled = result_df.style.format(
@@ -1216,6 +1390,7 @@ def render_validation_tab() -> None:
         """,
         unsafe_allow_html=True,
     )
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def contribution_donut() -> go.Figure:
@@ -1301,20 +1476,26 @@ def render_contribution_cards() -> None:
 
 
 def render_ai_report_text() -> None:
-    report_text = (
-        "강남구에서 인플루엔자A 확산 초기 징후가 감지되었습니다.\n"
-        "2024년 동절기 유사 패턴(KOWAS 2024-W48) 대비 확산 속도가 1.3배 "
-        "빠르며,\n"
-        "현재 기온(2°C)·습도(35%) 조건이 비말 전파에 유리합니다.\n"
-        "CDC 가이드라인에 따라:\n"
-        "1. 고위험군(65세 이상) 대상 선제 백신 접종 권고\n"
-        "2. 관내 의료기관 항바이러스제 재고 확인 "
-        "(오셀타미비르 3주 분량)\n"
-        "3. 학교·어린이집 방역 강화 및 발열 모니터링 가동\n"
-        "— RAG-LLM 기반 자동 생성 (참조: CDC, KOWAS, Deng et al. 2026)"
+    report_lines = [
+        "강남구에서 인플루엔자A 확산 초기 징후가 감지되었습니다.",
+        "2024년 동절기 유사 패턴(KOWAS 2024-W48) 대비 확산 속도가 1.3배 빠르며,",
+        "현재 기온(2°C)·습도(35%) 조건이 비말 전파에 유리합니다.",
+        "CDC 가이드라인에 따라:",
+        "1. 고위험군(65세 이상) 대상 선제 백신 접종 권고",
+        "2. 관내 의료기관 항바이러스제 재고 확인 (오셀타미비르 3주 분량)",
+        "3. 학교·어린이집 방역 강화 및 발열 모니터링 가동",
+        "— RAG-LLM 기반 자동 생성 (참조: CDC, KOWAS, Deng et al. 2026)",
+    ]
+    lines_html = "".join(
+        (
+            '<span class="report-line" '
+            f'style="--line-delay:{idx * 0.24:.2f}s;">'
+            f"{escape(line)}</span>"
+        )
+        for idx, line in enumerate(report_lines)
     )
     st.markdown(
-        f'<div class="blockquote-card">{report_text}</div>',
+        f'<div class="blockquote-card">{lines_html}</div>',
         unsafe_allow_html=True,
     )
 
@@ -1345,6 +1526,7 @@ def render_forecast_metrics() -> None:
 
 
 def render_ai_report_tab(selected_district: str) -> None:
+    st.markdown('<div class="tab-pane">', unsafe_allow_html=True)
     st.markdown(
         """
         <div class="section-card">
@@ -1364,6 +1546,7 @@ def render_ai_report_tab(selected_district: str) -> None:
     with right:
         render_ai_report_text()
     render_forecast_metrics()
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def render_footer() -> None:
