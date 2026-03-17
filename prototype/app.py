@@ -4,6 +4,7 @@ from datetime import datetime
 import folium
 import pandas as pd
 import streamlit as st
+from branca.element import Element
 from streamlit_folium import st_folium
 
 
@@ -705,17 +706,245 @@ def render_kpis() -> None:
         )
 
 
+def hex_to_rgba(hex_color: str, alpha: float) -> str:
+    hex_color = hex_color.lstrip("#")
+    red = int(hex_color[0:2], 16)
+    green = int(hex_color[2:4], 16)
+    blue = int(hex_color[4:6], 16)
+    return f"rgba({red}, {green}, {blue}, {alpha})"
+
+
+def inject_map_styles(fmap: folium.Map) -> None:
+    fmap.get_root().header.add_child(
+        Element(
+            """
+            <style>
+                .risk-pulse-marker {
+                    position: relative;
+                    width: var(--pulse-size);
+                    height: var(--pulse-size);
+                    pointer-events: auto;
+                }
+
+                .risk-pulse-marker .pulse-ring {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    width: calc(var(--pulse-size) * 0.62);
+                    height: calc(var(--pulse-size) * 0.62);
+                    border-radius: 999px;
+                    border: 2px solid var(--pulse-color);
+                    background: var(--pulse-fill);
+                    transform: translate(-50%, -50%) scale(0.35);
+                    opacity: 0.9;
+                    animation: districtPulse var(--pulse-speed) ease-out infinite;
+                    box-shadow: 0 0 18px var(--pulse-shadow);
+                }
+
+                .risk-pulse-marker .pulse-ring.delay {
+                    animation-delay: calc(var(--pulse-speed) / 2);
+                }
+
+                .risk-pulse-marker .pulse-ring.intense {
+                    display: none;
+                }
+
+                .risk-pulse-marker .pulse-core {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    width: var(--core-size);
+                    height: var(--core-size);
+                    transform: translate(-50%, -50%);
+                    border-radius: 999px;
+                    background: var(--pulse-color);
+                    border: 2px solid rgba(255, 255, 255, 0.92);
+                    box-shadow:
+                        0 0 0 5px var(--pulse-fill),
+                        0 0 24px var(--pulse-shadow);
+                    animation: coreFloat 2.6s ease-in-out infinite;
+                }
+
+                .risk-pulse-marker.selected .pulse-core {
+                    border-width: 3px;
+                    box-shadow:
+                        0 0 0 7px var(--pulse-fill),
+                        0 0 28px var(--pulse-shadow);
+                }
+
+                .risk-pulse-marker.level-1 .pulse-ring {
+                    animation-name: districtBreathe;
+                }
+
+                .risk-pulse-marker.level-1 .pulse-core {
+                    animation-name: coreBreathe;
+                }
+
+                .risk-pulse-marker.level-2 .pulse-ring {
+                    animation-name: districtPulse;
+                }
+
+                .risk-pulse-marker.level-3 .pulse-ring {
+                    animation-name: districtPulseFast;
+                }
+
+                .risk-pulse-marker.level-3 .pulse-core {
+                    animation-duration: 1.9s;
+                }
+
+                .risk-pulse-marker.level-4 .pulse-ring {
+                    animation-name: districtAlarmPulse;
+                    border-width: 3px;
+                }
+
+                .risk-pulse-marker.level-4 .pulse-ring.intense {
+                    display: block;
+                    animation-delay: calc(var(--pulse-speed) / 4);
+                }
+
+                .risk-pulse-marker.level-4 .pulse-core {
+                    animation-name: coreAlert;
+                    animation-duration: 0.95s;
+                }
+
+                @keyframes districtPulse {
+                    0% {
+                        transform: translate(-50%, -50%) scale(0.35);
+                        opacity: 0.95;
+                    }
+                    65% {
+                        opacity: 0.18;
+                    }
+                    100% {
+                        transform: translate(-50%, -50%) scale(1.55);
+                        opacity: 0;
+                    }
+                }
+
+                @keyframes districtBreathe {
+                    0% {
+                        transform: translate(-50%, -50%) scale(0.55);
+                        opacity: 0.38;
+                    }
+                    50% {
+                        transform: translate(-50%, -50%) scale(1.05);
+                        opacity: 0.12;
+                    }
+                    100% {
+                        transform: translate(-50%, -50%) scale(0.55);
+                        opacity: 0.38;
+                    }
+                }
+
+                @keyframes districtPulseFast {
+                    0% {
+                        transform: translate(-50%, -50%) scale(0.28);
+                        opacity: 1;
+                    }
+                    55% {
+                        opacity: 0.2;
+                    }
+                    100% {
+                        transform: translate(-50%, -50%) scale(1.7);
+                        opacity: 0;
+                    }
+                }
+
+                @keyframes districtAlarmPulse {
+                    0% {
+                        transform: translate(-50%, -50%) scale(0.24);
+                        opacity: 1;
+                    }
+                    40% {
+                        opacity: 0.45;
+                    }
+                    100% {
+                        transform: translate(-50%, -50%) scale(1.9);
+                        opacity: 0;
+                    }
+                }
+
+                @keyframes coreFloat {
+                    0%, 100% {
+                        transform: translate(-50%, -50%) scale(1);
+                    }
+                    50% {
+                        transform: translate(-50%, -50%) scale(1.08);
+                    }
+                }
+
+                @keyframes coreBreathe {
+                    0%, 100% {
+                        transform: translate(-50%, -50%) scale(0.96);
+                        opacity: 0.82;
+                    }
+                    50% {
+                        transform: translate(-50%, -50%) scale(1.04);
+                        opacity: 1;
+                    }
+                }
+
+                @keyframes coreAlert {
+                    0%, 100% {
+                        transform: translate(-50%, -50%) scale(0.92);
+                        box-shadow:
+                            0 0 0 5px var(--pulse-fill),
+                            0 0 18px var(--pulse-shadow);
+                    }
+                    50% {
+                        transform: translate(-50%, -50%) scale(1.16);
+                        box-shadow:
+                            0 0 0 8px var(--pulse-fill),
+                            0 0 32px var(--pulse-shadow);
+                    }
+                }
+            </style>
+            """
+        )
+    )
+
+
+def build_pulse_marker(level: int, cfg: dict[str, str], is_selected: bool) -> folium.DivIcon:
+    size = cfg["radius"] * 2 + 18
+    core_size = max(12, cfg["radius"] + 2)
+    pulse_speed = {8: "3.2s", 12: "2.7s", 16: "2.2s", 22: "1.7s"}.get(cfg["radius"], "2.5s")
+    pulse_fill = hex_to_rgba(cfg["color"], 0.14 if is_selected else 0.10)
+    pulse_shadow = hex_to_rgba(cfg["color"], 0.45 if is_selected else 0.30)
+    selected_class = "selected" if is_selected else ""
+    level_class = f"level-{level}"
+
+    html = f"""
+    <div class="risk-pulse-marker {level_class} {selected_class}"
+         style="
+            --pulse-size:{size}px;
+            --core-size:{core_size}px;
+            --pulse-speed:{pulse_speed};
+            --pulse-color:{cfg['color']};
+            --pulse-fill:{pulse_fill};
+            --pulse-shadow:{pulse_shadow};
+         ">
+        <span class="pulse-ring"></span>
+        <span class="pulse-ring delay"></span>
+        <span class="pulse-ring intense"></span>
+        <span class="pulse-core"></span>
+    </div>
+    """
+    return folium.DivIcon(html=html, icon_size=(size, size), icon_anchor=(size // 2, size // 2))
+
+
 def build_map(region: str) -> folium.Map:
     selected_name = region.replace("서울 ", "")
     fmap = folium.Map(location=[37.5665, 126.9780], zoom_start=11, tiles="CartoDB positron")
+    inject_map_styles(fmap)
 
     for district in DISTRICTS:
         cfg = RISK_CFG[district["risk"]]
         otc_status = "▲ 급증" if district["risk"] >= 3 else "— 정상"
         sewage_status = "▲ 양성" if district["risk"] >= 3 else "— 정상"
         search_status = "▲ 급증" if district["risk"] >= 2 else "— 정상"
-        weight = 3 if district["name"] == selected_name else 2
-        fill_opacity = 0.55 if district["name"] == selected_name else 0.4
+        is_selected = district["name"] == selected_name
+        weight = 3 if is_selected else 1.5
+        fill_opacity = 0.20 if is_selected else 0.12
 
         popup_html = (
             "<div style='font-family:Pretendard,sans-serif;'>"
@@ -730,12 +959,18 @@ def build_map(region: str) -> folium.Map:
 
         folium.CircleMarker(
             location=[district["lat"], district["lon"]],
-            radius=cfg["radius"],
+            radius=cfg["radius"] + 8,
             color=cfg["color"],
             fill=True,
             fill_color=cfg["color"],
             fill_opacity=fill_opacity,
             weight=weight,
+            opacity=0.65,
+        ).add_to(fmap)
+
+        folium.Marker(
+            location=[district["lat"], district["lon"]],
+            icon=build_pulse_marker(district["risk"], cfg, is_selected),
             popup=folium.Popup(popup_html, max_width=220),
             tooltip=f"{district['name']} — {cfg['label']}",
         ).add_to(fmap)
