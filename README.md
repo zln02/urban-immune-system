@@ -72,11 +72,11 @@
 
 | 위험도 지도 | 시계열 분석 |
 |:-----------:|:-----------:|
-| ![map](prototype/assets/screenshot_map.png) | ![timeseries](prototype/assets/slide6_timeseries.png) |
+| ![map](prototype/assets/프로토타입%20대시보드.png) | ![timeseries](prototype/assets/slide6_timeseries.png) |
 
 | 상관관계 분석 | AI 경보 리포트 |
 |:------------:|:--------------:|
-| ![corr](prototype/assets/slide7_crosscorr.png) | ![report](prototype/assets/screenshot_report.png) |
+| ![corr](prototype/assets/slide7_crosscorr.png) | ![report](prototype/assets/프로토타입%20대시보드.png) |
 
 > 🔗 **라이브 데모**: http://34.64.122.238:8501
 
