@@ -70,13 +70,19 @@
 
 ## 📸 데모 스크린샷
 
-| 위험도 지도 | 시계열 분석 |
-|:-----------:|:-----------:|
-| ![map](prototype/assets/프로토타입%20대시보드.png) | ![timeseries](prototype/assets/slide6_timeseries.png) |
+### 대표 대시보드
 
-| 상관관계 분석 | AI 경보 리포트 |
-|:------------:|:--------------:|
-| ![corr](prototype/assets/slide7_crosscorr.png) | ![report](prototype/assets/프로토타입%20대시보드.png) |
+![dashboard](prototype/assets/프로토타입%20대시보드.png)
+
+- 라이트 테마 기반 CDC/WHO 스타일 운영 콘솔
+- 5탭 구성: 위험도 지도 / 시계열 분석 / 상관관계 검정 / 교차검증 / AI 경보 리포트
+- 서울 자치구 위험도, Layer별 기여도, TFT 확산 예측을 한 화면에서 확인
+
+### 분석 결과 스냅샷
+
+| 시계열 분석 | 상관관계 분석 |
+|:-----------:|:-------------:|
+| ![timeseries](prototype/assets/slide6_timeseries.png) | ![corr](prototype/assets/slide7_crosscorr.png) |
 
 > 🔗 **라이브 데모**: http://34.64.122.238:8501
 
@@ -94,6 +100,7 @@ urban-immune-system/
 │   ├── app.py                   # 메인 앱 (5탭: 지도/시계열/상관관계/교차검증/AI리포트)
 │   ├── requirements.txt
 │   └── assets/                  # 분석 결과 PNG
+│       ├── 프로토타입 대시보드.png
 │       ├── slide6_timeseries.png
 │       ├── slide7_crosscorr.png
 │       ├── slide8_comparison.png
