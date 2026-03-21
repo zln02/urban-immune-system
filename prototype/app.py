@@ -503,6 +503,91 @@ def inject_styles() -> None:
             line-height: 1.8;
         }}
 
+        .team-watermark {{
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid {GRAY_200};
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            flex-wrap: wrap;
+        }}
+
+        .team-member {{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+        }}
+
+        .team-member .member-name {{
+            font-weight: 700;
+            font-size: 0.78rem;
+            color: {NAVY};
+        }}
+
+        .team-member .member-dept {{
+            font-size: 0.68rem;
+            color: {GRAY_500};
+        }}
+
+        .team-member .member-role {{
+            font-size: 0.7rem;
+            color: {NAVY_LIGHT};
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 4px;
+            padding: 1px 6px;
+            font-weight: 600;
+        }}
+
+        .sidebar-team {{
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid {GRAY_200};
+        }}
+
+        .sidebar-team .team-title {{
+            font-size: 0.68rem;
+            color: {GRAY_500};
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }}
+
+        .sidebar-member {{
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }}
+
+        .sidebar-member .s-badge {{
+            background: {NAVY};
+            color: white;
+            font-size: 0.62rem;
+            padding: 1px 6px;
+            border-radius: 3px;
+            font-weight: 700;
+            white-space: nowrap;
+        }}
+
+        .sidebar-member .s-info {{
+            font-size: 0.75rem;
+            color: {GRAY_700};
+        }}
+
+        .sidebar-member .s-name {{
+            font-weight: 700;
+            color: {GRAY_900};
+        }}
+
+        .sidebar-member .s-dept {{
+            font-size: 0.68rem;
+            color: {GRAY_500};
+        }}
+
         .stat-row {{
             display: flex;
             gap: 12px;
@@ -615,6 +700,36 @@ def render_sidebar() -> tuple[str, str, int, bool]:
             unsafe_allow_html=True,
         )
         st.caption("© 2026 Urban Immune System · LG전자 DX School 13회차")
+
+        st.markdown(
+            """
+            <div class="sidebar-team">
+                <div class="team-title">팀 구성원</div>
+                <div class="sidebar-member">
+                    <span class="s-badge">총괄 · AI</span>
+                    <div class="s-info">
+                        <div class="s-name">박진영</div>
+                        <div class="s-dept">컴퓨터공학과</div>
+                    </div>
+                </div>
+                <div class="sidebar-member">
+                    <span class="s-badge">분석</span>
+                    <div class="s-info">
+                        <div class="s-name">윤재영</div>
+                        <div class="s-dept">정보통신공학과</div>
+                    </div>
+                </div>
+                <div class="sidebar-member">
+                    <span class="s-badge">개발</span>
+                    <div class="s-info">
+                        <div class="s-name">정욱현</div>
+                        <div class="s-dept">정보통신공학과</div>
+                    </div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     return region, season, threshold, show_train
 
@@ -1240,6 +1355,23 @@ def render_footer() -> None:
             제1회 2026 데이터로 미래를 그리는 AI 아이디어 공모전 · LG전자 DX School 13회차<br>
             데이터: KDCA 감염병포털 · KOWAS 하수감시소식지 · 네이버 쇼핑인사이트/데이터랩<br>
             선행연구: Deng et al. (2026) Engineering — 2-Layer 하수+검색어 통합 조기경보
+            <div class="team-watermark">
+                <div class="team-member">
+                    <div class="member-role">총괄 PM · AI 모델링</div>
+                    <div class="member-name">박진영</div>
+                    <div class="member-dept">컴퓨터공학과</div>
+                </div>
+                <div class="team-member">
+                    <div class="member-role">데이터 분석</div>
+                    <div class="member-name">윤재영</div>
+                    <div class="member-dept">정보통신공학과</div>
+                </div>
+                <div class="team-member">
+                    <div class="member-role">시스템 개발</div>
+                    <div class="member-name">정욱현</div>
+                    <div class="member-dept">정보통신공학과</div>
+                </div>
+            </div>
         </div>
         """,
         unsafe_allow_html=True,

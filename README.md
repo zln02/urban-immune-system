@@ -7,6 +7,8 @@
 **약국 판매량 + 하수 바이러스 + 검색어 트렌드** — 3개 비의료 신호를 AI로 교차검증하여
 감염병 확산을 **1~3주 선행 감지**하고, LLM이 경보 리포트를 자동 생성합니다.
 
+> 🏆 **대상(1등)** — 제1회 2026 데이터로 미래를 그리는 AI 아이디어 공모전
+
 [![Streamlit](https://img.shields.io/badge/Streamlit-Dashboard-FF4B4B?logo=streamlit&logoColor=white)](http://34.64.122.238:8501)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://python.org)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -72,7 +74,7 @@
 
 ### 대표 대시보드
 
-![dashboard](prototype/assets/프로토타입%20대시보드.png)
+![dashboard](prototype/assets/dashboard_overview.png)
 
 - 라이트 테마 기반 CDC/WHO 스타일 운영 콘솔
 - 5탭 구성: 위험도 지도 / 시계열 분석 / 상관관계 검정 / 교차검증 / AI 경보 리포트
@@ -85,6 +87,8 @@
 | ![timeseries](prototype/assets/slide6_timeseries.png) | ![corr](prototype/assets/slide7_crosscorr.png) |
 
 > 🔗 **라이브 데모**: http://34.64.122.238:8501
+
+> ⚠️ GCP 임시 배포 환경으로, 서버가 중단될 수 있습니다. 스크린샷은 아래를 참고하세요.
 
 ---
 
@@ -100,7 +104,7 @@ urban-immune-system/
 │   ├── app.py                   # 메인 앱 (5탭: 지도/시계열/상관관계/교차검증/AI리포트)
 │   ├── requirements.txt
 │   └── assets/                  # 분석 결과 PNG
-│       ├── 프로토타입 대시보드.png
+│       ├── dashboard_overview.png
 │       ├── slide6_timeseries.png
 │       ├── slide7_crosscorr.png
 │       ├── slide8_comparison.png
@@ -176,7 +180,7 @@ python analysis/urban_immune_analysis.py
 - **약국 OTC**: 확진자 대비 **약 2주 선행**, Cross-correlation p<0.0001, Granger 유의
 - **하수 바이오마커**: 확진자 대비 **약 3주 선행**, Cross-correlation p<0.0001, Granger 유의
 - **검색어 트렌드**: 확진자 대비 **약 1주 선행**, Cross-correlation p<0.05, Granger 유의
-- **3-Layer 통합**: 단일 Layer 대비 F1-score 향상, 오경보 0건
+- **3-Layer 통합**: 단일 Layer 대비 오경보 0건 달성, 3번째 독립 신호원(약국 OTC)으로 시스템 신뢰성 강화
 
 ### vs 선행연구 (Deng et al., 2026)
 
@@ -195,19 +199,27 @@ python analysis/urban_immune_analysis.py
 
 ## 🛠 기술 스택
 
+### ✅ 구현 완료 (프로토타입)
+
 | 구분 | 기술 |
 |------|------|
-| **프로토타입** | Streamlit, Plotly, Folium |
-| **데이터 분석** | Pandas, SciPy, Matplotlib, Seaborn |
-| **시계열 예측** | TFT (PyTorch Forecasting) |
-| **이상탐지** | Deep Autoencoder + Isolation Forest |
-| **LLM 리포트** | GPT-4o / Claude API + RAG (LangChain) |
-| **벡터 DB** | Qdrant |
-| **스트리밍** | Apache Kafka |
-| **Backend** | Python, FastAPI |
-| **Frontend** | Next.js + Deck.gl |
-| **DB** | TimescaleDB |
-| **인프라** | Docker, Kubernetes, GCP |
+| 프로토타입 | Streamlit, Plotly, Folium |
+| 데이터 분석 | Pandas, SciPy, Matplotlib, Seaborn |
+| 인프라 | GCP Compute Engine |
+
+### 📐 아키텍처 설계 (Phase 2 구현 예정)
+
+| 구분 | 기술 |
+|------|------|
+| 시계열 예측 | TFT (PyTorch Forecasting) |
+| 이상탐지 | Deep Autoencoder + Isolation Forest |
+| LLM 리포트 | GPT-4o / Claude API + RAG (LangChain) |
+| 벡터 DB | Qdrant |
+| 스트리밍 | Apache Kafka |
+| Backend | Python, FastAPI |
+| Frontend | Next.js + Deck.gl |
+| DB | TimescaleDB |
+| 인프라 | Docker, Kubernetes |
 
 ---
 
@@ -215,7 +227,7 @@ python analysis/urban_immune_analysis.py
 
 | 이름 | 역할 | 담당 |
 |------|------|------|
-| 박진영 | PM / ML Engineer | 프로젝트 관리, ML 파이프라인, 이상탐지·TFT 모델 |
+| 박진영 | PM / ML Engineer | 프로젝트 총괄, 데이터 분석·시각화, Streamlit 대시보드 개발·GCP 배포 |
 | 윤재영 | Data Engineer | 데이터 수집·전처리, Kafka, TimescaleDB, RAG |
 | 정욱현 | Frontend Engineer | Next.js 대시보드, Deck.gl 3D 시각화, UI/UX |
 
@@ -239,6 +251,6 @@ MIT License — 자세한 내용은 [LICENSE](LICENSE) 파일 참조.
 
 **🏙️ Urban Immune System** — 도시를 지키는 AI 면역 체계
 
-*제1회 2026 데이터로 미래를 그리는 AI 아이디어 공모전 본선 진출작*
+*제1회 2026 데이터로 미래를 그리는 AI 아이디어 공모전 🏆 대상(1등) 수상작*
 
 </div>
