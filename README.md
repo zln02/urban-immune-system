@@ -63,10 +63,15 @@
 → [감염병 분류 + 확산 예측] → [RAG-LLM 경보 리포트] → [대시보드]
 ```
 
+**✅ 구현 완료**
+- **Cross-correlation + Granger 인과성**: Layer별 선행 시차 통계 검증 (p<0.0001)
+- **3-Layer 교차검증**: 약국 OTC + 하수 바이오마커 + 검색어 트렌드 통합 분석
+- **Streamlit 대시보드**: 위험도 지도, 시계열 분석, 상관관계 검정, 교차검증, AI 경보 리포트 5탭
+
+**📐 Phase 2 설계 (구현 예정)**
 - **Temporal Fusion Transformer (TFT)**: 3개 Layer 시계열을 동시에 학습, Attention 가중치로 Layer 기여도 자동 산출
 - **Deep Autoencoder 앙상블**: Layer별 비지도 이상탐지
 - **RAG + LLM**: 역학 논문·가이드라인 검색 → 경보 원인·대응 방안 자연어 리포트 자동 생성
-- **Cross-correlation + Granger 인과성**: Layer별 선행 시차 통계 검증
 
 ---
 
@@ -88,7 +93,7 @@
 
 > 🔗 **라이브 데모**: http://34.64.122.238:8501
 
-> ⚠️ GCP 임시 배포 환경으로, 서버가 중단될 수 있습니다. 스크린샷은 아래를 참고하세요.
+> ⚠️ GCP 임시 배포 환경으로, 서버가 중단될 수 있습니다. 스크린샷은 위를 참고하세요.
 
 ---
 
@@ -120,7 +125,7 @@ urban-immune-system/
 │
 ├── docs/
 │   ├── architecture.md          # 시스템 아키텍처
-│   └── data_sources.md          # 데이터 출처 상세
+│   └── slides/                  # 발표 자료
 │
 └── .github/
     └── workflows/
@@ -228,8 +233,8 @@ python analysis/urban_immune_analysis.py
 | 이름 | 역할 | 담당 |
 |------|------|------|
 | 박진영 | PM / ML Engineer | 프로젝트 총괄, 데이터 분석·시각화, Streamlit 대시보드 개발·GCP 배포 |
-| 윤재영 | Data Engineer | 데이터 수집·전처리, Kafka, TimescaleDB, RAG |
-| 정욱현 | Frontend Engineer | Next.js 대시보드, Deck.gl 3D 시각화, UI/UX |
+| 윤재영 | Data Engineer | 데이터 수집·전처리, API 연동, 분석 파이프라인 |
+| 정욱현 | Frontend Engineer | 프로토타입 UI 기획, Streamlit 레이아웃·시각화 설계 |
 
 ---
 
