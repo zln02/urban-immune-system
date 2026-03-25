@@ -81,3 +81,8 @@ logs/
 # Misc
 tmp/
 temp/
+pycache/
+*.egg-info/
+dist/
+build/
+.ruff_cache/

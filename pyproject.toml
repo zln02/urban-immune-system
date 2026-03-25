@@ -1,0 +1,25 @@
+[project]
+name = "urban-immune-system"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "streamlit>=1.30",
+    "pandas>=2.0",
+    "numpy>=1.24",
+    "plotly>=5.18",
+    "folium>=0.15",
+    "streamlit-folium>=0.18",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff", "pre-commit"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
