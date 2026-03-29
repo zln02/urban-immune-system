@@ -34,7 +34,10 @@ def get_producer() -> KafkaProducer:
     return _producer
 
 
-def send_signal(topic: str, region: str, layer: str, value: float, raw_value: float | None = None, source: str = "") -> None:
+def send_signal(
+    topic: str, region: str, layer: str, value: float,
+    raw_value: float | None = None, source: str = "",
+) -> None:
     """정규화된 신호를 Kafka에 전송한다."""
     producer = get_producer()
     payload = {
