@@ -86,3 +86,23 @@ pycache/
 dist/
 build/
 .ruff_cache/
+
+# ML 체크포인트 / 모델 파일
+ml/checkpoints/
+*.ckpt
+*.pt
+*.pth
+
+# KOWAS PDF 원본 데이터
+pipeline/data/
+
+# Frontend 빌드
+frontend/.next/
+frontend/out/
+
+# PPTX 생성물 (Git에서 제외, 로컬 보관)
+*.pptx
+
+# 시크릿
+.env.local
+.env.production
