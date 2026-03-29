@@ -80,7 +80,10 @@ def collect_otc_weekly(end_date: datetime | None = None) -> float | None:
         latest = normalized[-1] if normalized else None
 
         if latest is not None:
-            send_signal(TOPIC_L1, TARGET_REGION, "L1", latest, raw_value=raw_values[-1], source="naver_shopping_insight")
+            send_signal(
+                TOPIC_L1, TARGET_REGION, "L1", latest,
+                raw_value=raw_values[-1], source="naver_shopping_insight",
+            )
             logger.info("Layer 1 (OTC) 수집 완료: %.2f", latest)
         return latest
 

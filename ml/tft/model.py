@@ -12,7 +12,6 @@ from pathlib import Path
 
 import pandas as pd
 import pytorch_lightning as pl
-import torch
 from pytorch_forecasting import TemporalFusionTransformer, TimeSeriesDataSet
 from pytorch_forecasting.metrics import QuantileLoss
 
