@@ -1,0 +1,6 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: urban-immune
+  labels:
+    app.kubernetes.io/part-of: urban-immune-system

@@ -1,0 +1,68 @@
+name: Deploy to GCP
+
+on:
+  push:
+    branches: [main]
+
+env:
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_REGION: asia-northeast3
+  GCP_CLUSTER: uis-cluster
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write   # Workload Identity Federation
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Google Auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker --quiet
+
+      - name: Build & Push — backend
+        run: |
+          docker build -t gcr.io/$GCP_PROJECT_ID/uis-backend:${{ github.sha }} ./backend/
+          docker push gcr.io/$GCP_PROJECT_ID/uis-backend:${{ github.sha }}
+
+      - name: Build & Push — pipeline
+        run: |
+          docker build -t gcr.io/$GCP_PROJECT_ID/uis-pipeline:${{ github.sha }} ./pipeline/
+          docker push gcr.io/$GCP_PROJECT_ID/uis-pipeline:${{ github.sha }}
+
+      - name: Build & Push — ml
+        run: |
+          docker build -t gcr.io/$GCP_PROJECT_ID/uis-ml:${{ github.sha }} ./ml/
+          docker push gcr.io/$GCP_PROJECT_ID/uis-ml:${{ github.sha }}
+
+      - name: Get GKE credentials
+        uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: ${{ env.GCP_CLUSTER }}
+          location: ${{ env.GCP_REGION }}
+
+      - name: Deploy to GKE
+        run: |
+          for f in infra/k8s/*.yaml; do
+            sed "s|gcr.io/PROJECT_ID|gcr.io/$GCP_PROJECT_ID|g; s|:latest|:${{ github.sha }}|g" "$f" | kubectl apply -f -
+          done
+          kubectl rollout status deployment/backend -n urban-immune --timeout=120s
+          kubectl rollout status deployment/ml -n urban-immune --timeout=180s
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          kubectl rollout undo deployment/backend -n urban-immune || true
+          kubectl rollout undo deployment/ml -n urban-immune || true
