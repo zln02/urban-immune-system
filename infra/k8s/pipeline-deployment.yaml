@@ -15,12 +15,22 @@ spec:
       labels:
         app: pipeline
     spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: pipeline
           image: gcr.io/PROJECT_ID/uis-pipeline:latest
+          imagePullPolicy: IfNotPresent
           envFrom:
             - secretRef:
                 name: uis-secrets
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           resources:
             requests:
               cpu: "200m"

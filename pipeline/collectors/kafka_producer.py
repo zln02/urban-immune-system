@@ -10,8 +10,6 @@ from kafka import KafkaProducer
 
 logger = logging.getLogger(__name__)
 
-BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
-
 # 토픽 정의
 TOPIC_L1 = "uis.layer1.otc"
 TOPIC_L2 = "uis.layer2.wastewater"
@@ -25,7 +23,7 @@ def get_producer() -> KafkaProducer:
     global _producer
     if _producer is None:
         _producer = KafkaProducer(
-            bootstrap_servers=BOOTSTRAP_SERVERS,
+            bootstrap_servers=os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"),
             value_serializer=lambda v: json.dumps(v, ensure_ascii=False).encode("utf-8"),
             key_serializer=lambda k: k.encode("utf-8") if k else None,
             acks="all",
@@ -49,4 +47,5 @@ def send_signal(
         "source": source,
     }
     producer.send(topic, key=region, value=payload)
+    producer.flush(timeout=5.0)
     logger.debug("Kafka send → %s | %s | %.2f", topic, region, value)

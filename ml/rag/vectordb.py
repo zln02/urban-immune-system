@@ -28,22 +28,22 @@ class EpidemiologyVectorDB:
             from qdrant_client import QdrantClient
 
             self.client = QdrantClient(host=host, port=port, timeout=10)
-        except Exception as e:
-            print(f"Qdrant connection failed: {e}")
+        except Exception as exc:
+            logger.warning("Qdrant connection failed: %s", exc)
 
         try:
             from sentence_transformers import SentenceTransformer
 
             self.model = SentenceTransformer(model_name)
             self.embedder = self.model
-        except Exception as e:
-            print(f"SentenceTransformer load failed: {e}")
+        except Exception as exc:
+            logger.warning("SentenceTransformer load failed: %s", exc)
 
         if self.client is not None:
             try:
                 self._ensure_collection()
-            except Exception as e:
-                print(f"Qdrant collection init failed: {e}")
+            except Exception as exc:
+                logger.warning("Qdrant collection init failed: %s", exc)
 
     def _ensure_collection(self) -> None:
         if self.client is None:

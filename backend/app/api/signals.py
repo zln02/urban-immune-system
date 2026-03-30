@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,13 +26,10 @@ async def get_latest_signals(db: AsyncSession = Depends(get_db)) -> dict:
 @router.get("/timeseries")
 async def get_timeseries(
     layer: str = Query(..., pattern="^(otc|wastewater|search)$"),
-    region: str = Query("서울"),
+    region: str = Query("서울", min_length=2, max_length=100),
     days: int = Query(90, ge=7, le=365),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    if days < 7 or days > 365:
-        raise HTTPException(status_code=400, detail="days must be between 7 and 365")
-
     query = text(
         """
         SELECT time, value

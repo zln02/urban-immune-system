@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import httpx
 
-ML_SERVICE_URL = "http://ml:8001"
+from ..config import settings
+
+ML_SERVICE_URL = settings.ml_service_url
 
 
 async def get_tft_forecast(region: str) -> dict:

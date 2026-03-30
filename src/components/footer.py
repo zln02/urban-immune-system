@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from src.config import GRAY_500, GREEN_SAFE, NAVY, NAVY_LIGHT, ORANGE, RED
+from src.config import NAVY
 
 
 def render_footer() -> None:
