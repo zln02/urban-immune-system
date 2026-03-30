@@ -100,4 +100,4 @@ jobs:
           python-version: "3.11"
           cache: pip
       - run: pip install -e ".[dev]"
-      - run: pytest
+      - run: pytest --cov=src --cov-report=term-missing

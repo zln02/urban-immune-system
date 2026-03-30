@@ -1,39 +1,47 @@
-"""Layer 신호 조회 API."""
-from datetime import datetime, timedelta
-from typing import Literal
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from fastapi import APIRouter, Query
+from ..database import get_db
 
-router = APIRouter()
+router = APIRouter(prefix="/api/v1/signals", tags=["signals"])
 
 
 @router.get("/latest")
-async def get_latest_signals(
-    region: str = Query("서울특별시", description="지역명"),
-    layer: Literal["L1", "L2", "L3", "ALL"] = Query("ALL"),
-) -> dict:
-    """각 Layer 최신 정규화 신호값 반환."""
-    # TODO: TimescaleDB에서 실제 데이터 조회
-    return {
-        "region": region,
-        "layer": layer,
-        "data": [],
-        "updated_at": datetime.utcnow().isoformat(),
-    }
+async def get_latest_signals(db: AsyncSession = Depends(get_db)) -> dict:
+    query = text(
+        """
+        SELECT layer, region, value, recorded_at
+        FROM signals
+        WHERE recorded_at >= NOW() - INTERVAL '7 days'
+        ORDER BY recorded_at DESC
+        LIMIT 100
+        """
+    )
+    result = await db.execute(query)
+    rows = result.mappings().all()
+    return {"data": [dict(row) for row in rows], "count": len(rows)}
 
 
 @router.get("/timeseries")
 async def get_timeseries(
-    region: str = Query("서울특별시"),
-    layer: str = Query("ALL"),
-    weeks: int = Query(12, ge=1, le=52),
+    layer: str = Query(..., pattern="^(otc|wastewater|search)$"),
+    region: str = Query("서울"),
+    days: int = Query(90, ge=7, le=365),
+    db: AsyncSession = Depends(get_db),
 ) -> dict:
-    """주간 시계열 데이터 반환 (차트용)."""
-    since = datetime.utcnow() - timedelta(weeks=weeks)
-    # TODO: TimescaleDB time_bucket('1 week', ...) 쿼리
-    return {
-        "region": region,
-        "layer": layer,
-        "since": since.isoformat(),
-        "series": [],
-    }
+    if days < 7 or days > 365:
+        raise HTTPException(status_code=400, detail="days must be between 7 and 365")
+
+    query = text(
+        """
+        SELECT recorded_at, value
+        FROM signals
+        WHERE layer = :layer AND region = :region
+          AND recorded_at >= NOW() - CAST((:days || ' days') AS INTERVAL)
+        ORDER BY recorded_at
+        """
+    )
+    result = await db.execute(query, {"layer": layer, "region": region, "days": str(days)})
+    rows = result.mappings().all()
+    return {"layer": layer, "region": region, "data": [dict(row) for row in rows]}
