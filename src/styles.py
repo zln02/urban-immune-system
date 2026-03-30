@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from src.config import (
+    GRAY_50,
     GRAY_100,
     GRAY_200,
     GRAY_300,
-    GRAY_50,
     GRAY_500,
     GRAY_700,
     GRAY_900,

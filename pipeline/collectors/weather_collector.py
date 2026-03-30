@@ -14,9 +14,7 @@ import httpx
 from pipeline.collectors.kafka_producer import TOPIC_AUX, send_signal
 
 logger = logging.getLogger(__name__)
-
-KMA_API_KEY = os.getenv("KMA_API_KEY", "")
-KMA_CURRENT_URL = "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst"
+KMA_CURRENT_URL = "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst"
 
 # 서울 격자 좌표 (기상청 기준)
 SEOUL_NX, SEOUL_NY = 60, 127
@@ -24,13 +22,15 @@ SEOUL_NX, SEOUL_NY = 60, 127
 
 def collect_weather(region: str = "서울특별시") -> dict | None:
     """기상청 초단기실황 API에서 기온·습도를 수집해 Kafka로 전송한다."""
-    if not KMA_API_KEY:
+    api_key = os.getenv("KMA_API_KEY", "")
+
+    if not api_key:
         logger.warning("기상청 API 키가 없습니다 (KMA_API_KEY)")
         return None
 
     now = datetime.now(timezone.utc)
     params = {
-        "serviceKey": KMA_API_KEY,
+        "serviceKey": api_key,
         "numOfRows": 10,
         "pageNo": 1,
         "dataType": "JSON",

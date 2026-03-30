@@ -13,31 +13,21 @@ from datetime import datetime, timedelta, timezone
 import httpx
 
 from pipeline.collectors.kafka_producer import TOPIC_L1, send_signal
+from pipeline.collectors.normalization import min_max_normalize
 
 logger = logging.getLogger(__name__)
-
-NAVER_CLIENT_ID = os.getenv("NAVER_CLIENT_ID", "")
-NAVER_CLIENT_SECRET = os.getenv("NAVER_CLIENT_SECRET", "")
 DATALAB_URL = "https://openapi.naver.com/v1/datalab/shopping/categories"
 
 # OTC 의약품 카테고리 키워드 (쇼핑인사이트 카테고리 ID 매핑 필요)
 OTC_KEYWORDS = ["감기약", "해열제", "종합감기약", "타이레놀", "판콜"]
 TARGET_REGION = "서울특별시"
 
-
-def _normalize(values: list[float]) -> list[float]:
-    """Min-Max 정규화 (0~100)."""
-    if not values:
-        return values
-    lo, hi = min(values), max(values)
-    if hi == lo:
-        return [50.0] * len(values)
-    return [round((v - lo) / (hi - lo) * 100, 2) for v in values]
-
-
 def collect_otc_weekly(end_date: datetime | None = None) -> float | None:
     """최근 1주 OTC 트렌드 지수를 수집해 정규화 후 Kafka로 전송한다."""
-    if not NAVER_CLIENT_ID or not NAVER_CLIENT_SECRET:
+    client_id = os.getenv("NAVER_CLIENT_ID", "")
+    client_secret = os.getenv("NAVER_CLIENT_SECRET", "")
+
+    if not client_id or not client_secret:
         logger.warning("네이버 API 키가 설정되지 않았습니다 (NAVER_CLIENT_ID / NAVER_CLIENT_SECRET)")
         return None
 
@@ -62,8 +52,8 @@ def collect_otc_weekly(end_date: datetime | None = None) -> float | None:
             DATALAB_URL,
             json=payload,
             headers={
-                "X-Naver-Client-Id": NAVER_CLIENT_ID,
-                "X-Naver-Client-Secret": NAVER_CLIENT_SECRET,
+                "X-Naver-Client-Id": client_id,
+                "X-Naver-Client-Secret": client_secret,
                 "Content-Type": "application/json",
             },
             timeout=15.0,
@@ -76,7 +66,7 @@ def collect_otc_weekly(end_date: datetime | None = None) -> float | None:
             return None
 
         raw_values = [p["ratio"] for p in results[0].get("data", [])]
-        normalized = _normalize(raw_values)
+        normalized = min_max_normalize(raw_values)
         latest = normalized[-1] if normalized else None
 
         if latest is not None:

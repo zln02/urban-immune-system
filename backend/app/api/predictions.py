@@ -1,10 +1,10 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 
 router = APIRouter(prefix="/api/v1/predictions", tags=["predictions"])
 
 
 @router.get("/forecast")
-async def get_forecast(horizon: int = 14) -> dict:
+async def get_forecast(horizon: int = Query(14, ge=7, le=21)) -> dict:
     # Phase 2: TFT 모델 서빙 연동
     return {
         "horizon_days": horizon,

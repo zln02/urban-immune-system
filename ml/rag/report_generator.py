@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
+MAX_RAG_DOC_CHARS = 300
 
 
 SYSTEM_PROMPT = """당신은 공중보건 전문가입니다.
@@ -25,7 +26,9 @@ SYSTEM_PROMPT = """당신은 공중보건 전문가입니다.
 
 
 def _build_prompt(signals: dict, rag_docs: list[dict], region: str) -> str:
-    docs_text = "\n\n".join([f"[참고 {i+1}] {d['text'][:500]}" for i, d in enumerate(rag_docs)])
+    docs_text = "\n\n".join(
+        [f"[참고 {i + 1}] {_sanitize_doc_text(d.get('text', ''))}" for i, d in enumerate(rag_docs)]
+    )
     return f"""
 지역: {region}
 분석 시점: {signals.get('time', 'N/A')}
@@ -47,6 +50,11 @@ def _build_prompt(signals: dict, rag_docs: list[dict], region: str) -> str:
 3. 7/14/21일 전망
 4. 권고 조치 (시민 대상 / 보건 당국 대상)
 """
+
+
+def _sanitize_doc_text(text: str) -> str:
+    sanitized = " ".join(text.split())
+    return sanitized[:MAX_RAG_DOC_CHARS]
 
 
 async def generate_alert_report(signals: dict, region: str = "서울특별시") -> dict:
@@ -72,7 +80,11 @@ async def generate_alert_report(signals: dict, region: str = "서울특별시") 
 
 
 async def _call_openai(prompt: str) -> str:
+    if not OPENAI_API_KEY:
+        raise RuntimeError("OPENAI_API_KEY is not configured")
+
     from openai import AsyncOpenAI
+
     client = AsyncOpenAI(api_key=OPENAI_API_KEY)
     resp = await client.chat.completions.create(
         model=LLM_MODEL,
@@ -87,7 +99,11 @@ async def _call_openai(prompt: str) -> str:
 
 
 async def _call_claude(prompt: str) -> str:
+    if not ANTHROPIC_API_KEY:
+        raise RuntimeError("ANTHROPIC_API_KEY is not configured")
+
     import anthropic
+
     client = anthropic.AsyncAnthropic(api_key=ANTHROPIC_API_KEY)
     resp = await client.messages.create(
         model=LLM_MODEL,

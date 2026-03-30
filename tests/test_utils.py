@@ -15,3 +15,21 @@ def test_asset_path_returns_string() -> None:
 
 def test_asset_path_contains_assets() -> None:
     assert "assets" in asset_path("test.png")
+
+
+def test_hex_to_rgba_rejects_invalid_alpha() -> None:
+    try:
+        hex_to_rgba("#ff0000", 1.5)
+    except ValueError as exc:
+        assert "alpha" in str(exc)
+    else:
+        raise AssertionError("invalid alpha should raise ValueError")
+
+
+def test_asset_path_rejects_parent_traversal() -> None:
+    try:
+        asset_path("../README.md")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("path traversal should raise ValueError")

@@ -15,6 +15,7 @@ from pathlib import Path
 import pdfplumber
 
 from pipeline.collectors.kafka_producer import TOPIC_L2, send_signal
+from pipeline.collectors.normalization import min_max_normalize
 
 logger = logging.getLogger(__name__)
 
@@ -42,14 +43,6 @@ def _parse_kowas_pdf(pdf_path: Path) -> list[dict]:
         logger.error("KOWAS PDF 파싱 실패 (%s): %s", pdf_path.name, exc)
     return records
 
-
-def _normalize(values: list[float]) -> list[float]:
-    lo, hi = min(values), max(values)
-    if hi == lo:
-        return [50.0] * len(values)
-    return [round((v - lo) / (hi - lo) * 100, 2) for v in values]
-
-
 def collect_wastewater_from_pdfs(region: str = "서울특별시") -> int:
     """KOWAS_DATA_DIR 내 모든 PDF를 파싱해 Kafka로 전송한다. 전송 건수 반환."""
     if not KOWAS_DATA_DIR.exists():
@@ -65,7 +58,7 @@ def collect_wastewater_from_pdfs(region: str = "서울특별시") -> int:
         return 0
 
     raw_vals = [r["concentration"] for r in all_records]
-    normalized = _normalize(raw_vals)
+    normalized = min_max_normalize(raw_vals)
 
     for record, norm_val in zip(all_records, normalized):
         send_signal(
