@@ -11,10 +11,10 @@ import logging
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-from collectors.otc_collector import collect_otc_weekly
-from collectors.search_collector import collect_search_weekly
-from collectors.wastewater import collect_wastewater_from_pdfs
-from collectors.weather_collector import collect_weather
+from pipeline.collectors.otc_collector import collect_otc_weekly
+from pipeline.collectors.search_collector import collect_search_weekly
+from pipeline.collectors.wastewater import collect_wastewater_from_pdfs
+from pipeline.collectors.weather_collector import collect_weather
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 logger = logging.getLogger(__name__)

@@ -60,6 +60,7 @@ jobs:
           done
           kubectl rollout status deployment/backend -n urban-immune --timeout=120s
           kubectl rollout status deployment/ml -n urban-immune --timeout=180s
+          kubectl rollout status deployment/pipeline -n urban-immune --timeout=120s
 
       - name: Rollback on failure
         if: failure()

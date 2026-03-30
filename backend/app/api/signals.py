@@ -11,10 +11,10 @@ router = APIRouter(prefix="/api/v1/signals", tags=["signals"])
 async def get_latest_signals(db: AsyncSession = Depends(get_db)) -> dict:
     query = text(
         """
-        SELECT layer, region, value, recorded_at
-        FROM signals
-        WHERE recorded_at >= NOW() - INTERVAL '7 days'
-        ORDER BY recorded_at DESC
+        SELECT layer, region, value, time
+        FROM layer_signals
+        WHERE time >= NOW() - INTERVAL '7 days'
+        ORDER BY time DESC
         LIMIT 100
         """
     )
@@ -35,13 +35,13 @@ async def get_timeseries(
 
     query = text(
         """
-        SELECT recorded_at, value
-        FROM signals
+        SELECT time, value
+        FROM layer_signals
         WHERE layer = :layer AND region = :region
-          AND recorded_at >= NOW() - CAST((:days || ' days') AS INTERVAL)
-        ORDER BY recorded_at
+          AND time >= NOW() - make_interval(days => :days)
+        ORDER BY time
         """
     )
-    result = await db.execute(query, {"layer": layer, "region": region, "days": str(days)})
+    result = await db.execute(query, {"layer": layer, "region": region, "days": days})
     rows = result.mappings().all()
     return {"layer": layer, "region": region, "data": [dict(row) for row in rows]}

@@ -8,11 +8,11 @@ from __future__ import annotations
 
 import logging
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import httpx
 
-from collectors.kafka_producer import TOPIC_L1, send_signal
+from pipeline.collectors.kafka_producer import TOPIC_L1, send_signal
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ def collect_otc_weekly(end_date: datetime | None = None) -> float | None:
         logger.warning("네이버 API 키가 설정되지 않았습니다 (NAVER_CLIENT_ID / NAVER_CLIENT_SECRET)")
         return None
 
-    end = end_date or datetime.utcnow()
+    end = end_date or datetime.now(timezone.utc)
     start = end - timedelta(weeks=12)
 
     payload = {

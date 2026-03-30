@@ -97,5 +97,5 @@ def predict(model: TemporalFusionTransformer, df: pd.DataFrame) -> dict:
         "forecast_7d": float(predictions.prediction[0, 0, 3]),   # 중앙값
         "forecast_14d": float(predictions.prediction[0, 1, 3]),
         "forecast_21d": float(predictions.prediction[0, 2, 3]),
-        "attention_weights": predictions.attention[0].tolist() if hasattr(predictions, "attention") else [],
+        "attention_weights": predictions.attention[0].tolist() if hasattr(predictions, "attention") and predictions.attention is not None and len(predictions.attention) > 0 else [],
     }
