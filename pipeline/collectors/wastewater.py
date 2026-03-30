@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pdfplumber
 
-from collectors.kafka_producer import TOPIC_L2, send_signal
+from pipeline.collectors.kafka_producer import TOPIC_L2, send_signal
 
 logger = logging.getLogger(__name__)
 

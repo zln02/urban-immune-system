@@ -7,11 +7,11 @@ from __future__ import annotations
 
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 import httpx
 
-from collectors.kafka_producer import TOPIC_AUX, send_signal
+from pipeline.collectors.kafka_producer import TOPIC_AUX, send_signal
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ def collect_weather(region: str = "서울특별시") -> dict | None:
         logger.warning("기상청 API 키가 없습니다 (KMA_API_KEY)")
         return None
 
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     params = {
         "serviceKey": KMA_API_KEY,
         "numOfRows": 10,

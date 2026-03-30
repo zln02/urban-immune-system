@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 
 from kafka import KafkaProducer
 
@@ -41,7 +41,7 @@ def send_signal(
     """정규화된 신호를 Kafka에 전송한다."""
     producer = get_producer()
     payload = {
-        "time": datetime.utcnow().isoformat(),
+        "time": datetime.now(timezone.utc).isoformat(),
         "layer": layer,
         "region": region,
         "value": round(value, 4),
