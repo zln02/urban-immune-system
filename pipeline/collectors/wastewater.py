@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pdfplumber
 
-from pipeline.collectors.kafka_producer import TOPIC_L2, send_signal
+from pipeline.collectors.db_writer import insert_signal_sync
 from pipeline.collectors.normalization import min_max_normalize
 
 logger = logging.getLogger(__name__)
@@ -61,11 +61,7 @@ def collect_wastewater_from_pdfs(region: str = "서울특별시") -> int:
     normalized = min_max_normalize(raw_vals)
 
     for record, norm_val in zip(all_records, normalized):
-        send_signal(
-            TOPIC_L2, region, "L2", norm_val,
-            raw_value=record["concentration"],
-            source="kowas_pdf",
-        )
+        insert_signal_sync(region, "L2", norm_val, raw_value=record["concentration"], source="kowas_pdf")
 
     logger.info("Layer 2 (하수) %d건 전송 완료", len(all_records))
     return len(all_records)

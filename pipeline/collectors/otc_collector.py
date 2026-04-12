@@ -12,7 +12,7 @@ from datetime import datetime, timedelta, timezone
 
 import httpx
 
-from pipeline.collectors.kafka_producer import TOPIC_L1, send_signal
+from pipeline.collectors.db_writer import insert_signal_sync
 from pipeline.collectors.normalization import min_max_normalize
 
 logger = logging.getLogger(__name__)
@@ -70,10 +70,7 @@ def collect_otc_weekly(end_date: datetime | None = None) -> float | None:
         latest = normalized[-1] if normalized else None
 
         if latest is not None:
-            send_signal(
-                TOPIC_L1, TARGET_REGION, "L1", latest,
-                raw_value=raw_values[-1], source="naver_shopping_insight",
-            )
+            insert_signal_sync(TARGET_REGION, "L1", latest, raw_value=raw_values[-1], source="naver_shopping_insight")
             logger.info("Layer 1 (OTC) 수집 완료: %.2f", latest)
         return latest
 

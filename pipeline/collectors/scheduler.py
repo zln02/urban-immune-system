@@ -5,6 +5,10 @@
 - Layer 2 (하수)  : 매주 화요일 10:00 (KOWAS 주간 보고서 발행 후)
 - Layer 3 (검색)  : 매주 월요일 09:05
 - 보조 (기상)     : 매시간
+
+각 수집기는 Kafka 대신 db_writer.insert_signal_sync()로
+TimescaleDB layer_signals 테이블에 직접 INSERT한다.
+(발표 데모 단순화 옵션: cron + DB INSERT, Kafka Consumer 불필요)
 """
 import logging
 

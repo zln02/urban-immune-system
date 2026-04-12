@@ -8,6 +8,16 @@ autoencoder:
   batch_size: 32
   threshold_percentile: 95.0
 
+xgboost:
+  n_estimators: 200
+  max_depth: 4
+  learning_rate: 0.05
+  subsample: 0.8
+  min_samples_leaf: 5
+  random_state: 42
+  cv_splits: 5
+  cv_gap: 4                   # 주 단위 갭 (미래 누출 방지)
+
 tft:
   max_encoder_length: 24    # 과거 24주
   max_prediction_length: 3  # 최대 3주 예측
@@ -19,16 +29,21 @@ tft:
   max_epochs: 50
   gradient_clip_val: 0.1
 
+llm:
+  provider: openai            # env LLM_PROVIDER로 override 가능
+  model: gpt-4o-mini          # env OPENAI_MODEL / ANTHROPIC_MODEL 우선 적용
+  max_tokens: 1024
+  temperature: 0.3
+
 rag:
   embed_model: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
   vector_dim: 384
+  collection: epidemiology_docs   # Qdrant 컬렉션명 — 임의 변경 금지
   top_k: 5
-  llm_model: "gpt-4o"
-  max_tokens: 1500
-  temperature: 0.3
 
 alert:
   thresholds:
     green:  [0, 30]
-    yellow: [30, 60]
-    red:    [60, 100]
+    yellow: [30, 55]
+    orange: [55, 75]
+    red:    [75, 100]

@@ -13,7 +13,7 @@ from datetime import datetime, timedelta, timezone
 
 import httpx
 
-from pipeline.collectors.kafka_producer import TOPIC_L3, send_signal
+from pipeline.collectors.db_writer import insert_signal_sync
 from pipeline.collectors.normalization import min_max_normalize
 
 logger = logging.getLogger(__name__)
@@ -67,7 +67,7 @@ def collect_search_weekly(end_date: datetime | None = None) -> float | None:
         latest = normalized[-1] if normalized else None
 
         if latest is not None:
-            send_signal(TOPIC_L3, TARGET_REGION, "L3", latest, raw_value=raw_values[-1], source="naver_datalab")
+            insert_signal_sync(TARGET_REGION, "L3", latest, raw_value=raw_values[-1], source="naver_datalab")
             logger.info("Layer 3 (검색어) 수집 완료: %.2f", latest)
         return latest
 
