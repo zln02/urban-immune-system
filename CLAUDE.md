@@ -47,3 +47,33 @@ analysis/ — 데이터 분석 스크립트
 타입 힌트 public 함수 필수
 
 import 순서: stdlib → third-party → local
+
+## 팀 에이전트 시스템
+팀원 5명은 각자 자기 모듈 디렉토리에서 `claude` 세션을 열어 역할 특화 에이전트와 대화한다.
+
+| 팀원 | 진입 경로 | 에이전트 역할 |
+|---|---|---|
+| 박진영 | `cd ml && claude` 또는 `cd docs && claude` | ML Lead + PM + B2G 문서 |
+| 이경준 | `cd backend && claude` | FastAPI·보안·감사로그 |
+| 이우형 | `cd pipeline && claude` | Kafka·수집·정규화 |
+| 김나영 | `cd frontend && claude` (Phase2) / `cd src && claude` (Phase1) | UI·지도·시각화 |
+| 박정빈 | `cd infra && claude` 또는 `cd tests && claude` | K8s·CI·QA |
+
+각 모듈 CLAUDE.md 가 Claude Code에 의해 최근접 우선으로 자동 로드된다.
+
+## B2G 납품 금지 규칙 (ISMS-P)
+- SQL: 문자열 포맷 금지 → 반드시 파라미터 바인딩(`$1` / `:param` / SQLAlchemy bind)
+- CORS: `*` 금지 → `ALLOWED_ORIGINS` 환경변수 allowlist만
+- 기본 비밀번호 금지: `changeme*`, `password`, `1234`, `admin` 등
+- API 키·토큰 로그 출력 시 `sk-*`, `Bearer *` 마스킹
+- 모든 외부 API 호출은 try/except + 로깅 (네이버 429·KMA 타임아웃 대응)
+- alert_reports 등 변경성 테이블은 `created_by`, `created_at` 감사 필드 필수
+
+## 상용화 문서
+- `docs/business/roadmap.md` — 캡스톤 발표 + Phase 4 이후 상용화 타임라인
+- `docs/business/isms-p-checklist.md` — ISMS-P 인증 체크리스트
+- `docs/business/sales-targets.md` — 타깃 고객 리스트
+- `docs/business/pricing-model.md` — 구독/건당/PoC 3-tier 가격 초안
+- `docs/business/procurement.md` — 조달청·나라장터 절차
+
+기능 변경 시 위 문서에 영향 있는지 1줄 이상 검토 후 PR에 기록.
