@@ -140,11 +140,11 @@ uvicorn backend.app.main:app --reload --port 8000
 
 | 이름 | 역할 | 담당 모듈 |
 | --- | --- | --- |
-| 박진영 | PM / ML Lead | `ml/`, 전체 아키텍처 |
-| 이경준 | Backend | `backend/` |
-| 이우형 | Data Engineer | `pipeline/` |
-| 김나영 | Frontend | `frontend/`, `src/` |
-| 박정빈 | DevOps / QA | `infra/`, CI/CD |
+| 박진영 | PM · 역할 B+C (파이프라인 + ML/AI 엔진) | `pipeline/`, `ml/` |
+| 이경준 | 역할 B (데이터 파이프라인) | `pipeline/` |
+| 이우형 | 역할 A (Backend + API) | `backend/`, `infra/` |
+| 김나영 | 역할 D1 (Frontend 개발 · API 연동) | `frontend/src/`, `src/` (API 연동) |
+| 박정빈 | 역할 D2 (UX 디자인 · 발표 준비) | `src/styles.py`, `src/map/`, `src/components/`, 발표자료 |
 
 ## 브랜치 전략
 

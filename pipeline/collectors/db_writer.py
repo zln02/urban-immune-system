@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import warnings
 from datetime import datetime, timezone
 
 import asyncpg
@@ -25,6 +26,13 @@ async def _get_pool() -> asyncpg.Pool:
     global _pool
     if _pool is None:
         db_url = os.getenv("DATABASE_URL", _DEFAULT_DB_URL)
+        if "changeme" in db_url:
+            warnings.warn(
+                "DATABASE_URL에 플레이스홀더 자격증명(changeme)이 포함되어 있습니다. "
+                "프로덕션 환경에서는 반드시 실제 자격증명으로 교체하세요.",
+                UserWarning,
+                stacklevel=2,
+            )
         try:
             _pool = await asyncpg.create_pool(
                 dsn=db_url,
