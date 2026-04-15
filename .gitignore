@@ -102,6 +102,8 @@ frontend/out/
 
 # PPTX 생성물 (Git에서 제외, 로컬 보관)
 *.pptx
+# 회의록 PPTX 는 예외적으로 추적 (배포용)
+!docs/meeting-notes/*.pptx
 
 # 시크릿
 .env.local

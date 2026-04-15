@@ -38,6 +38,10 @@
           {
             "type": "command",
             "command": "~/.claude/hooks/save_session_memory.sh"
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/hooks/append_portfolio_log.sh"
           }
         ]
       }

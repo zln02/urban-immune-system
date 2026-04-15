@@ -81,3 +81,61 @@ def test_claude_settings_json_exists() -> None:
     assert "hooks" in data
     assert "SessionStart" in data["hooks"]
     assert "Stop" in data["hooks"]
+
+
+REQUIRED_MEETING_FILES = [
+    "docs/meeting-notes/README.md",
+    "docs/meeting-notes/2026-04-15_팀킥오프.md",
+    "docs/meeting-notes/setup-per-role.md",
+]
+
+REQUIRED_PORTFOLIO_FILES = [
+    "docs/portfolio/README.md",
+    "docs/portfolio/timeline.md",
+    "docs/portfolio/decisions/_template.md",
+    "docs/portfolio/troubleshooting/_template.md",
+    "docs/portfolio/milestones/_template.md",
+    "docs/portfolio/retrospectives/_template.md",
+]
+
+REQUIRED_GITHUB_FILES = [
+    ".github/CODEOWNERS",
+    ".github/pull_request_template.md",
+    ".github/ISSUE_TEMPLATE/bug_report.md",
+    ".github/ISSUE_TEMPLATE/feature_request.md",
+    ".github/ISSUE_TEMPLATE/docs.md",
+    ".github/workflows/security.yml",
+    ".github/dependabot.yml",
+]
+
+REQUIRED_SCRIPTS = [
+    "scripts/gen_kickoff_pptx.py",
+    "scripts/build_portfolio.py",
+]
+
+
+@pytest.mark.parametrize("path", REQUIRED_MEETING_FILES)
+def test_meeting_notes_present(path: str) -> None:
+    p = REPO_ROOT / path
+    assert p.exists(), f"{path} 누락"
+    assert p.stat().st_size > 100, f"{path} 너무 얇음"
+
+
+@pytest.mark.parametrize("path", REQUIRED_PORTFOLIO_FILES)
+def test_portfolio_present(path: str) -> None:
+    assert (REPO_ROOT / path).exists(), f"{path} 누락"
+
+
+@pytest.mark.parametrize("path", REQUIRED_GITHUB_FILES)
+def test_github_templates_present(path: str) -> None:
+    assert (REPO_ROOT / path).exists(), f"{path} 누락"
+
+
+@pytest.mark.parametrize("path", REQUIRED_SCRIPTS)
+def test_scripts_present(path: str) -> None:
+    assert (REPO_ROOT / path).exists(), f"{path} 누락"
+
+
+def test_frontend_lockfile_exists() -> None:
+    """CI Frontend Lint Job 이 cache 해결할 수 있도록 package-lock.json 존재."""
+    assert (REPO_ROOT / "frontend" / "package-lock.json").exists()
