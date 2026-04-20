@@ -6,7 +6,7 @@ from datetime import datetime
 
 import streamlit as st
 
-from src.config import GREEN_SAFE, L1_PHARMACY, L2_SEWAGE, L3_SEARCH, ORANGE, RED
+from src.config import L1_PHARMACY, L2_SEWAGE, L3_SEARCH, RED
 
 
 def render_header(region: str) -> None:

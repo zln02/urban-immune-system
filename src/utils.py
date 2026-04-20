@@ -14,5 +14,6 @@ def hex_to_rgba(hex_color: str, alpha: float) -> str:
 
 
 def asset_path(filename: str) -> str:
-    assets_dir = Path(__file__).resolve().parents[1] / "prototype" / "assets"
+    """캡스톤 프로토타입 이미지 조회. 통합 경로는 `docs/images/screenshots/`."""
+    assets_dir = Path(__file__).resolve().parents[1] / "docs" / "images" / "screenshots"
     return str(assets_dir / filename)

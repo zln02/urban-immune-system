@@ -105,6 +105,19 @@ frontend/out/
 # 회의록 PPTX 는 예외적으로 추적 (배포용)
 !docs/meeting-notes/*.pptx
 
+# 포트폴리오 빌드 산출물
+docs/portfolio/portfolio.html
+
 # 시크릿
 .env.local
 .env.production
+
+# 학교 지원금 영수증 (로컬 정산 전용)
+docs/business/receipts/
+
+# 주간 보고서 PDF 생성물 (MD 원본만 추적)
+docs/weekly-reports/**/*.pdf
+docs/weekly-reports/**/*.html
+docs/weekly-reports/guides/*.pdf
+docs/weekly-reports/guides/*.html
+*.tsbuildinfo

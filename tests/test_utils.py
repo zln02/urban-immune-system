@@ -13,5 +13,8 @@ def test_asset_path_returns_string() -> None:
     assert isinstance(asset_path("test.png"), str)
 
 
-def test_asset_path_contains_assets() -> None:
-    assert "assets" in asset_path("test.png")
+def test_asset_path_points_to_screenshots_dir() -> None:
+    # 경로 통합: prototype/assets 제거 → docs/images/screenshots 로 단일화
+    path = asset_path("test.png")
+    assert "docs/images/screenshots" in path
+    assert path.endswith("test.png")

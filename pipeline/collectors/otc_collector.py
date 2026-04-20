@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 import httpx
 
 from collectors.kafka_producer import TOPIC_L1, send_signal
+from collectors.utils import normalize_minmax
 
 logger = logging.getLogger(__name__)
 
@@ -23,16 +24,6 @@ DATALAB_URL = "https://openapi.naver.com/v1/datalab/shopping/categories"
 # OTC 의약품 카테고리 키워드 (쇼핑인사이트 카테고리 ID 매핑 필요)
 OTC_KEYWORDS = ["감기약", "해열제", "종합감기약", "타이레놀", "판콜"]
 TARGET_REGION = "서울특별시"
-
-
-def _normalize(values: list[float]) -> list[float]:
-    """Min-Max 정규화 (0~100)."""
-    if not values:
-        return values
-    lo, hi = min(values), max(values)
-    if hi == lo:
-        return [50.0] * len(values)
-    return [round((v - lo) / (hi - lo) * 100, 2) for v in values]
 
 
 def collect_otc_weekly(end_date: datetime | None = None) -> float | None:
@@ -76,7 +67,7 @@ def collect_otc_weekly(end_date: datetime | None = None) -> float | None:
             return None
 
         raw_values = [p["ratio"] for p in results[0].get("data", [])]
-        normalized = _normalize(raw_values)
+        normalized = normalize_minmax(raw_values)
         latest = normalized[-1] if normalized else None
 
         if latest is not None:
