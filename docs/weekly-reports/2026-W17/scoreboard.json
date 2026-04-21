@@ -1,0 +1,26 @@
+{
+  "year": 2026,
+  "week": 17,
+  "since": "2026-04-20",
+  "until": "2026-04-26",
+  "rows": [
+    {
+      "member": "wlsdud5035",
+      "commits": 2,
+      "test_loc": 0,
+      "prs_merged": 0,
+      "pr_reviews": 0,
+      "issues": 0,
+      "score": 2.0
+    },
+    {
+      "member": "박진영",
+      "commits": 0,
+      "test_loc": 0,
+      "prs_merged": 0,
+      "pr_reviews": 0,
+      "issues": 0,
+      "score": 0.0
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "generated_at": "2026-04-21T23:14:53",
+  "script": "analysis/notebooks/performance_measurement.py",
+  "data_source": "synthetic (2024-25 flu season, 52 weeks, seed=42)",
+  "note": "교체: --real 플래그로 KDCA ILINet 실데이터 수집 후 재실행",
+  "models": [
+    {
+      "threshold": 26.0,
+      "n_test": 26,
+      "n_positive_truth": 9,
+      "n_pred_positive": 20,
+      "precision": 0.45,
+      "recall": 1.0,
+      "f1": 0.621,
+      "mcc": 0.399,
+      "auprc": 0.82,
+      "confusion": {
+        "tn": 6,
+        "fp": 11,
+        "fn": 0,
+        "tp": 9
+      },
+      "false_alarms": 11,
+      "model": "pharmacy_only"
+    },
+    {
+      "threshold": 37.0,
+      "n_test": 26,
+      "n_positive_truth": 9,
+      "n_pred_positive": 17,
+      "precision": 0.471,
+      "recall": 0.889,
+      "f1": 0.615,
+      "mcc": 0.359,
+      "auprc": 0.838,
+      "confusion": {
+        "tn": 8,
+        "fp": 9,
+        "fn": 1,
+        "tp": 8
+      },
+      "false_alarms": 9,
+      "model": "sewage_only"
+    },
+    {
+      "threshold": 52.0,
+      "n_test": 26,
+      "n_positive_truth": 9,
+      "n_pred_positive": 10,
+      "precision": 0.7,
+      "recall": 0.778,
+      "f1": 0.737,
+      "mcc": 0.588,
+      "auprc": 0.851,
+      "confusion": {
+        "tn": 14,
+        "fp": 3,
+        "fn": 2,
+        "tp": 7
+      },
+      "false_alarms": 3,
+      "model": "search_only"
+    },
+    {
+      "threshold": 34.0,
+      "n_test": 26,
+      "n_positive_truth": 9,
+      "n_pred_positive": 19,
+      "precision": 0.474,
+      "recall": 1.0,
+      "f1": 0.643,
+      "mcc": 0.442,
+      "auprc": 0.885,
+      "confusion": {
+        "tn": 7,
+        "fp": 10,
+        "fn": 0,
+        "tp": 9
+      },
+      "false_alarms": 10,
+      "model": "three_layer_ensemble"
+    }
+  ],
+  "ensemble_weights": {
+    "W1_L1": 0.35,
+    "W2_L2": 0.4,
+    "W3_L3": 0.25
+  },
+  "test_period_weeks": 26
+}

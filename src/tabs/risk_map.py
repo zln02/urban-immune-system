@@ -13,9 +13,11 @@ def render_map_tab(region: str) -> None:
     st.markdown("#### 서울시 구별 감염병 위험도 현황")
     st_folium(build_map(region), width=None, height=500, returned_objects=[])
     # 범례는 src.config.RISK_CFG 를 단일 소스로 사용 (하드코딩 제거)
+    # Okabe-Ito CUD 팔레트 + 아이콘 3중 중복 코딩 (색상 + 아이콘 + 텍스트)
     legend_items = "".join(
         f'<div class="legend-item">'
         f'<div class="swatch" style="background:{cfg["color"]};"></div>'
+        f'<span class="legend-icon" aria-hidden="true">{cfg["icon"]}</span> '
         f'{cfg["label"]}'
         f"</div>"
         for _, cfg in sorted(RISK_CFG.items())

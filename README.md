@@ -20,12 +20,16 @@
 
 ## 검증 결과
 
-> 🏆 **공모전 대상 수상 시점 결과** (LG전자 DX School, 2026-04):
-> - **F1-Score**: 0.71 | **Precision**: 1.00 (오경보 0건)
-> - **Granger 인과검정**: 3개 Layer 모두 p < 0.05
-> - 2024-25 인플루엔자 시즌 실데이터 기반
+> 🏆 **공모전 대상 수상** (LG전자 DX School, 2026-03)
 >
-> ℹ️ **현재 상태 (2026-04-20)**: 캡스톤 단계에서 실제 학습·재현 진행 중. 모델 가중치는 `ml/checkpoints/` 생성 예정. 대시보드 검증 탭의 수치는 `ml/outputs/validation.json` 연결 시 실결과로 대체됨.
+> ℹ️ **현재 측정 (2026-04-21, 합성 데이터 · 재현 가능)**
+> - `python analysis/notebooks/performance_measurement.py` 1회 실행 결과
+> - **3-Layer 통합**: F1=**0.643** · MCC=**0.442** · AUPRC=**0.885** · Precision=0.474 · Recall=1.0 (N=26주, 경보 이벤트 9건, 오경보 10건)
+> - **Granger 인과검정** (statsmodels, maxlag=4): L1_약국 p=0.0000 · L2_하수 p=0.0000 · L3_검색 p=0.0193 → **3 Layer 모두 p < 0.05 유의**
+>
+> ⚠️ **데이터 주의**: 위 수치는 `seed=42` 로 생성한 2024-25 시즌 유사 합성 데이터 기반. KDCA ILINet 실데이터 확보 후 동일 스크립트 재실행 예정 (P1 멀티시즌 검증).
+>
+> 📄 결과 JSON: `ml/outputs/validation.json` · `ml/outputs/correlation.json` · `analysis/results/metrics_v1.json`
 
 ## 아키텍처
 
