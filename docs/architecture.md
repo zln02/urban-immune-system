@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Urban Immune System is a presentation-first prototype that demonstrates how
+Urban Immune System is a presentation-first Streamlit dashboard (`src/`) that demonstrates how
 multi-layer surveillance signals can be fused into an infectious disease early
 warning workflow.
 
@@ -31,16 +31,16 @@ External data sources
  Visualization + AI alert reporting
 ```
 
-## Prototype Components
+## Components
 
-- `prototype/app.py`
-  - UI shell
-  - style system
-  - simulated data generation
-  - interactive Plotly charts
-  - Folium-based Seoul risk map
+- `src/` (Streamlit dashboard, modularized)
+  - `src/app.py` — entry point with 5-tab routing
+  - `src/tabs/` — risk_map / timeseries / correlation / validation / report
+  - `src/map/` — Folium-based Seoul 25-gu risk map
+  - `src/components/` — shared UI (header, sidebar, footer, cards)
+  - `src/styles.py` — inline CSS
 - `analysis/data/`
-  - placeholder for future real datasets
+  - placeholder for future real datasets + P0 performance reproducibility notebooks
 - `.github/workflows/ci.yml`
   - lint and import smoke tests
 

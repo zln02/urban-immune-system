@@ -94,8 +94,7 @@ uvicorn backend.app.main:app --reload --port 8000
 ├── ml/            # TFT + Autoencoder + RAG-LLM
 ├── frontend/      # Next.js + Deck.gl (Phase 2)
 ├── infra/         # K8s 매니페스트 + DB 스키마
-├── analysis/      # 공모전 분석 코드 (아카이브)
-├── prototype/     # 레거시 Streamlit (보존)
+├── analysis/      # 공모전 분석 코드 + P0 재현 노트북
 ├── tests/         # pytest
 └── docs/          # 문서
 ```

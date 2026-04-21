@@ -58,8 +58,7 @@ docker compose down -v                # 볼륨 포함 정리
 - `ml/` — TFT 모델, Autoencoder, RAG 리포트 생성기
 - `frontend/` — Next.js 14 앱
 - `infra/db/init.sql` — TimescaleDB 초기화 스키마
-- `prototype/` — 레거시 단일파일 (보존, 수정 금지)
-- `analysis/` — 공모전 분석 스크립트 (아카이브)
+- `analysis/` — 공모전 분석 스크립트 + P0 수치 재현 노트북 (작업 중)
 
 ## Code Rules
 
