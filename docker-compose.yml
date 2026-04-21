@@ -1,5 +1,6 @@
 # Urban Immune System — 로컬 개발 인프라
-# 서비스: Kafka(KRaft) · Kafka UI · TimescaleDB · Qdrant
+# 서비스: Kafka(KRaft) · TimescaleDB · Qdrant
+# kafka-ui 제거 (개발 편의용, 포트 8080 해방 + 컨테이너 1개 절감)
 
 services:
   kafka:
@@ -26,18 +27,6 @@ services:
       interval: 15s
       timeout: 10s
       retries: 5
-
-  kafka-ui:
-    image: provectuslabs/kafka-ui:latest
-    container_name: uis-kafka-ui
-    depends_on:
-      kafka:
-        condition: service_healthy
-    ports:
-      - "8080:8080"
-    environment:
-      KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
 
   timescaledb:
     image: timescale/timescaledb:latest-pg16
