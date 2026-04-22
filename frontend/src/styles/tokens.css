@@ -1,0 +1,49 @@
+/**
+ * Urban Immune System — Design Tokens
+ *
+ * 원칙:
+ * 1. WCAG 2.2 AA · KWCAG 2.2 (공공 조달 필수)
+ * 2. Okabe-Ito CUD 색맹 안전 팔레트 (한국 남성 5.9% 적록색맹 대비)
+ * 3. 3중 중복 코딩 = 색상 + 아이콘 + 텍스트
+ * 4. Pretendard GOV (KRDS 공식 권장)
+ */
+
+@layer base {
+  :root {
+    /* ━━ Okabe-Ito CUD 팔레트 (위험도 4단계) ━━ */
+    --risk-safe:    #009E73;  /* Bluish Green · Level 1 · ✅ */
+    --risk-caution: #E69F00;  /* Orange-Yellow · Level 2 · 🔔 */
+    --risk-warning: #D55E00;  /* Vermillion · Level 3 · ⚠️ */
+    --risk-alert:   #CC0000;  /* Pure Red · Level 4 · 🚨 */
+
+    /* ━━ 3-Layer 브랜드 색상 ━━ */
+    --layer-pharmacy: #be185d;  /* L1 약국 OTC */
+    --layer-sewage:   #047857;  /* L2 하수 */
+    --layer-search:   #1d4ed8;  /* L3 검색 */
+
+    /* ━━ 세만틱 (라이트 테마) ━━ */
+    --background: 0 0% 100%;
+    --foreground: 215 28% 17%;
+    --primary: 215 54% 24%;          /* Navy */
+    --primary-foreground: 0 0% 100%;
+    --muted: 210 16% 93%;
+    --muted-foreground: 215 19% 35%;
+    --border: 214 20% 88%;
+    --ring: 215 54% 24%;
+
+    /* ━━ 레이아웃 ━━ */
+    --radius: 0.75rem;
+    --header-h: 4rem;
+  }
+
+  .dark {
+    --background: 215 28% 10%;
+    --foreground: 0 0% 97%;
+    --primary: 215 54% 70%;
+    --primary-foreground: 215 54% 10%;
+    --muted: 215 19% 18%;
+    --muted-foreground: 215 19% 65%;
+    --border: 215 19% 22%;
+    --ring: 215 54% 70%;
+  }
+}

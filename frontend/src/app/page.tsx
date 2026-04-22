@@ -1,45 +1,55 @@
-import RiskMap from "@/components/map/RiskMap";
-import TrendChart from "@/components/charts/TrendChart";
-import AlertReport from "@/components/report/AlertReport";
+import Link from "next/link";
 
-export default function DashboardPage() {
+export default function LandingPage() {
   return (
-    <main className="flex flex-col gap-6 p-6">
-      {/* 헤더 */}
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white">🦠 Urban Immune System</h1>
-          <p className="text-sm text-gray-400 mt-0.5">AI 기반 감염병 조기경보 시스템 · 서울특별시</p>
+    <main className="mx-auto max-w-5xl px-6 py-16">
+      <header className="mb-12 border-b border-border pb-8">
+        <div className="mb-3 text-sm font-medium uppercase tracking-wider text-muted-foreground">
+          B2G Surveillance Platform · 2026
         </div>
-        <AlertLevelBadge />
+        <h1 className="text-4xl font-bold tracking-tight">🦠 Urban Immune System</h1>
+        <p className="mt-3 text-lg text-muted-foreground">
+          3-Layer 비의료 신호 교차검증으로 감염병을 1~3주 선행 감지하는 AI 조기경보 서비스
+        </p>
       </header>
 
-      {/* 메인 그리드 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* 3D 위험도 맵 */}
-        <div className="lg:col-span-2 rounded-xl bg-gray-900 border border-gray-800 overflow-hidden" style={{ height: 480 }}>
-          <RiskMap />
-        </div>
+      <section className="mb-12 grid gap-6 md:grid-cols-3">
+        <LayerCard title="💊 약국 OTC" hint="~2주 선행" desc="네이버 쇼핑인사이트" />
+        <LayerCard title="🚰 하수 바이오마커" hint="~3주 선행" desc="환경부 KOWAS" />
+        <LayerCard title="🔍 검색 트렌드" hint="~1주 선행" desc="네이버 데이터랩" />
+      </section>
 
-        {/* 경보 리포트 */}
-        <div className="rounded-xl bg-gray-900 border border-gray-800 p-5">
-          <AlertReport />
-        </div>
-      </div>
+      <section className="mb-12 rounded-lg border border-border bg-muted/40 p-6">
+        <h2 className="mb-4 text-xl font-semibold">개발 현황</h2>
+        <ul className="space-y-2 text-sm">
+          <li>✅ 실측 재현 가능 성능 — F1 0.643 · MCC 0.442 · AUPRC 0.885 (seed=42)</li>
+          <li>🟡 Next.js 15 + React 19 + TanStack Query v5 + shadcn/ui 스택 세팅</li>
+          <li>🔴 SSE 실시간 경보 · MapLibre 25구 choropleth · ECharts 시계열 구현 예정</li>
+        </ul>
+      </section>
 
-      {/* 시계열 차트 */}
-      <div className="rounded-xl bg-gray-900 border border-gray-800 p-5">
-        <TrendChart />
-      </div>
+      <footer className="text-sm text-muted-foreground">
+        <p>
+          내부 데모 대시보드는{" "}
+          <Link href="http://34.64.124.90:8501" className="font-medium underline">
+            Streamlit (포트 8501)
+          </Link>{" "}
+          에서 확인 가능합니다.
+        </p>
+        <p className="mt-2 opacity-70">
+          Powered by 2026 AI 아이디어 공모전 대상 수상 연구 · © 2026 Urban Immune System
+        </p>
+      </footer>
     </main>
   );
 }
 
-function AlertLevelBadge() {
-  // TODO: SWR로 /api/v1/alerts/current 폴링
+function LayerCard({ title, hint, desc }: { title: string; hint: string; desc: string }) {
   return (
-    <span className="px-3 py-1.5 rounded-full text-sm font-semibold bg-green-900 text-green-300 border border-green-700">
-      ● GREEN — 정상
-    </span>
+    <article className="rounded-lg border border-border bg-background p-5">
+      <div className="text-lg font-semibold">{title}</div>
+      <div className="mt-1 text-sm font-medium text-primary">{hint}</div>
+      <div className="mt-2 text-sm text-muted-foreground">{desc}</div>
+    </article>
   );
 }

@@ -49,6 +49,15 @@ all = [
     "urban-immune-system[backend,pipeline,ml,dev]",
 ]
 
+[build-system]
+requires = ["setuptools>=70", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*", "backend*", "pipeline*", "ml*"]
+exclude = ["tests*", "frontend*", "prototype*", "analysis*", "docs*", "infra*", "scripts*"]
+
 [tool.ruff]
 line-length = 120
 target-version = "py311"
