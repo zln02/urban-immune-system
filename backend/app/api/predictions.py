@@ -23,7 +23,7 @@ async def get_forecast(
     query = text("""
         SELECT DISTINCT ON (layer) layer, value
         FROM layer_signals
-        WHERE region = :region AND layer IN ('L1', 'L2', 'L3', 'AUX')
+        WHERE region = :region AND layer IN ('otc', 'wastewater', 'search')
         ORDER BY layer, time DESC
     """)
     result = await db.execute(query, {"region": region})

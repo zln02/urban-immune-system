@@ -50,15 +50,15 @@ async def get_current_alert(
     query = text("""
         SELECT DISTINCT ON (layer) layer, value, time
         FROM layer_signals
-        WHERE region = :region AND layer IN ('L1', 'L2', 'L3')
+        WHERE region = :region AND layer IN ('otc', 'wastewater', 'search')
         ORDER BY layer, time DESC
     """)
     result = await db.execute(query, {"region": region})
     rows = {r["layer"]: r["value"] for r in result.mappings().all()}
 
-    l1 = rows.get("L1", 0.0)
-    l2 = rows.get("L2", 0.0)
-    l3 = rows.get("L3", 0.0)
+    l1 = rows.get("otc", 0.0)
+    l2 = rows.get("wastewater", 0.0)
+    l3 = rows.get("search", 0.0)
     composite = round(W1 * l1 + W2 * l2 + W3 * l3, 2)
     alert_level = _compute_alert_level(composite)
 

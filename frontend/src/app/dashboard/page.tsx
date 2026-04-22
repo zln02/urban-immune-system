@@ -1,0 +1,906 @@
+"use client";
+
+import { useState, type CSSProperties } from "react";
+import { I } from "@/components/ui/icons";
+import { Panel } from "@/components/ui/panel";
+import { RiskPill } from "@/components/ui/risk-pill";
+import { KoreaMap } from "@/components/map/korea-map";
+import { TrendChart } from "@/components/charts/trend-chart";
+import { AlertBanner } from "@/components/alert/alert-banner";
+import { KpiCard } from "@/components/alert/kpi-card";
+import { LayerCard } from "@/components/alert/layer-card";
+import { AIReportCard } from "@/components/alert/ai-report-card";
+import { AlertTable } from "@/components/alert/alert-table";
+
+import { KOREA_REGIONS, regionName, type RegionCode } from "@/lib/korea-regions";
+import { RISK_META } from "@/lib/risk";
+import { DICT, type Lang } from "@/lib/i18n";
+import { mockAlerts, mockDistricts, mockSeries } from "@/lib/mock-data";
+import { useOtcTrend, useSearchTrend } from "@/hooks/useNaverTrend";
+
+/**
+ * Urban Immune System — Conservative Dashboard Home
+ *
+ * Claude Design handoff (2026-04-22, k6f2hag...) Conservative 변형.
+ * 전국 17개 시도 · 전라 권역 L4 경보 시나리오.
+ * 캡스톤 중간발표 Golden Path: Alert Banner → AI Report → PDF.
+ *
+ * Layout:
+ *   ┌─────────── top bar (navy) ───────────┐
+ *   │rail│sidebar│  hero alert banner      │
+ *   │    │       │  KPI × 4                │
+ *   │    │       │  Map | 3-Layer cards    │
+ *   │    │       │  Trend chart (hero)     │
+ *   │    │       │  AI report | Alerts     │
+ *   └────┴───────┴─────────────────────────┘
+ */
+export default function DashboardPage() {
+  const [lang, setLang] = useState<Lang>("ko");
+  const [selected, setSelected] = useState<RegionCode>("JB");
+
+  const t = DICT[lang];
+  const atRiskCount = Object.values(mockDistricts).filter((d) => d.risk >= 3).length;
+  const activeAlerts = mockAlerts;
+
+  const layerColor = {
+    pharmacy: "var(--layer-pharmacy)",
+    sewage: "var(--layer-sewage)",
+    search: "var(--layer-search)",
+  };
+
+  const selectedInfo = mockDistricts[selected];
+
+  // ── Naver 실데이터 (L1 OTC / L3 검색어) ──────────────────────────
+  const otcQuery = useOtcTrend(12);
+  const searchQuery = useSearchTrend(12);
+
+  const toSparkValues = (values: number[], scale = 100) =>
+    values.map((v) => v * scale);
+
+  const calcChange = (values: number[]) => {
+    if (values.length < 2) return 0;
+    const prev = values[values.length - 2];
+    const curr = values[values.length - 1];
+    return prev === 0 ? 0 : ((curr - prev) / prev) * 100;
+  };
+
+  const otcSeries = otcQuery.data?.series ?? [];
+  const searchSeries = searchQuery.data?.series ?? [];
+  const hasOtc = otcSeries.length > 0;
+  const hasSearch = searchSeries.length > 0;
+
+  const otcValues = hasOtc ? toSparkValues(otcSeries.map((p) => p.value)) : mockSeries.pharmacy;
+  const otcLatest = hasOtc ? otcValues[otcValues.length - 1] : mockSeries.pharmacy[mockSeries.pharmacy.length - 1];
+  const otcChange = hasOtc ? calcChange(otcValues) : 0;
+
+  const searchValues = hasSearch ? toSparkValues(searchSeries.map((p) => p.value)) : mockSeries.search;
+  const searchLatest = hasSearch ? searchValues[searchValues.length - 1] : mockSeries.search[mockSeries.search.length - 1];
+  const searchChange = hasSearch ? calcChange(searchValues) : 0;
+
+  const dataSourceLabel = hasOtc || hasSearch ? "실시간 · Naver 연결" : "시뮬레이션 데이터";
+
+  return (
+    <div
+      style={{
+        width: "100%",
+        minHeight: "100vh",
+        display: "grid",
+        gridTemplateColumns: "var(--rail-w) var(--sidebar-w) 1fr",
+        gridTemplateRows: "var(--header-h) 1fr",
+        background: "var(--bg-sub)",
+        color: "var(--text)",
+        fontFamily: "var(--font-sans)",
+      }}
+    >
+      {/* ── Top bar ────────────────────────────────────────── */}
+      <header
+        style={{
+          gridColumn: "1 / -1",
+          display: "grid",
+          gridTemplateColumns: "var(--rail-w) var(--sidebar-w) 1fr auto",
+          background: "var(--primary-70)",
+          color: "var(--gray-0)",
+          borderBottom: "1px solid var(--primary-90)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <I.Grid size={20} stroke="var(--gray-0)" />
+        </div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "0 16px",
+            borderRight: "1px solid var(--primary-90)",
+          }}
+        >
+          <div
+            style={{
+              width: 24,
+              height: 24,
+              background: "var(--gray-0)",
+              color: "var(--primary-70)",
+              display: "grid",
+              placeItems: "center",
+              fontWeight: 700,
+              fontSize: 11,
+              letterSpacing: 0.5,
+            }}
+          >
+            UIS
+          </div>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, letterSpacing: 0.1 }}>
+              {t.brand}
+            </div>
+            <div style={{ fontSize: 10, opacity: 0.7 }}>
+              KDCA · {t.nav_dashboard}
+            </div>
+          </div>
+        </div>
+        <nav
+          style={{
+            display: "flex",
+            alignItems: "center",
+            paddingLeft: 16,
+            gap: 4,
+            fontSize: 13,
+          }}
+        >
+          {[t.nav_dashboard, t.nav_districts, t.nav_reports, t.nav_alerts, t.nav_audit].map(
+            (n, i) => (
+              <button
+                key={n}
+                type="button"
+                style={{
+                  height: "100%",
+                  padding: "0 14px",
+                  background: i === 0 ? "var(--primary-90)" : "transparent",
+                  color: "var(--gray-0)",
+                  border: "none",
+                  cursor: "pointer",
+                  borderBottom:
+                    i === 0
+                      ? "2px solid var(--gray-0)"
+                      : "2px solid transparent",
+                  fontWeight: i === 0 ? 600 : 400,
+                }}
+              >
+                {n}
+              </button>
+            ),
+          )}
+        </nav>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            paddingRight: 12,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              fontSize: 11,
+              opacity: 0.85,
+              marginRight: 12,
+            }}
+          >
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: "50%",
+                background: hasOtc || hasSearch ? "var(--risk-safe)" : "var(--risk-caution)",
+                animation: "uis-blink 2s infinite",
+              }}
+            />
+            <span>{dataSourceLabel} · {hasOtc || hasSearch ? "실시간" : t.header_sync}</span>
+          </div>
+          <button
+            type="button"
+            aria-label={lang === "en" ? "Toggle language" : "언어 전환"}
+            onClick={() => setLang(lang === "ko" ? "en" : "ko")}
+            style={iconBtnDark}
+          >
+            <span style={{ fontSize: 11, fontWeight: 700 }}>{lang.toUpperCase()}</span>
+          </button>
+          <button type="button" style={iconBtnDark}>
+            <I.Bell size={16} stroke="var(--gray-0)" />
+            <span
+              style={{
+                position: "absolute",
+                top: 8,
+                right: 8,
+                minWidth: 14,
+                height: 14,
+                background: "var(--risk-alert)",
+                color: "#fff",
+                fontSize: 9,
+                fontWeight: 700,
+                display: "grid",
+                placeItems: "center",
+                padding: "0 3px",
+              }}
+            >
+              {activeAlerts.length}
+            </span>
+          </button>
+          <button type="button" style={iconBtnDark}>
+            <I.Settings size={16} stroke="var(--gray-0)" />
+          </button>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              paddingLeft: 12,
+              borderLeft: "1px solid var(--primary-90)",
+              height: 24,
+            }}
+          >
+            <div
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: "50%",
+                background: "var(--primary-30)",
+                display: "grid",
+                placeItems: "center",
+                fontSize: 10,
+                fontWeight: 600,
+              }}
+            >
+              JP
+            </div>
+            <div style={{ fontSize: 11 }}>
+              <div style={{ fontWeight: 600 }}>{t.user}</div>
+              <div style={{ opacity: 0.7, fontSize: 10 }}>
+                {t.role.split("·")[1]?.trim()}
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* ── Rail ─────────────────────────────────────────── */}
+      <aside
+        style={{
+          background: "var(--surface)",
+          borderRight: "1px solid var(--border)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          padding: "12px 0",
+          gap: 4,
+        }}
+      >
+        {[
+          { Icon: I.Home, active: true },
+          { Icon: I.Map, active: false },
+          { Icon: I.Report, active: false },
+          { Icon: I.Shield, active: false },
+          { Icon: I.Filter, active: false },
+        ].map(({ Icon, active }, i) => (
+          <button
+            key={i}
+            type="button"
+            style={{
+              width: 36,
+              height: 36,
+              background: active ? "var(--primary-70)" : "transparent",
+              color: active ? "var(--gray-0)" : "var(--text-secondary)",
+              border: "none",
+              display: "grid",
+              placeItems: "center",
+              cursor: "pointer",
+            }}
+          >
+            <Icon size={18} stroke="currentColor" />
+          </button>
+        ))}
+      </aside>
+
+      {/* ── Sidebar ──────────────────────────────────────── */}
+      <aside
+        style={{
+          background: "var(--surface)",
+          borderRight: "1px solid var(--border)",
+          padding: "var(--sp-4)",
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--sp-5)",
+          overflow: "hidden",
+        }}
+      >
+        <div>
+          <div className="t-label-01" style={sidebarLabel}>
+            {lang === "en" ? "Filter" : "필터"}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <FieldRow label={lang === "en" ? "Time window" : "기간"}>
+              <select style={selectStyle} defaultValue="60d">
+                <option value="60d">{lang === "en" ? "Last 60 days" : "최근 60일"}</option>
+                <option value="14d">{lang === "en" ? "Last 14 days" : "최근 14일"}</option>
+                <option value="7d">{lang === "en" ? "Last 7 days" : "최근 7일"}</option>
+              </select>
+            </FieldRow>
+            <FieldRow label={lang === "en" ? "Region" : "권역"}>
+              <select
+                style={selectStyle}
+                value={selected}
+                onChange={(e) => setSelected(e.target.value as RegionCode)}
+              >
+                {KOREA_REGIONS.map((d) => (
+                  <option key={d.code} value={d.code}>
+                    {regionName(d.code, lang)}
+                  </option>
+                ))}
+              </select>
+            </FieldRow>
+            <FieldRow label={lang === "en" ? "Disease" : "질병"}>
+              <select style={selectStyle} defaultValue="resp">
+                <option value="resp">
+                  {lang === "en" ? "Respiratory syndrome" : "호흡기 증후군"}
+                </option>
+                <option value="gi">{lang === "en" ? "GI syndrome" : "소화기 증후군"}</option>
+              </select>
+            </FieldRow>
+          </div>
+        </div>
+
+        <div>
+          <div className="t-label-01" style={sidebarLabel}>
+            {lang === "en" ? "Signal layers" : "신호 레이어"}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {[
+              { key: "pharmacy", label: t.layer_pharmacy, sub: t.layer_pharmacy_sub, c: layerColor.pharmacy },
+              { key: "sewage", label: t.layer_sewage, sub: t.layer_sewage_sub, c: layerColor.sewage },
+              { key: "search", label: t.layer_search, sub: t.layer_search_sub, c: layerColor.search },
+            ].map((l) => (
+              <label
+                key={l.key}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  padding: 8,
+                  cursor: "pointer",
+                  background: "var(--bg-sub)",
+                }}
+              >
+                <input type="checkbox" defaultChecked style={{ accentColor: l.c }} />
+                <span style={{ width: 3, height: 18, background: l.c }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, fontWeight: 500 }}>{l.label}</div>
+                  <div style={{ fontSize: 10, color: "var(--text-tertiary)" }}>{l.sub}</div>
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <div className="t-label-01" style={sidebarLabel}>
+            {lang === "en" ? "Threshold" : "임계값"}
+          </div>
+          <div
+            style={{
+              fontSize: 11,
+              color: "var(--text-secondary)",
+              marginBottom: 6,
+              display: "flex",
+              justifyContent: "space-between",
+            }}
+          >
+            <span>50%</span>
+            <span style={{ fontWeight: 600, color: "var(--text)" }}>85%</span>
+            <span>95%</span>
+          </div>
+          <div style={{ position: "relative", height: 4, background: "var(--border)" }}>
+            <div
+              style={{
+                position: "absolute",
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: "78%",
+                background: "var(--primary-70)",
+              }}
+            />
+            <div
+              style={{
+                position: "absolute",
+                left: "78%",
+                top: -4,
+                width: 12,
+                height: 12,
+                background: "var(--primary-70)",
+                borderRadius: 1,
+              }}
+            />
+          </div>
+          <div
+            style={{
+              marginTop: 8,
+              fontSize: 10,
+              color: "var(--text-tertiary)",
+              lineHeight: 1.4,
+            }}
+          >
+            {t.trigger}
+          </div>
+        </div>
+
+        <div
+          style={{
+            marginTop: "auto",
+            padding: 12,
+            background: "var(--bg-sub)",
+            fontSize: 10,
+            color: "var(--text-tertiary)",
+            lineHeight: 1.5,
+          }}
+        >
+          <div style={{ fontWeight: 600, color: "var(--text-secondary)", marginBottom: 4 }}>
+            {lang === "en" ? "Compliance" : "준법"}
+          </div>
+          WCAG 2.2 AA · KWCAG 2.2
+          <br />
+          ISMS-P · KRDS 2024
+        </div>
+      </aside>
+
+      {/* ── Main content ─────────────────────────────────── */}
+      <main
+        style={{
+          padding: "var(--sp-5) var(--sp-6)",
+          overflow: "auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: "var(--sp-5)",
+        }}
+      >
+        <div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              fontSize: 11,
+              color: "var(--text-tertiary)",
+              marginBottom: 6,
+            }}
+          >
+            <span>KDCA</span>
+            <span>/</span>
+            <span>{t.nav_dashboard}</span>
+            <span>/</span>
+            <span style={{ color: "var(--text-secondary)" }}>
+              {lang === "en" ? "Nationwide overview" : "전국 현황"}
+            </span>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "flex-end",
+              justifyContent: "space-between",
+              gap: 16,
+            }}
+          >
+            <div>
+              <h1 className="t-h-04" style={{ margin: 0, fontWeight: 400 }}>
+                {lang === "en" ? "Surveillance overview" : "감시 현황 개요"}
+              </h1>
+              <div
+                style={{
+                  fontSize: 13,
+                  color: "var(--text-secondary)",
+                  marginTop: 4,
+                }}
+              >
+                {t.header_status} · 2026-04-28 09:28 KST · Δ 7d vs baseline
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button type="button" style={btnGhost}>
+                <I.Filter size={14} /> {lang === "en" ? "Compare" : "비교"}
+              </button>
+              <button type="button" style={btnGhost}>
+                <I.Print size={14} /> PDF
+              </button>
+              <button type="button" style={btnPrimary}>
+                <I.Download size={14} /> {lang === "en" ? "Export" : "내보내기"}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <AlertBanner alerts={activeAlerts} t={t} lang={lang} confidence={0.93} />
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
+            gap: "var(--sp-4)",
+          }}
+        >
+          <KpiCard
+            label={t.kpi_alerts}
+            value={activeAlerts.length}
+            delta={`+${activeAlerts.filter((a) => a.level === 4).length} L4`}
+            tone="alert"
+          />
+          <KpiCard
+            label={t.kpi_at_risk}
+            value={atRiskCount}
+            total={17}
+            delta={lang === "en" ? "of 17" : "/17"}
+            tone={atRiskCount > 3 ? "warning" : "caution"}
+          />
+          <KpiCard
+            label={t.kpi_lead}
+            value="14.2"
+            unit={lang === "en" ? "days" : "일"}
+            delta={lang === "en" ? "vs clinical" : "임상 대비"}
+            tone="safe"
+            sparkData={otcValues.slice(-20)}
+            sparkColor="var(--layer-pharmacy)"
+          />
+          <KpiCard
+            label={t.kpi_confidence}
+            value="0.87"
+            delta="Granger p<0.01"
+            tone="safe"
+            sparkData={mockSeries.sewage.slice(-20)}
+            sparkColor="var(--layer-sewage)"
+          />
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1.45fr 1fr",
+            gap: "var(--sp-4)",
+          }}
+        >
+          <Panel
+            title={t.map_title}
+            sub={t.map_sub}
+            actions={
+              <div style={{ display: "flex", gap: 4 }}>
+                <button type="button" style={tabBtn(true)}>
+                  L4-L1
+                </button>
+                <button type="button" style={tabBtn(false)}>
+                  {lang === "en" ? "Cases" : "건수"}
+                </button>
+                <button type="button" style={tabBtn(false)}>
+                  Δ 7d
+                </button>
+              </div>
+            }
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 200px",
+                gap: 16,
+                alignItems: "stretch",
+              }}
+            >
+              <KoreaMap
+                data={mockDistricts}
+                lang={lang}
+                selected={selected}
+                onSelect={setSelected}
+                size={520}
+              />
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                  borderLeft: "1px solid var(--border)",
+                  paddingLeft: 16,
+                }}
+              >
+                <div className="t-label-01" style={sidebarLabel}>
+                  {lang === "en" ? "Legend" : "범례"}
+                </div>
+                {([4, 3, 2, 1] as const).map((level) => {
+                  const meta = RISK_META[level];
+                  const count = Object.values(mockDistricts).filter(
+                    (x) => x.risk === level,
+                  ).length;
+                  return (
+                    <div
+                      key={level}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        fontSize: 12,
+                        padding: "4px 0",
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: 14,
+                          height: 14,
+                          background: `var(--risk-${meta.token})`,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "#fff",
+                          fontSize: 9,
+                          fontWeight: 700,
+                          backgroundImage: meta.hatch
+                            ? "repeating-linear-gradient(45deg, transparent 0 3px, rgba(0,0,0,0.25) 3px 4px)"
+                            : "none",
+                        }}
+                      >
+                        {meta.icon}
+                      </span>
+                      <span style={{ flex: 1, fontWeight: 500 }}>
+                        L{level} · {meta.label[lang]}
+                      </span>
+                      <span className="t-num-sm" style={{ color: "var(--text-tertiary)" }}>
+                        {count}
+                      </span>
+                    </div>
+                  );
+                })}
+                <div
+                  style={{
+                    marginTop: 12,
+                    padding: 10,
+                    background: "var(--bg-sub)",
+                    fontSize: 11,
+                    color: "var(--text-secondary)",
+                    lineHeight: 1.5,
+                  }}
+                >
+                  <div
+                    style={{
+                      fontWeight: 600,
+                      color: "var(--text)",
+                      marginBottom: 4,
+                    }}
+                  >
+                    {regionName(selected, lang)}
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span>{lang === "en" ? "Level" : "단계"}</span>
+                    <RiskPill level={selectedInfo.risk} lang={lang} />
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginTop: 4,
+                    }}
+                  >
+                    <span>{lang === "en" ? "Cases" : "건수"}</span>
+                    <span className="t-num-sm">{selectedInfo.cases}</span>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      marginTop: 4,
+                    }}
+                  >
+                    <span>Δ 7d</span>
+                    <span
+                      className="t-num-sm"
+                      style={{ color: "var(--risk-warning)" }}
+                    >
+                      +{selectedInfo.change}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Panel>
+
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "var(--sp-4)" }}
+          >
+            <LayerCard
+              title={t.layer_pharmacy}
+              sub={hasOtc ? "Naver 쇼핑인사이트 실시간" : t.layer_pharmacy_sub}
+              data={otcValues.slice(-30)}
+              value={otcLatest}
+              change={otcChange}
+              color="var(--layer-pharmacy)"
+              icon={<I.Pharmacy size={14} />}
+            />
+            <LayerCard
+              title={t.layer_sewage}
+              sub={t.layer_sewage_sub}
+              data={mockSeries.sewage.slice(-30)}
+              value={mockSeries.sewage[mockSeries.sewage.length - 1]}
+              change={22.8}
+              color="var(--layer-sewage)"
+              icon={<I.Water size={14} />}
+            />
+            <LayerCard
+              title={t.layer_search}
+              sub={hasSearch ? "Naver 데이터랩 실시간" : t.layer_search_sub}
+              data={searchValues.slice(-30)}
+              value={searchLatest}
+              change={searchChange}
+              color="var(--layer-search)"
+              icon={<I.Search size={14} />}
+            />
+          </div>
+        </div>
+
+        <Panel
+          title={t.trend_title}
+          sub={t.trend_sub}
+          actions={
+            <div style={{ display: "flex", gap: 4 }}>
+              {["7d", "30d", "60d", lang === "en" ? "All" : "전체"].map((lbl, i) => (
+                <button key={lbl} type="button" style={tabBtn(i === 2)}>
+                  {lbl}
+                </button>
+              ))}
+            </div>
+          }
+        >
+          <TrendChart series={mockSeries} t={t} height={280} />
+          <div
+            style={{
+              marginTop: 12,
+              padding: "10px 12px",
+              background: "var(--bg-sub)",
+              fontSize: 12,
+              color: "var(--text-secondary)",
+              display: "flex",
+              gap: 16,
+              alignItems: "center",
+              flexWrap: "wrap",
+            }}
+          >
+            <span style={{ fontWeight: 600, color: "var(--text)" }}>{t.granger}</span>
+            <span>
+              OTC → {lang === "en" ? "Clinical" : "임상"}: p = 0.003 (lag 14)
+            </span>
+            <span style={{ color: "var(--border-strong)" }}>|</span>
+            <span>
+              {lang === "en" ? "Sewage" : "하수"} →{" "}
+              {lang === "en" ? "Clinical" : "임상"}: p = 0.007 (lag 21)
+            </span>
+            <span style={{ color: "var(--border-strong)" }}>|</span>
+            <span>
+              {lang === "en" ? "Search" : "검색"} →{" "}
+              {lang === "en" ? "Clinical" : "임상"}: p = 0.012 (lag 7)
+            </span>
+          </div>
+        </Panel>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1.3fr 1fr",
+            gap: "var(--sp-4)",
+          }}
+        >
+          <AIReportCard t={t} lang={lang} />
+          <AlertTable alerts={activeAlerts} t={t} lang={lang} />
+        </div>
+
+        <footer
+          style={{
+            textAlign: "center",
+            fontSize: 11,
+            color: "var(--text-tertiary)",
+            padding: "8px 0",
+            borderTop: "1px solid var(--border)",
+            marginTop: 8,
+          }}
+        >
+          {t.footer} · WCAG 2.2 AA · ISMS-P
+        </footer>
+      </main>
+    </div>
+  );
+}
+
+/* ── 공통 style tokens (페이지 전용) ─────────────────────── */
+
+const sidebarLabel: CSSProperties = {
+  color: "var(--text-tertiary)",
+  textTransform: "uppercase",
+  letterSpacing: 0.48,
+  marginBottom: 8,
+};
+
+const selectStyle: CSSProperties = {
+  width: "100%",
+  padding: "6px 10px",
+  fontSize: 12,
+  fontFamily: "inherit",
+  background: "var(--bg-sub)",
+  border: "none",
+  borderBottom: "1px solid var(--text-tertiary)",
+  color: "var(--text)",
+  cursor: "pointer",
+};
+
+const iconBtnDark: CSSProperties = {
+  width: 40,
+  height: 40,
+  background: "transparent",
+  border: "none",
+  color: "var(--gray-0)",
+  cursor: "pointer",
+  display: "grid",
+  placeItems: "center",
+  position: "relative",
+};
+
+const btnGhost: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  padding: "7px 12px",
+  fontSize: 12,
+  fontWeight: 500,
+  background: "transparent",
+  color: "var(--text)",
+  border: "1px solid var(--border-strong)",
+  cursor: "pointer",
+  fontFamily: "inherit",
+};
+
+const btnPrimary: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  padding: "7px 14px",
+  fontSize: 12,
+  fontWeight: 500,
+  background: "var(--primary-70)",
+  color: "var(--gray-0)",
+  border: "none",
+  cursor: "pointer",
+  fontFamily: "inherit",
+};
+
+function tabBtn(active: boolean): CSSProperties {
+  return {
+    padding: "4px 10px",
+    fontSize: 11,
+    fontWeight: 500,
+    fontFamily: "inherit",
+    background: active ? "var(--primary-70)" : "transparent",
+    color: active ? "var(--gray-0)" : "var(--text-secondary)",
+    border: `1px solid ${active ? "var(--primary-70)" : "var(--border-strong)"}`,
+    cursor: "pointer",
+  };
+}
+
+function FieldRow({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <span className="t-label-02" style={{ color: "var(--text-secondary)" }}>
+        {label}
+      </span>
+      {children}
+    </label>
+  );
+}

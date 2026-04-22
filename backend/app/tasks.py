@@ -3,13 +3,12 @@ from __future__ import annotations
 
 import logging
 
-from taskiq_kafka import KafkaBroker
-
-from .config import settings
+from taskiq import InMemoryBroker
 
 logger = logging.getLogger(__name__)
 
-broker = KafkaBroker(settings.kafka_bootstrap)
+# 데모용 InMemoryBroker — 프로덕션 시 taskiq-kafka 또는 taskiq-aio-pika 교체
+broker = InMemoryBroker()
 
 
 @broker.task
