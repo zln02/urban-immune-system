@@ -83,21 +83,42 @@
 
 > 공공기관·공기업 납품 시 **의무 준수**. 위반 시 조달 심사 감점. 공식: https://www.krds.go.kr
 
-### 색상 체계 — 13단계 Gray + 11단계 컬러
-- **Primary · Secondary · Gray** 3분류
-- Gray: 0(흰색) · 100(검정) 포함 **13단계** 스케일 (0, 10, 20, 30, 40, 50, 60, 70, 80, 85, 90, 95, 100)
-- Primary/Secondary/System: **11단계** 명도 스케일 (5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 95)
-- **대비 매직 넘버** (명도 레벨 선택 시 기준):
-  - `40` = 3:1 (UI 요소 경계선 최소)
-  - `50` = 4.5:1 (본문·아이콘 WCAG AA 최소)
-  - `70` = 7:1 (본문 WCAG AAA)
-  - `90` = 15:1 (최고 대비)
-- **System Colors 4종**:
-  - Danger (빨강) · Warning (노랑) · Success (초록) · Information (파랑)
-- **우리 적용**:
-  - Primary = Navy `#1F2D5B` (공공기관 기본)
-  - Gray 스케일 = IBM Carbon 의 Gray 10·20·30·50·70·90·100 차용 (동일 13단계 호환)
-  - System = 위 Okabe-Ito 위험도 팔레트가 대체 (색맹 안전 + KRDS System 4종 매핑)
+### 색상 체계 — KRDS v1.1.0 공식 팔레트 (실제 hex 값)
+
+> 출처: github.com/KRDS-uiux/krds-uiux/tokens (2026-01-12 릴리스)
+> 전체 팔레트는 `frontend/.design-refs/krds-tokens.md` 참조
+
+**Primary (정부 파랑)** 11단계 — 이게 진짜 한국 정부 파랑:
+- 50 = `#256ef4` (WCAG AA 4.5:1 기본)
+- **60 = `#0b50d0`** (우리 `--brand-primary`, 링크·버튼)
+- 70 = `#083891` (hover/active)
+
+**Gray (정부 회색)** 13단계:
+- 0 = `#ffffff` · 5 = `#f4f5f6` · 10 = `#e6e8ea` · 20 = `#cdd1d5` (경계)
+- 50 = `#6d7882` (보조 텍스트 4.5:1) · 70 = `#464c53` (본문 AAA 7:1)
+- 95 = `#131416` · 100 = `#000000`
+
+**System Colors** (50 단계 = WCAG AA 기본):
+- Danger = `#de3412` · Warning = `#ffb114` · Success = `#228738` · Information = `#0b78cb`
+
+**대비 매직 넘버** (명도 레벨 선택 시 기준):
+- `40` = 3:1 (UI 요소 경계선 최소)
+- `50` = 4.5:1 (본문·아이콘 WCAG AA 최소)
+- `70` = 7:1 (본문 WCAG AAA)
+- `95` = 15:1 (최고 대비)
+
+### 우리 프로젝트 매핑 (2-Tier 전략)
+
+**Tier 1 — 정부 브랜드 (KRDS 그대로)**
+- `--brand-primary` = KRDS primary.60 (`#0b50d0`)
+- `--text-primary` = KRDS gray.100 (`#000000`)
+- `--text-secondary` = KRDS gray.70 (`#464c53`)
+- `--border-subtle` = KRDS gray.20 (`#cdd1d5`)
+
+**Tier 2 — 위험도 4단계 (Okabe-Ito CUD 유지, KRDS System 미사용)**
+- 이유: KRDS Danger(#de3412) + Success(#228738) 는 Deuteranopia 에서 구분 약함
+- 해결: Okabe-Ito (Nature 권장) = 한국 남성 5.9% 적록색맹 대비 과학적 검증됨
+- 위험도 4단계: #009E73 · #E69F00 · #D55E00 · #CC0000 (앞서 명시)
 
 ### 타이포그래피 — Pretendard GOV (공공 전용)
 - **공식 폰트**: Pretendard GOV (가변 폰트) — 대한민국 중앙부처 홈페이지 표준
@@ -173,11 +194,12 @@ handoff 번들에 포함되어야 하는 것:
 
 Claude Design 은 채팅창에 파일 업로드 가능. 더 정교한 결과 원하면 아래 3개 첨부:
 
-1. **`frontend/.design-refs/ibm-carbon.md`** (332줄) — IBM Carbon 상세 명세 (색상 토큰·타이포·컴포넌트 패턴 전부)
-2. **`frontend/src/styles/tokens.css`** — 우리 현재 Okabe-Ito + KRDS 매핑
-3. **`frontend/CLAUDE.md`** — 금기 사항·상용 요구사항
+1. **`frontend/.design-refs/ibm-carbon.md`** (332줄) — IBM Carbon 디자인 시스템 상세 명세
+2. **`frontend/.design-refs/krds-tokens.md`** — 대한민국 KRDS v1.1.0 공식 팔레트 전체 hex 값 (Primary·Secondary·Gray·System 4종)
+3. **`frontend/src/styles/tokens.css`** — 우리 현재 2-Tier 매핑 (KRDS + Okabe-Ito)
+4. **`frontend/CLAUDE.md`** — 금기 사항·상용 요구사항
 
-awesome-design-md 전체 69개는 **노이즈**. IBM Carbon 1개만으로 충분 — 기본 스켈레톤 제공 + KRDS·Okabe-Ito 로 한국 공공 맞춤.
+awesome-design-md 전체 69개는 **노이즈**. IBM Carbon 1개 + KRDS 1개 조합이면 충분 — 해외 엔터프라이즈 구조 + 한국 공공 공식.
 
 ---
 

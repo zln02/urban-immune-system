@@ -7,6 +7,7 @@
 | 파일 | 출처 | 용도 |
 |---|---|---|
 | `ibm-carbon.md` | VoltAgent/awesome-design-md `ibm/` (getdesign CDN) | IBM Carbon 디자인 시스템 상세 명세 (332줄) |
+| `krds-tokens.md` | github.com/KRDS-uiux/krds-uiux v1.1.0 (2026-01-12) | 대한민국 범정부 디자인 시스템 공식 토큰 전체 hex |
 
 ## 관리 정책
 
