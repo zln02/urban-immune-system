@@ -15,17 +15,39 @@ spec:
       labels:
         app: ml
     spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: ml
           image: gcr.io/PROJECT_ID/uis-ml:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8001
           envFrom:
             - secretRef:
                 name: uis-secrets
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           volumeMounts:
             - name: model-storage
               mountPath: /app/checkpoints
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 30
+            periodSeconds: 30
           resources:
             requests:
               cpu: "500m"

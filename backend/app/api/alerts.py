@@ -1,12 +1,14 @@
-"""경보 리포트 API."""
+"""경보 리포트 API — SSE 스트리밍 + DB 앙상블."""
 from __future__ import annotations
 
 import json
 import logging
 from collections.abc import AsyncIterator
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..config import settings
@@ -17,6 +19,9 @@ from ..tasks import generate_report_task
 router = APIRouter(prefix="/api/v1/alerts", tags=["alerts"])
 logger = logging.getLogger(__name__)
 
+# CLAUDE.md 앙상블 가중치
+W1, W2, W3 = 0.35, 0.40, 0.25
+
 _SYSTEM_PROMPT = (
     "당신은 공중보건 전문가입니다. "
     "3-Layer 감염병 조기경보 시스템(약국 OTC + 하수 바이오마커 + 검색어 트렌드)의 "
@@ -25,37 +30,65 @@ _SYSTEM_PROMPT = (
 )
 
 
+def _compute_alert_level(score: float) -> str:
+    if score < 30:
+        return "GREEN"
+    elif score < 55:
+        return "YELLOW"
+    elif score < 75:
+        return "ORANGE"
+    return "RED"
+
+
 @router.get("/current")
 async def get_current_alert(
-    region: str = Query("서울특별시"),
+    region: str = Query("서울특별시", min_length=2, max_length=100),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    """현재 경보 레벨 및 최신 LLM 리포트 반환."""
+    """현재 경보 레벨: 최신 3계층 신호 앙상블 + DB 리포트 조회."""
+    # 계층별 최신 신호 조회
+    query = text("""
+        SELECT DISTINCT ON (layer) layer, value, time
+        FROM layer_signals
+        WHERE region = :region AND layer IN ('L1', 'L2', 'L3')
+        ORDER BY layer, time DESC
+    """)
+    result = await db.execute(query, {"region": region})
+    rows = {r["layer"]: r["value"] for r in result.mappings().all()}
+
+    l1 = rows.get("L1", 0.0)
+    l2 = rows.get("L2", 0.0)
+    l3 = rows.get("L3", 0.0)
+    composite = round(W1 * l1 + W2 * l2 + W3 * l3, 2)
+    alert_level = _compute_alert_level(composite)
+
+    # 교차검증: YELLOW 이상은 2개 이상 계층 30 이상 필수
+    layers_above_30 = sum(1 for v in [l1, l2, l3] if v >= 30)
+    if alert_level != "GREEN" and layers_above_30 < 2:
+        alert_level = "GREEN"
+        logger.info("교차검증 미충족 (%d개 계층) → GREEN 유지", layers_above_30)
+
+    # 최신 리포트 조회
     alert = await get_latest_alert(region, db)
-    if alert is None:
-        return {
-            "region": region,
-            "alert_level": "GREEN",
-            "composite_score": None,
-            "summary": None,
-            "recommendations": None,
-            "generated_at": None,
-        }
     return {
-        "region": alert["region"],
-        "alert_level": alert["alert_level"],
-        "summary": alert["summary"],
-        "recommendations": alert["recommendations"],
-        "generated_at": str(alert["created_at"]),
+        "region": region,
+        "alert_level": alert_level,
+        "composite_score": composite,
+        "l1_score": l1,
+        "l2_score": l2,
+        "l3_score": l3,
+        "summary": alert["summary"] if alert else None,
+        "recommendations": alert["recommendations"] if alert else None,
+        "generated_at": str(alert["created_at"]) if alert else None,
     }
 
 
 @router.post("/generate")
 async def generate_alert_report(
-    region: str = Query("서울특별시"),
+    region: str = Query("서울특별시", min_length=2, max_length=100),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    """RAG-LLM 경보 리포트 비동기 생성 요청 (Taskiq → Kafka → ML 서비스)."""
+    """RAG-LLM 경보 리포트 비동기 생성 (Taskiq → Kafka → ML 서비스)."""
     risk = await get_latest_risk_score(region, db)
     if risk is None:
         raise HTTPException(status_code=404, detail=f"{region} 리스크 점수 데이터 없음")
@@ -74,10 +107,10 @@ async def generate_alert_report(
 
 @router.get("/stream")
 async def stream_alert_report(
-    region: str = Query("서울특별시"),
+    region: str = Query("서울특별시", min_length=2, max_length=100),
     db: AsyncSession = Depends(get_db),
 ) -> StreamingResponse:
-    """LLM 경보 리포트를 SSE로 스트리밍한다 (RAG 없는 즉시 응답용)."""
+    """Claude SSE 스트리밍 경보 리포트 (RAG 없는 즉시 응답)."""
     risk = await get_latest_risk_score(region, db)
     signals: dict = risk or {
         "l1": "N/A", "l2": "N/A", "l3": "N/A",
@@ -93,12 +126,7 @@ async def stream_alert_report(
 async def _sse_generator(region: str, signals: dict) -> AsyncIterator[str]:
     prompt = _build_prompt(region, signals)
     try:
-        if settings.llm_model.startswith("claude"):
-            gen = _stream_claude(prompt)
-        else:
-            gen = _stream_openai(prompt)
-
-        async for chunk in gen:
+        async for chunk in _stream_claude(prompt):
             yield f"data: {json.dumps({'text': chunk}, ensure_ascii=False)}\n\n"
     except Exception:
         logger.exception("SSE 스트리밍 오류: region=%s", region)
@@ -123,25 +151,6 @@ def _build_prompt(region: str, signals: dict) -> str:
         "3. 7/14/21일 전망\n"
         "4. 권고 조치 (시민 대상 / 보건 당국 대상)"
     )
-
-
-async def _stream_openai(prompt: str) -> AsyncIterator[str]:
-    from openai import AsyncOpenAI
-    client = AsyncOpenAI(api_key=settings.openai_api_key)
-    stream = await client.chat.completions.create(
-        model=settings.llm_model,
-        messages=[
-            {"role": "system", "content": _SYSTEM_PROMPT},
-            {"role": "user", "content": prompt},
-        ],
-        max_tokens=1500,
-        temperature=0.3,
-        stream=True,
-    )
-    async for chunk in stream:
-        delta = chunk.choices[0].delta.content or ""
-        if delta:
-            yield delta
 
 
 async def _stream_claude(prompt: str) -> AsyncIterator[str]:

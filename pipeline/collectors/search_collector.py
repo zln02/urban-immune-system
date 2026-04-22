@@ -9,37 +9,30 @@ from __future__ import annotations
 
 import logging
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import httpx
 
-from collectors.kafka_producer import TOPIC_L3, send_signal
+from pipeline.collectors.db_writer import insert_signal_sync
+from pipeline.collectors.normalization import min_max_normalize
 
 logger = logging.getLogger(__name__)
-
-NAVER_CLIENT_ID = os.getenv("NAVER_CLIENT_ID", "")
-NAVER_CLIENT_SECRET = os.getenv("NAVER_CLIENT_SECRET", "")
 DATALAB_URL = "https://openapi.naver.com/v1/datalab/search"
 
 # 증상 기반 검색어 (쇼핑 키워드와 의도적으로 분리)
 SYMPTOM_KEYWORDS = ["독감 증상", "인플루엔자", "고열 원인", "몸살 원인", "타미플루"]
 TARGET_REGION = "서울특별시"
 
-
-def _normalize(values: list[float]) -> list[float]:
-    lo, hi = min(values), max(values)
-    if hi == lo:
-        return [50.0] * len(values)
-    return [round((v - lo) / (hi - lo) * 100, 2) for v in values]
-
-
 def collect_search_weekly(end_date: datetime | None = None) -> float | None:
     """최근 12주 검색 트렌드를 수집해 최신값을 Kafka로 전송한다."""
-    if not NAVER_CLIENT_ID or not NAVER_CLIENT_SECRET:
+    client_id = os.getenv("NAVER_CLIENT_ID", "")
+    client_secret = os.getenv("NAVER_CLIENT_SECRET", "")
+
+    if not client_id or not client_secret:
         logger.warning("네이버 API 키가 설정되지 않았습니다")
         return None
 
-    end = end_date or datetime.utcnow()
+    end = end_date or datetime.now(timezone.utc)
     start = end - timedelta(weeks=12)
 
     payload = {
@@ -56,8 +49,8 @@ def collect_search_weekly(end_date: datetime | None = None) -> float | None:
             DATALAB_URL,
             json=payload,
             headers={
-                "X-Naver-Client-Id": NAVER_CLIENT_ID,
-                "X-Naver-Client-Secret": NAVER_CLIENT_SECRET,
+                "X-Naver-Client-Id": client_id,
+                "X-Naver-Client-Secret": client_secret,
                 "Content-Type": "application/json",
             },
             timeout=15.0,
@@ -70,11 +63,11 @@ def collect_search_weekly(end_date: datetime | None = None) -> float | None:
             return None
 
         raw_values = [p["ratio"] for p in results[0].get("data", [])]
-        normalized = _normalize(raw_values)
+        normalized = min_max_normalize(raw_values)
         latest = normalized[-1] if normalized else None
 
         if latest is not None:
-            send_signal(TOPIC_L3, TARGET_REGION, "L3", latest, raw_value=raw_values[-1], source="naver_datalab")
+            insert_signal_sync(TARGET_REGION, "L3", latest, raw_value=raw_values[-1], source="naver_datalab")
             logger.info("Layer 3 (검색어) 수집 완료: %.2f", latest)
         return latest
 

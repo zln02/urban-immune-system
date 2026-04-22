@@ -5,16 +5,20 @@
 - Layer 2 (하수)  : 매주 화요일 10:00 (KOWAS 주간 보고서 발행 후)
 - Layer 3 (검색)  : 매주 월요일 09:05
 - 보조 (기상)     : 매시간
+
+각 수집기는 Kafka 대신 db_writer.insert_signal_sync()로
+TimescaleDB layer_signals 테이블에 직접 INSERT한다.
+(발표 데모 단순화 옵션: cron + DB INSERT, Kafka Consumer 불필요)
 """
 import logging
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-from collectors.otc_collector import collect_otc_weekly
-from collectors.search_collector import collect_search_weekly
-from collectors.wastewater import collect_wastewater_from_pdfs
-from collectors.weather_collector import collect_weather
+from pipeline.collectors.otc_collector import collect_otc_weekly
+from pipeline.collectors.search_collector import collect_search_weekly
+from pipeline.collectors.wastewater import collect_wastewater_from_pdfs
+from pipeline.collectors.weather_collector import collect_weather
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 logger = logging.getLogger(__name__)

@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api import alerts, predictions, signals
+from .config import settings
 from .tasks import broker
 
 
@@ -23,7 +24,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:8501"],
+    allow_origins=settings.allowed_origins,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )

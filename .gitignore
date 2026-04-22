@@ -106,3 +106,6 @@ frontend/out/
 # 시크릿
 .env.local
 .env.production
+
+# Claude Code 로컬 설정 (개인 설정 — 팀 공유 금지)
+.claude/settings.local.json

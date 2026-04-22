@@ -6,7 +6,7 @@
 
 > AI 기반 감염병 조기경보 시스템 — 3-Layer 비의료 신호 교차검증
 
-🏆 **제1회 2026 데이터로 미래를 그리는 AI 아이디어 공모전 대상(1등)** — LG전자 DX School
+🏆 **제1회 2026 데이터로 미래를 그리는 AI 아이디어 공모전 대상(1등)** — 한국능률협회
 
 ## 핵심 아이디어
 
@@ -60,6 +60,45 @@ graph TB
 | DB | TimescaleDB (PostgreSQL 16) |
 | Infra | Docker + Kubernetes (GKE) + GitHub Actions |
 
+## 현재 상태
+
+- Streamlit 프로토타입: 구현 완료
+- FastAPI backend: 라우트/설정/보안 하드닝 완료, 일부 비즈니스 로직 미완료
+- Pipeline: producer/scheduler 구현 완료, consumer와 KOWAS 자동화 미완료
+- ML: TFT/Autoencoder/RAG 코드와 서빙 엔트리포인트 초안 존재, 실제 추론 wiring 미완료
+- Next.js frontend: 초기 대시보드/지도/차트/리포트 컴포넌트 존재, 실데이터 연결 보강 필요
+- 테스트: 현재 로컬 기준 `pytest tests` 22개 통과
+
+## 개발 로드맵
+
+### Phase 1. 데이터 흐름 고정
+
+- 실 API 키로 L1/L3/KMA 수집 검증
+- Kafka Consumer 구현 및 TimescaleDB 적재 완료
+- `signals` API를 실데이터 조회 기준으로 고정
+- Docker Compose 기준 end-to-end 흐름 검증
+
+### Phase 2. 모델링 고도화
+
+- 과거 시즌 데이터 추가 수집
+- TFT walk-forward 검증 및 Autoencoder threshold 튜닝
+- RAG 문서 적재와 리포트 근거 표시
+- placeholder 예측/경보 응답 제거
+
+### Phase 3. 서비스 통합
+
+- `alerts`, `predictions` 실제 로직 연결
+- Next.js 대시보드 실데이터 연동
+- API 인증/제한 정책 반영
+- 발표용 데모 시나리오 완성
+
+### Phase 4. 안정화
+
+- 부하 테스트와 장애 복구 절차 정리
+- K8s 운영 점검과 모니터링 기본 지표 정리
+- 발표 자료, README, 실행 가이드 최신화
+- 재현 가능한 배포 절차 확정
+
 ## Quick Start
 
 ```bash
@@ -101,11 +140,11 @@ uvicorn backend.app.main:app --reload --port 8000
 
 | 이름 | 역할 | 담당 모듈 |
 | --- | --- | --- |
-| 박진영 | PM / ML Lead | `ml/`, 전체 아키텍처 |
-| 이경준 | Backend | `backend/` |
-| 이우형 | Data Engineer | `pipeline/` |
-| 김나영 | Frontend | `frontend/`, `src/` |
-| 박정빈 | DevOps / QA | `infra/`, CI/CD |
+| 박진영 | PM · 역할 B+C (파이프라인 + ML/AI 엔진) | `pipeline/`, `ml/` |
+| 이경준 | 역할 B (데이터 파이프라인) | `pipeline/` |
+| 이우형 | 역할 A (Backend + API) | `backend/`, `infra/` |
+| 김나영 | 역할 D1 (Frontend 개발 · API 연동) | `frontend/src/`, `src/` (API 연동) |
+| 박정빈 | 역할 D2 (UX 디자인 · 발표 준비) | `src/styles.py`, `src/map/`, `src/components/`, 발표자료 |
 
 ## 브랜치 전략
 

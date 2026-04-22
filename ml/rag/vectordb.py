@@ -5,9 +5,7 @@ import logging
 import os
 from typing import Any
 
-from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, PointStruct, VectorParams
-from sentence_transformers import SentenceTransformer
 
 logger = logging.getLogger(__name__)
 
@@ -21,12 +19,35 @@ VECTOR_DIM = 384
 class EpidemiologyVectorDB:
     """역학 문서 임베딩 저장소."""
 
-    def __init__(self) -> None:
-        self.client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
-        self.embedder = SentenceTransformer(EMBED_MODEL)
-        self._ensure_collection()
+    def __init__(self, host: str = QDRANT_HOST, port: int = QDRANT_PORT, model_name: str = EMBED_MODEL) -> None:
+        self.client = None
+        self.model = None
+        self.embedder = None
+
+        try:
+            from qdrant_client import QdrantClient
+
+            self.client = QdrantClient(host=host, port=port, timeout=10)
+        except Exception as exc:
+            logger.warning("Qdrant connection failed: %s", exc)
+
+        try:
+            from sentence_transformers import SentenceTransformer
+
+            self.model = SentenceTransformer(model_name)
+            self.embedder = self.model
+        except Exception as exc:
+            logger.warning("SentenceTransformer load failed: %s", exc)
+
+        if self.client is not None:
+            try:
+                self._ensure_collection()
+            except Exception as exc:
+                logger.warning("Qdrant collection init failed: %s", exc)
 
     def _ensure_collection(self) -> None:
+        if self.client is None:
+            return
         existing = [c.name for c in self.client.get_collections().collections]
         if COLLECTION_NAME not in existing:
             self.client.create_collection(
@@ -40,6 +61,10 @@ class EpidemiologyVectorDB:
 
         docs: [{"id": int, "text": str, "metadata": dict}, ...]
         """
+        if self.client is None or self.embedder is None:
+            logger.warning("Qdrant 또는 임베딩 모델이 초기화되지 않아 add_documents를 건너뜁니다")
+            return 0
+
         texts = [d["text"] for d in docs]
         vectors = self.embedder.encode(texts, show_progress_bar=False).tolist()
 
@@ -53,6 +78,10 @@ class EpidemiologyVectorDB:
 
     def search(self, query: str, top_k: int = 5) -> list[dict]:
         """쿼리와 유사한 역학 문서 top-k를 반환한다."""
+        if self.client is None or self.embedder is None:
+            logger.warning("Qdrant 또는 임베딩 모델이 초기화되지 않아 search 결과를 비웁니다")
+            return []
+
         query_vec = self.embedder.encode([query], show_progress_bar=False)[0].tolist()
         results = self.client.search(
             collection_name=COLLECTION_NAME,
