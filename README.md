@@ -20,9 +20,16 @@
 
 ## 검증 결과
 
-- **F1-Score**: 0.71 | **Precision**: 1.00 (오경보 0건)
-- **Granger 인과검정**: 3개 Layer 모두 p < 0.05
-- 2024-25 인플루엔자 시즌 실데이터 기반
+> 🏆 **공모전 대상 수상** (LG전자 DX School, 2026-03)
+>
+> ℹ️ **현재 측정 (2026-04-21, 합성 데이터 · 재현 가능)**
+> - `python analysis/notebooks/performance_measurement.py` 1회 실행 결과
+> - **3-Layer 통합**: F1=**0.643** · MCC=**0.442** · AUPRC=**0.885** · Precision=0.474 · Recall=1.0 (N=26주, 경보 이벤트 9건, 오경보 10건)
+> - **Granger 인과검정** (statsmodels, maxlag=4): L1_약국 p=0.0000 · L2_하수 p=0.0000 · L3_검색 p=0.0193 → **3 Layer 모두 p < 0.05 유의**
+>
+> ⚠️ **데이터 주의**: 위 수치는 `seed=42` 로 생성한 2024-25 시즌 유사 합성 데이터 기반. KDCA ILINet 실데이터 확보 후 동일 스크립트 재실행 예정 (P1 멀티시즌 검증).
+>
+> 📄 결과 JSON: `ml/outputs/validation.json` · `ml/outputs/correlation.json` · `analysis/results/metrics_v1.json`
 
 ## 아키텍처
 
@@ -91,8 +98,7 @@ uvicorn backend.app.main:app --reload --port 8000
 ├── ml/            # TFT + Autoencoder + RAG-LLM
 ├── frontend/      # Next.js + Deck.gl (Phase 2)
 ├── infra/         # K8s 매니페스트 + DB 스키마
-├── analysis/      # 공모전 분석 코드 (아카이브)
-├── prototype/     # 레거시 Streamlit (보존)
+├── analysis/      # 공모전 분석 코드 + P0 재현 노트북
 ├── tests/         # pytest
 └── docs/          # 문서
 ```
@@ -127,3 +133,4 @@ mypy src/
 ## License
 
 MIT License
+

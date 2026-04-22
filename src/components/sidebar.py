@@ -51,36 +51,12 @@ def render_sidebar() -> tuple[str, str, int, bool]:
             """,
             unsafe_allow_html=True,
         )
-        st.caption("© 2026 Urban Immune System · LG전자 DX School 13회차")
 
-        st.markdown(
-            """
-            <div class="sidebar-team">
-                <div class="team-title">팀 구성원</div>
-                <div class="sidebar-member">
-                    <span class="s-badge">총괄 · AI</span>
-                    <div class="s-info">
-                        <div class="s-name">박진영</div>
-                        <div class="s-dept">컴퓨터공학과</div>
-                    </div>
-                </div>
-                <div class="sidebar-member">
-                    <span class="s-badge">분석</span>
-                    <div class="s-info">
-                        <div class="s-name">윤재영</div>
-                        <div class="s-dept">정보통신공학과</div>
-                    </div>
-                </div>
-                <div class="sidebar-member">
-                    <span class="s-badge">개발</span>
-                    <div class="s-info">
-                        <div class="s-name">정욱현</div>
-                        <div class="s-dept">정보통신공학과</div>
-                    </div>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
+        st.divider()
+        st.caption(
+            "상용화 웹 서비스는 [frontend/](../frontend/) (Next.js) 에서 개발 중. "
+            "이 Streamlit 대시보드는 내부 운영·데모 용도입니다."
         )
+        st.caption("© 2026 Urban Immune System · AI 기반 감염병 조기경보 서비스")
 
     return region, season, threshold, show_train

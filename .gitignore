@@ -100,9 +100,29 @@ pipeline/data/
 frontend/.next/
 frontend/out/
 
-# PPTX 생성물 (Git에서 제외, 로컬 보관)
+# 발표 산출물은 Git 대신 Notion 관리 (MD·PPTX·PDF 모두 제외)
 *.pptx
+docs/slides/*
+!docs/slides/.gitkeep
+docs/meeting-notes/*.pdf
+docs/meeting-notes/*.pptx
+docs/meeting-notes/demo-scripts.md
+docs/meeting-notes/2026-*_팀킥오프.md
+docs/meeting-notes/2026-*_팀협업가이드.md
+
+# 포트폴리오 빌드 산출물
+docs/portfolio/portfolio.html
 
 # 시크릿
 .env.local
 .env.production
+
+# 학교 지원금 영수증 (로컬 정산 전용)
+docs/business/receipts/
+
+# 주간 보고서 PDF 생성물 (MD 원본만 추적)
+docs/weekly-reports/**/*.pdf
+docs/weekly-reports/**/*.html
+docs/weekly-reports/guides/*.pdf
+docs/weekly-reports/guides/*.html
+*.tsbuildinfo

@@ -13,13 +13,21 @@ GRAY_500 = "#64748b"
 GRAY_700 = "#334155"
 GRAY_900 = "#0f172a"
 WHITE = "#ffffff"
-RED = "#dc2626"
-ORANGE = "#ea580c"
-YELLOW = "#ca8a04"
-GREEN_SAFE = "#16a34a"
+# ─────────────────────────────────────────────
+# 경보 색상 — Okabe-Ito CUD (색맹 안전, Nature 권장)
+# 2026-04-21 교체: 기존 hex 는 YELLOW 2.94:1·ORANGE 3.56:1 로 WCAG AA 실패 + 적록색맹 동색
+# ─────────────────────────────────────────────
+RED = "#CC0000"          # Deep Red — 대비 5.1:1
+ORANGE = "#D55E00"       # Vermillion (Okabe-Ito #6)
+YELLOW = "#E69F00"       # Orange-Yellow (#2)
+GREEN_SAFE = "#009E73"   # Bluish Green (#3) — 적록색맹에도 구분됨
+
+# Layer 색상 (기존 유지, 경보 4색과 다른 영역)
 L1_PHARMACY = "#be185d"
 L2_SEWAGE = "#047857"
 L3_SEARCH = "#1d4ed8"
+# 별칭 (레거시 호환)
+L2_SEARCH = L3_SEARCH
 
 REGIONS = [
     "서울 강남구",
@@ -62,8 +70,8 @@ DISTRICTS = [
 ]
 
 RISK_CFG = {
-    1: {"color": GREEN_SAFE, "label": "Level 1 (낮음)", "radius": 8},
-    2: {"color": YELLOW, "label": "Level 2 (주의)", "radius": 12},
-    3: {"color": ORANGE, "label": "Level 3 (경계)", "radius": 16},
-    4: {"color": RED, "label": "Level 4 (심각)", "radius": 22},
+    1: {"color": GREEN_SAFE, "label": "Level 1 (낮음)",   "radius": 8,  "icon": "✅"},
+    2: {"color": YELLOW,     "label": "Level 2 (주의)",   "radius": 12, "icon": "🔔"},
+    3: {"color": ORANGE,     "label": "Level 3 (경계)",   "radius": 16, "icon": "⚠️"},
+    4: {"color": RED,        "label": "Level 4 (심각)",   "radius": 22, "icon": "🚨"},
 }

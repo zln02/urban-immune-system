@@ -1,0 +1,40 @@
+# Urban Immune System — CODEOWNERS
+# 형식: 경로패턴  @GitHub계정
+# 실제 GitHub 계정으로 교체 필요 (박진영 zln02 외 미확정)
+
+# 전체 기본 리뷰어 (PM)
+*                            @zln02
+
+# Backend (이경준)
+/backend/                    @LeeGyeongJun2645
+/backend/app/                @LeeGyeongJun2645
+
+# Data Pipeline (이우형)
+/pipeline/                   @zln02
+/pipeline/collectors/        @zln02
+
+# ML (박진영)
+/ml/                         @zln02
+/analysis/                   @zln02
+
+# Frontend (김나영)
+/frontend/                   @zln02
+/src/                        @zln02
+
+# Infra / DevOps (박정빈)
+/infra/                      @zln02
+/.github/workflows/          @zln02
+/docker-compose.yml          @zln02
+
+# Tests (QA 공동)
+/tests/                      @zln02
+
+# Docs (박진영 + 전원)
+/docs/                       @zln02
+/docs/business/              @zln02
+/docs/meeting-notes/         @zln02
+/docs/portfolio/             @zln02
+
+# 글로벌 에이전트·설정
+/CLAUDE.md                   @zln02
+/.claude/                    @zln02

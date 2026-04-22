@@ -1,7 +1,7 @@
 """경보 리포트 API."""
 from fastapi import APIRouter, BackgroundTasks, Query
 
-router = APIRouter()
+router = APIRouter(prefix="/api/v1/alerts", tags=["alerts"])
 
 
 @router.get("/current")

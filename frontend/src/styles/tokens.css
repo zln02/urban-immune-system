@@ -1,0 +1,236 @@
+/**
+ * Urban Immune System — Design Tokens v2
+ *
+ * Tier 1 · KRDS v1.1.0 공식 (한국 디지털정부 디자인시스템)
+ * Tier 2 · Okabe-Ito CUD (색맹 안전 · Nature 권장)
+ * WCAG 2.2 AA · KWCAG 2.2 · 8px grid · Pretendard GOV
+ *
+ * Handoff 반영: Claude Design (2026-04-22, k6f2hag...) · 전국 17개 시도 지도 지원
+ */
+
+:root {
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+  /* Tier 1 · KRDS 공식 팔레트 (primitive)        */
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+  /* Primary (정부 파랑) */
+  --krds-primary-5:  #ecf2fe;
+  --krds-primary-10: #d8e5fd;
+  --krds-primary-20: #b1cefb;
+  --krds-primary-30: #86aff9;
+  --krds-primary-40: #4c87f6;
+  --krds-primary-50: #256ef4;  /* WCAG AA 4.5:1 */
+  --krds-primary-60: #0b50d0;  /* hover/active */
+  --krds-primary-70: #083891;
+  --krds-primary-80: #052561;
+  --krds-primary-90: #03163a;
+  --krds-primary-95: #020f27;
+
+  /* Secondary */
+  --krds-secondary-50: #346fb2;
+  --krds-secondary-60: #1c589c;
+  --krds-secondary-70: #063a74;
+
+  /* Gray 13단계 */
+  --krds-gray-0:   #ffffff;
+  --krds-gray-5:   #f4f5f6;
+  --krds-gray-10:  #e6e8ea;
+  --krds-gray-20:  #cdd1d5;
+  --krds-gray-30:  #b1b8be;
+  --krds-gray-40:  #8a949e;
+  --krds-gray-50:  #6d7882;
+  --krds-gray-60:  #58616a;
+  --krds-gray-70:  #464c53;  /* 7:1 AAA 본문 */
+  --krds-gray-80:  #33363d;
+  --krds-gray-90:  #1e2124;
+  --krds-gray-95:  #131416;
+  --krds-gray-100: #000000;
+
+  /* System Colors (보조·알림용 — 실제 위험도는 Tier 2 사용) */
+  --krds-danger-50:      #de3412;
+  --krds-warning-30:     #ffb114;
+  --krds-success-50:     #228738;
+  --krds-information-50: #0b78cb;
+
+  /* Back-compat aliases (dash-conservative 참조용) */
+  --gray-0:   var(--krds-gray-0);
+  --gray-10:  var(--krds-gray-5);
+  --gray-20:  var(--krds-gray-10);
+  --gray-30:  var(--krds-gray-20);
+  --gray-40:  var(--krds-gray-30);
+  --gray-50:  var(--krds-gray-40);
+  --gray-60:  var(--krds-gray-50);
+  --gray-70:  var(--krds-gray-60);
+  --gray-80:  var(--krds-gray-70);
+  --gray-85:  var(--krds-gray-80);
+  --gray-90:  var(--krds-gray-90);
+  --gray-95:  var(--krds-gray-95);
+  --gray-100: var(--krds-gray-100);
+
+  --primary-5:  var(--krds-primary-5);
+  --primary-10: var(--krds-primary-10);
+  --primary-30: var(--krds-primary-30);
+  --primary-50: var(--krds-primary-50);
+  --primary-70: var(--krds-primary-60);
+  --primary-90: var(--krds-primary-90);
+
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+  /* Tier 2 · 위험도 — Okabe-Ito CUD               */
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+  --risk-safe:    #009e73;  /* Bluish Green · L1 · ✅ 안전 */
+  --risk-safe-10: #d9f0e8;
+  --risk-safe-40: #4fbd9d;
+
+  --risk-caution:    #e69f00;  /* Orange-Yellow · L2 · 🔔 주의 */
+  --risk-caution-10: #fbecd0;
+  --risk-caution-40: #f0c265;
+
+  --risk-warning:    #d55e00;  /* Vermillion · L3 · ⚠️ 경계 */
+  --risk-warning-10: #fadbc9;
+  --risk-warning-40: #e59166;
+
+  --risk-alert:    #cc0000;  /* Pure Red · L4 · 🚨 경보 */
+  --risk-alert-10: #fbd4d4;
+  --risk-alert-40: #e05c5c;
+
+  /* 3-Layer 브랜드 */
+  --layer-pharmacy:    #be185d;
+  --layer-pharmacy-10: #fce7f0;
+  --layer-sewage:      #047857;
+  --layer-sewage-10:   #d7f0e2;
+  --layer-search:      #1d4ed8;
+  --layer-search-10:   #dde6fb;
+
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+  /* 세만틱 역할 매핑                              */
+  /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+  --bg:              var(--krds-gray-0);
+  --bg-sub:          var(--krds-gray-5);
+  --bg-hover:        var(--krds-gray-10);
+  --surface:         var(--krds-gray-0);
+  --surface-raised:  var(--krds-gray-0);
+  --border:          var(--krds-gray-20);
+  --border-strong:   var(--krds-gray-30);
+  --text:            var(--krds-gray-100);
+  --text-secondary:  var(--krds-gray-70);
+  --text-tertiary:   var(--krds-gray-50);
+  --text-inverse:    var(--krds-gray-0);
+  --accent:          var(--krds-primary-60);
+  --accent-hover:    var(--krds-primary-70);
+  --accent-subtle:   var(--krds-primary-5);
+  --focus:           var(--krds-primary-50);
+
+  /* Spacing (8px grid) */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-7: 32px; --sp-8: 40px;
+  --sp-9: 48px; --sp-10: 64px;
+
+  /* Radii */
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-xl: 16px;
+
+  /* Layout */
+  --header-h: 48px;
+  --rail-w: 48px;
+  --sidebar-w: 280px;
+
+  /* Motion */
+  --duration-micro:    150ms;
+  --duration-standard: 250ms;
+  --duration-entrance: 400ms;
+  --dur-fast: var(--duration-micro);
+  --dur: var(--duration-standard);
+  --dur-slow: var(--duration-entrance);
+  --ease: cubic-bezier(0.2, 0, 0.38, 0.9);
+
+  /* Type */
+  --font-sans: "Pretendard GOV Variable", "Pretendard Variable", Pretendard,
+    -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, monospace;
+
+  /* Elevation */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.04), 0 0 1px rgba(0, 0, 0, 0.08);
+  --shadow-2: 0 2px 6px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-3: 0 8px 24px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+/* 다크 모드 — next-themes 가 html.dark 또는 [data-theme="dark"] 토글 */
+.dark, [data-theme="dark"] {
+  --bg:              var(--krds-gray-95);
+  --bg-sub:          var(--krds-gray-90);
+  --bg-hover:        var(--krds-gray-80);
+  --surface:         var(--krds-gray-90);
+  --surface-raised:  var(--krds-gray-80);
+  --border:          var(--krds-gray-80);
+  --border-strong:   var(--krds-gray-70);
+  --text:            var(--krds-gray-5);
+  --text-secondary:  var(--krds-gray-20);
+  --text-tertiary:   var(--krds-gray-40);
+  --text-inverse:    var(--krds-gray-100);
+  --accent:          var(--krds-primary-40);
+  --accent-hover:    var(--krds-primary-30);
+  --accent-subtle:   var(--krds-primary-90);
+  --focus:           var(--krds-primary-40);
+
+  --risk-safe-10:    #0d2a22;
+  --risk-caution-10: #362a0f;
+  --risk-warning-10: #3b1a0a;
+  --risk-alert-10:   #3b0e0e;
+
+  --layer-pharmacy-10: #3a1024;
+  --layer-sewage-10:   #0a2c1f;
+  --layer-search-10:   #0f1c3f;
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-2: 0 2px 6px rgba(0, 0, 0, 0.4);
+  --shadow-3: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* 색맹 시뮬 (Claude Design handoff 호환) */
+[data-cvd="deuteranopia"] { filter: url(#cvd-deuteranopia); }
+[data-cvd="protanopia"]   { filter: url(#cvd-protanopia); }
+
+/* 정보 밀도 토글 */
+[data-density="compact"] {
+  --sp-4: 12px; --sp-5: 16px; --sp-6: 20px; --header-h: 40px;
+}
+[data-density="comfortable"] {
+  --sp-4: 20px; --sp-5: 24px; --sp-6: 32px; --header-h: 56px;
+}
+
+/* KRDS 접근성 — prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-micro: 0ms;
+    --duration-standard: 0ms;
+    --duration-entrance: 0ms;
+    --dur-fast: 0ms; --dur: 0ms; --dur-slow: 0ms;
+  }
+}
+
+/* Type scale (IBM Carbon productive) */
+.t-label-01 { font-size: 11px; line-height: 1.27; letter-spacing: 0.32px; font-weight: 500; }
+.t-label-02 { font-size: 12px; line-height: 1.33; letter-spacing: 0.16px; font-weight: 500; }
+.t-body-01  { font-size: 13px; line-height: 1.38; letter-spacing: 0.16px; font-weight: 400; }
+.t-body-02  { font-size: 14px; line-height: 1.43; font-weight: 400; }
+.t-h-01     { font-size: 14px; line-height: 1.29; letter-spacing: 0.16px; font-weight: 600; }
+.t-h-02     { font-size: 16px; line-height: 1.375; font-weight: 600; }
+.t-h-03     { font-size: 20px; line-height: 1.4; font-weight: 400; }
+.t-h-04     { font-size: 28px; line-height: 1.29; font-weight: 400; }
+.t-num-sm   { font-variant-numeric: tabular-nums; font-weight: 500; font-size: 13px; }
+.t-num-md   { font-variant-numeric: tabular-nums; font-weight: 500; font-size: 20px; }
+.t-num-lg   { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 40px; letter-spacing: -0.02em; line-height: 1.05; }
+.t-num-xl   { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 56px; letter-spacing: -0.03em; line-height: 1; }
+.t-mono     { font-family: var(--font-mono); font-size: 12px; }
+
+/* 공통 애니메이션 (dashboard 컴포넌트 공용) */
+@keyframes uis-pulse  { 0%, 100% { opacity: 0.35 } 50% { opacity: 0.7 } }
+@keyframes uis-slidein { 0% { transform: translateY(-8px); opacity: 0 } 100% { transform: translateY(0); opacity: 1 } }
+@keyframes uis-blink  { 0%, 100% { opacity: 1 } 50% { opacity: 0.4 } }
+
+.uis-card { transition: box-shadow var(--dur) var(--ease); }
+.uis-card:hover { box-shadow: var(--shadow-2); }

@@ -1,0 +1,20 @@
+{
+  "generated_at": "2026-04-21T23:14:53",
+  "headline_metrics": {
+    "F1": 0.643,
+    "MCC": 0.442,
+    "AUPRC": 0.885,
+    "Precision": 0.474,
+    "Recall": 1.0,
+    "N_test_weeks": 26,
+    "N_alert_events": 9,
+    "False_alarms": 10
+  },
+  "granger_p_values": {
+    "L1_pharmacy": 0.0,
+    "L2_sewage": 0.0,
+    "L3_search": 0.0193
+  },
+  "all_granger_significant": true,
+  "dataset": "synthetic 2024-25 flu season (reproducible with seed=42)"
+}
