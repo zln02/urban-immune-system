@@ -1,4 +1,7 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 @import "../styles/tokens.css";
 
 @font-face {
@@ -6,33 +9,8 @@
   font-weight: 45 920;
   font-style: normal;
   font-display: swap;
-  src: url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/woff2/PretendardVariable.woff2") format("woff2-variations");
-}
-
-@theme {
-  --font-sans: "Pretendard GOV", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-  --color-primary: hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
-  --color-muted: hsl(var(--muted));
-  --color-muted-foreground: hsl(var(--muted-foreground));
-  --color-border: hsl(var(--border));
-  --color-ring: hsl(var(--ring));
-
-  --color-risk-safe: var(--risk-safe);
-  --color-risk-caution: var(--risk-caution);
-  --color-risk-warning: var(--risk-warning);
-  --color-risk-alert: var(--risk-alert);
-
-  --color-layer-pharmacy: var(--layer-pharmacy);
-  --color-layer-sewage: var(--layer-sewage);
-  --color-layer-search: var(--layer-search);
-
-  --radius-lg: var(--radius);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-sm: calc(var(--radius) - 4px);
+  src: url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/woff2/PretendardVariable.woff2")
+    format("woff2-variations");
 }
 
 html,
@@ -42,6 +20,6 @@ body {
 }
 
 *:focus-visible {
-  outline: 2px solid hsl(var(--ring));
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
