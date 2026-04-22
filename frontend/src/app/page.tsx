@@ -23,9 +23,25 @@ export default function LandingPage() {
         <h2 className="mb-4 text-xl font-semibold">개발 현황</h2>
         <ul className="space-y-2 text-sm">
           <li>✅ 실측 재현 가능 성능 — F1 0.643 · MCC 0.442 · AUPRC 0.885 (seed=42)</li>
-          <li>🟡 Next.js 15 + React 19 + TanStack Query v5 + shadcn/ui 스택 세팅</li>
-          <li>🔴 SSE 실시간 경보 · MapLibre 25구 choropleth · ECharts 시계열 구현 예정</li>
+          <li>✅ Conservative 대시보드 — 전국 17개 시도 · 전라 권역 L4 경보 시나리오</li>
+          <li>✅ KRDS v1.1.0 + Okabe-Ito CUD 2-Tier 디자인 토큰 시스템</li>
+          <li>🟡 SSE 실시간 경보 · MapLibre 교체 · ECharts 5 전환 예정</li>
+          <li>🟡 Innovative (Brutalist) 변형 · JWT 인증 · PDF 다운로드 실구현</li>
         </ul>
+        <div className="mt-6 flex gap-3">
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+          >
+            감시 대시보드 열기 →
+          </Link>
+          <Link
+            href="http://localhost:3000/dashboard"
+            className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium"
+          >
+            EN Preview
+          </Link>
+        </div>
       </section>
 
       <footer className="text-sm text-muted-foreground">
