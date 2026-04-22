@@ -28,31 +28,18 @@ export default function LandingPage() {
           <li>🟡 SSE 실시간 경보 · MapLibre 교체 · ECharts 5 전환 예정</li>
           <li>🟡 Innovative (Brutalist) 변형 · JWT 인증 · PDF 다운로드 실구현</li>
         </ul>
-        <div className="mt-6 flex gap-3">
+        <div className="mt-6">
           <Link
             href="/dashboard"
             className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
           >
             감시 대시보드 열기 →
           </Link>
-          <Link
-            href="http://localhost:3000/dashboard"
-            className="inline-flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium"
-          >
-            EN Preview
-          </Link>
         </div>
       </section>
 
       <footer className="text-sm text-muted-foreground">
-        <p>
-          내부 데모 대시보드는{" "}
-          <Link href="http://34.64.124.90:8501" className="font-medium underline">
-            Streamlit (포트 8501)
-          </Link>{" "}
-          에서 확인 가능합니다.
-        </p>
-        <p className="mt-2 opacity-70">
+        <p className="opacity-70">
           Powered by 2026 AI 아이디어 공모전 대상 수상 연구 · © 2026 Urban Immune System
         </p>
       </footer>
