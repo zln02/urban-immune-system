@@ -109,3 +109,21 @@ frontend/out/
 
 # Claude Code 로컬 설정 (개인 설정 — 팀 공유 금지)
 .claude/settings.local.json
+
+# 폰트 바이너리 (CDN 사용 권장)
+*.ttf
+*.otf
+*.woff
+*.woff2
+
+# TS 빌드 캐시
+**/tsconfig.tsbuildinfo
+
+# PDF / 발표 자료 (Google Drive 별도 보관)
+*.pdf
+docs/slides/
+docs/weekly-reports/
+
+# 회의자료 대용량 파일
+캡스톤_회의자료.pdf
+회의자료_캡스톤디자인.md

@@ -56,18 +56,24 @@ graph TB
 | Backend | FastAPI + SQLAlchemy (async) |
 | Pipeline | Kafka KRaft + httpx + pdfplumber |
 | ML | PyTorch Forecasting (TFT) + scikit-learn |
-| LLM | GPT-4o + LangChain + Qdrant |
+| LLM | Claude claude-sonnet-4-6 (SSE 스트리밍) + Qdrant (RAG) |
 | DB | TimescaleDB (PostgreSQL 16) |
 | Infra | Docker + Kubernetes (GKE) + GitHub Actions |
 
-## 현재 상태
+## 현재 상태 (2026-04-22 기준)
 
-- Streamlit 프로토타입: 구현 완료
-- FastAPI backend: 라우트/설정/보안 하드닝 완료, 일부 비즈니스 로직 미완료
-- Pipeline: producer/scheduler 구현 완료, consumer와 KOWAS 자동화 미완료
-- ML: TFT/Autoencoder/RAG 코드와 서빙 엔트리포인트 초안 존재, 실제 추론 wiring 미완료
-- Next.js frontend: 초기 대시보드/지도/차트/리포트 컴포넌트 존재, 실데이터 연결 보강 필요
-- 테스트: 현재 로컬 기준 `pytest tests` 22개 통과
+| 모듈 | 상태 |
+|------|------|
+| Streamlit 대시보드 | ✅ 완료 (5탭, Okabe-Ito 색상, WCAG AA) |
+| FastAPI 백엔드 | ✅ 가동 중 (port 8001, SSE 스트리밍 포함) |
+| Next.js 대시보드 | ✅ 완료 (17개 시도 지도, 팬데믹 이상탐지 탭) |
+| L1 OTC 수집 | ✅ 실데이터 (Naver 쇼핑인사이트, 130건/10지역) |
+| L3 검색 수집 | ✅ 실데이터 (Naver DataLab, 130건/10지역) |
+| L2 하수 수집 | 🔧 KOWAS 수동 삽입 예정 |
+| Claude SSE 경보 리포트 | ✅ 실시간 스트리밍 작동 |
+| TFT 예측 모델 | 🔧 가중평균 fallback 사용 중 |
+| Autoencoder 이상탐지 | 🔧 UI 완료, 모델 학습 예정 |
+| pytest | ✅ 22개 통과 |
 
 ## 개발 로드맵
 
@@ -118,7 +124,10 @@ pip install -e ".[all]"
 streamlit run src/app.py --server.port 8501
 
 # 5. Backend API
-uvicorn backend.app.main:app --reload --port 8000
+uvicorn backend.app.main:app --reload --port 8001
+
+# 6. Next.js 대시보드 (선택)
+cd frontend && npm run dev
 ```
 
 ## 프로젝트 구조

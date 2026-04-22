@@ -11,12 +11,15 @@ import { KpiCard } from "@/components/alert/kpi-card";
 import { LayerCard } from "@/components/alert/layer-card";
 import { AIReportCard } from "@/components/alert/ai-report-card";
 import { AlertTable } from "@/components/alert/alert-table";
+import { AnomalyPanel } from "@/components/anomaly/anomaly-panel";
 
 import { KOREA_REGIONS, regionName, type RegionCode } from "@/lib/korea-regions";
 import { RISK_META } from "@/lib/risk";
 import { DICT, type Lang } from "@/lib/i18n";
 import { mockAlerts, mockDistricts, mockSeries } from "@/lib/mock-data";
 import { useOtcTrend, useSearchTrend } from "@/hooks/useNaverTrend";
+
+type DashTab = "surveillance" | "anomaly";
 
 /**
  * Urban Immune System — Conservative Dashboard Home
@@ -37,6 +40,7 @@ import { useOtcTrend, useSearchTrend } from "@/hooks/useNaverTrend";
 export default function DashboardPage() {
   const [lang, setLang] = useState<Lang>("ko");
   const [selected, setSelected] = useState<RegionCode>("JB");
+  const [activeTab, setActiveTab] = useState<DashTab>("surveillance");
 
   const t = DICT[lang];
   const atRiskCount = Object.values(mockDistricts).filter((d) => d.risk >= 3).length;
@@ -148,29 +152,33 @@ export default function DashboardPage() {
             fontSize: 13,
           }}
         >
-          {[t.nav_dashboard, t.nav_districts, t.nav_reports, t.nav_alerts, t.nav_audit].map(
-            (n, i) => (
+          {[
+            { label: t.nav_dashboard, tab: "surveillance" as DashTab },
+            { label: lang === "ko" ? "🧬 팬데믹 조기탐지" : "🧬 Pandemic Detection", tab: "anomaly" as DashTab },
+            { label: t.nav_reports, tab: null },
+            { label: t.nav_alerts, tab: null },
+          ].map(({ label, tab }) => {
+            const isActive = tab ? activeTab === tab : false;
+            return (
               <button
-                key={n}
+                key={label}
                 type="button"
+                onClick={() => tab && setActiveTab(tab)}
                 style={{
                   height: "100%",
                   padding: "0 14px",
-                  background: i === 0 ? "var(--primary-90)" : "transparent",
+                  background: isActive ? "var(--primary-90)" : "transparent",
                   color: "var(--gray-0)",
                   border: "none",
                   cursor: "pointer",
-                  borderBottom:
-                    i === 0
-                      ? "2px solid var(--gray-0)"
-                      : "2px solid transparent",
-                  fontWeight: i === 0 ? 600 : 400,
+                  borderBottom: isActive ? "2px solid var(--gray-0)" : "2px solid transparent",
+                  fontWeight: isActive ? 600 : 400,
                 }}
               >
-                {n}
+                {label}
               </button>
-            ),
-          )}
+            );
+          })}
         </nav>
         <div
           style={{
@@ -466,6 +474,13 @@ export default function DashboardPage() {
           gap: "var(--sp-5)",
         }}
       >
+        {/* ── 팬데믹 조기탐지 탭 ───────────────────────── */}
+        {activeTab === "anomaly" && (
+          <AnomalyPanel lang={lang} />
+        )}
+
+        {/* ── 감시 현황 탭 ─────────────────────────────── */}
+        {activeTab === "surveillance" && (<>
         <div>
           <div
             style={{
@@ -809,6 +824,7 @@ export default function DashboardPage() {
         >
           {t.footer} · WCAG 2.2 AA · ISMS-P
         </footer>
+        </>)}
       </main>
     </div>
   );
