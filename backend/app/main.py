@@ -1,12 +1,24 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api import alerts, predictions, signals
+from .tasks import broker
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await broker.startup()
+    yield
+    await broker.shutdown()
+
 
 app = FastAPI(
     title="Urban Immune System API",
     version="0.2.0",
     docs_url="/docs",
+    lifespan=lifespan,
 )
 
 app.add_middleware(

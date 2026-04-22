@@ -6,6 +6,9 @@ class Settings(BaseSettings):
     kafka_bootstrap: str = "localhost:9092"
     qdrant_url: str = "http://localhost:6333"
     openai_api_key: str = ""
+    anthropic_api_key: str = ""
+    ml_service_url: str = "http://ml:8001"
+    llm_model: str = "gpt-4o"
     environment: str = "development"
 
     class Config:
