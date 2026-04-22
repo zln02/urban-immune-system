@@ -100,10 +100,15 @@ pipeline/data/
 frontend/.next/
 frontend/out/
 
-# PPTX 생성물 (Git에서 제외, 로컬 보관)
+# 발표 산출물은 Git 대신 Notion 관리 (MD·PPTX·PDF 모두 제외)
 *.pptx
-# 회의록 PPTX 는 예외적으로 추적 (배포용)
-!docs/meeting-notes/*.pptx
+docs/slides/*
+!docs/slides/.gitkeep
+docs/meeting-notes/*.pdf
+docs/meeting-notes/*.pptx
+docs/meeting-notes/demo-scripts.md
+docs/meeting-notes/2026-*_팀킥오프.md
+docs/meeting-notes/2026-*_팀협업가이드.md
 
 # 포트폴리오 빌드 산출물
 docs/portfolio/portfolio.html
