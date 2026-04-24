@@ -16,7 +16,7 @@ export const KOREA_REGIONS: Region[] = [
   { code: "CN", name: { ko: "충청남도",      en: "Chungnam" } },
   { code: "DJ", name: { ko: "대전광역시",    en: "Daejeon" } },
   { code: "SJ", name: { ko: "세종특별자치시", en: "Sejong" } },
-  { code: "JB", name: { ko: "전북특별자치도", en: "Jeonbuk" } },
+  { code: "JB", name: { ko: "전라북도", en: "Jeonbuk" } },
   { code: "JN", name: { ko: "전라남도",      en: "Jeonnam" } },
   { code: "GJ", name: { ko: "광주광역시",    en: "Gwangju" } },
   { code: "GB", name: { ko: "경상북도",      en: "Gyeongbuk" } },

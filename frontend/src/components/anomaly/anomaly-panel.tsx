@@ -1,26 +1,10 @@
 "use client";
-import { useState, type CSSProperties } from "react";
+import { useState } from "react";
 import type { Lang } from "@/lib/i18n";
+import { useRegionAlerts } from "@/hooks/useRegionAlerts";
 
 interface AnomalyPanelProps {
   lang: Lang;
-}
-
-/** 이상탐지 점수 생성 — 실제 Autoencoder 연동 전 시뮬레이션 */
-function useAnomalyScores() {
-  // 정상 패턴 대비 재구성 오차 (0-100)
-  // 실 구현: GET /api/v1/predictions/anomaly 에서 수신
-  const regions: AnomalyRegion[] = [
-    { code: "JB", name: "전북특별자치도", score: 82, delta: +31, status: "anomaly" },
-    { code: "JN", name: "전라남도",       score: 74, delta: +28, status: "anomaly" },
-    { code: "GJ", name: "광주광역시",     score: 58, delta: +19, status: "warning" },
-    { code: "GN", name: "경상남도",       score: 44, delta: +12, status: "warning" },
-    { code: "SL", name: "서울특별시",     score: 21, delta: +3,  status: "normal"  },
-    { code: "GG", name: "경기도",         score: 18, delta: +2,  status: "normal"  },
-    { code: "BS", name: "부산광역시",     score: 15, delta: -1,  status: "normal"  },
-    { code: "DG", name: "대구광역시",     score: 14, delta: 0,   status: "normal"  },
-  ];
-  return regions;
 }
 
 interface AnomalyRegion {
@@ -29,6 +13,22 @@ interface AnomalyRegion {
   score: number;
   delta: number;
   status: "anomaly" | "warning" | "normal";
+}
+
+/** 이상탐지 점수 — 실데이터 alerts/regions 응답을 proxy 로 사용
+ *  (composite 75+ = anomaly, 55+ = warning, 그 외 normal).
+ *  진짜 Autoencoder 결과는 ml/outputs/anomaly_metrics.json (학습 결과: Recall 1.000 / 분리도 2.3x)
+ */
+function useAnomalyScores(): AnomalyRegion[] {
+  const { data } = useRegionAlerts(28);
+  if (!data?.alerts) return [];
+  return data.alerts.slice(0, 8).map((a) => ({
+    code: a.region.slice(0, 2),
+    name: a.region,
+    score: Math.round(a.composite),
+    delta: 0, // 실 추세 계산은 후속 PR
+    status: a.composite >= 75 ? "anomaly" : a.composite >= 55 ? "warning" : "normal",
+  }));
 }
 
 const STATUS_META = {

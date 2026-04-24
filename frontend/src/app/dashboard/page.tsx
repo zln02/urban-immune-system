@@ -18,6 +18,8 @@ import { RISK_META } from "@/lib/risk";
 import { DICT, type Lang } from "@/lib/i18n";
 import { mockAlerts, mockDistricts, mockSeries } from "@/lib/mock-data";
 import { useOtcTrend, useSearchTrend } from "@/hooks/useNaverTrend";
+import { useWastewaterSeries } from "@/hooks/useSignalTimeseries";
+import { useRegionAlerts } from "@/hooks/useRegionAlerts";
 
 type DashTab = "surveillance" | "anomaly";
 
@@ -44,7 +46,14 @@ export default function DashboardPage() {
 
   const t = DICT[lang];
   const atRiskCount = Object.values(mockDistricts).filter((d) => d.risk >= 3).length;
+  const regionAlertsQuery = useRegionAlerts(28);
+  // AlertBanner / KpiCard 는 기존 mockAlerts 유지 (AlertRecord 타입)
   const activeAlerts = mockAlerts;
+  // AlertTable 만 실데이터 (RegionAlert 타입) 분리
+  const tableAlerts: typeof mockAlerts | NonNullable<typeof regionAlertsQuery.data>["alerts"] =
+    regionAlertsQuery.data?.alerts && regionAlertsQuery.data.alerts.length > 0
+      ? regionAlertsQuery.data.alerts
+      : mockAlerts;
 
   const layerColor = {
     pharmacy: "var(--layer-pharmacy)",
@@ -57,6 +66,8 @@ export default function DashboardPage() {
   // ── Naver 실데이터 (L1 OTC / L3 검색어) ──────────────────────────
   const otcQuery = useOtcTrend(12);
   const searchQuery = useSearchTrend(12);
+  // ── L2 KOWAS 하수 실데이터 (TimescaleDB 952건 → /signals/timeseries) ─
+  const sewageQuery = useWastewaterSeries("서울특별시", 365);
 
   const toSparkValues = (values: number[], scale = 100) =>
     values.map((v) => v * scale);
@@ -70,8 +81,10 @@ export default function DashboardPage() {
 
   const otcSeries = otcQuery.data?.series ?? [];
   const searchSeries = searchQuery.data?.series ?? [];
+  const sewageSeries = sewageQuery.data?.data ?? [];
   const hasOtc = otcSeries.length > 0;
   const hasSearch = searchSeries.length > 0;
+  const hasSewage = sewageSeries.length > 0;
 
   const otcValues = hasOtc ? toSparkValues(otcSeries.map((p) => p.value)) : mockSeries.pharmacy;
   const otcLatest = hasOtc ? otcValues[otcValues.length - 1] : mockSeries.pharmacy[mockSeries.pharmacy.length - 1];
@@ -81,7 +94,11 @@ export default function DashboardPage() {
   const searchLatest = hasSearch ? searchValues[searchValues.length - 1] : mockSeries.search[mockSeries.search.length - 1];
   const searchChange = hasSearch ? calcChange(searchValues) : 0;
 
-  const dataSourceLabel = hasOtc || hasSearch ? "실시간 · Naver 연결" : "시뮬레이션 데이터";
+  // KOWAS는 이미 0-100 정규화 완료, scale 1.0
+  const sewageValues = hasSewage ? sewageSeries.map((p) => p.value) : mockSeries.sewage;
+  const sewageLatest = hasSewage ? sewageValues[sewageValues.length - 1] : mockSeries.sewage[mockSeries.sewage.length - 1];
+
+  const dataSourceLabel = hasOtc || hasSearch || hasSewage ? "실시간 · Naver + KOWAS 연결" : "시뮬레이션 데이터";
 
   return (
     <div
@@ -572,7 +589,7 @@ export default function DashboardPage() {
             value="0.87"
             delta="Granger p<0.01"
             tone="safe"
-            sparkData={mockSeries.sewage.slice(-20)}
+            sparkData={sewageValues.slice(-20)}
             sparkColor="var(--layer-sewage)"
           />
         </div>
@@ -738,10 +755,10 @@ export default function DashboardPage() {
             />
             <LayerCard
               title={t.layer_sewage}
-              sub={t.layer_sewage_sub}
-              data={mockSeries.sewage.slice(-30)}
-              value={mockSeries.sewage[mockSeries.sewage.length - 1]}
-              change={22.8}
+              sub={hasSewage ? "질병관리청 KOWAS 자동 수집 (952건)" : t.layer_sewage_sub}
+              data={sewageValues.slice(-30)}
+              value={sewageLatest}
+              change={hasSewage ? calcChange(sewageValues) : 22.8}
               color="var(--layer-sewage)"
               icon={<I.Water size={14} />}
             />
@@ -808,8 +825,8 @@ export default function DashboardPage() {
             gap: "var(--sp-4)",
           }}
         >
-          <AIReportCard t={t} lang={lang} />
-          <AlertTable alerts={activeAlerts} t={t} lang={lang} />
+          <AIReportCard t={t} lang={lang} region={regionName(selected, "ko")} />
+          <AlertTable alerts={tableAlerts} t={t} lang={lang} />
         </div>
 
         <footer

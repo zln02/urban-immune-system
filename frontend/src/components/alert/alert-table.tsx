@@ -1,11 +1,20 @@
 import type { AlertRecord } from "@/lib/mock-data";
 import type { Translations, Lang } from "@/lib/i18n";
 import { RISK_META, type RiskLevel } from "@/lib/risk";
+import type { RegionAlert } from "@/hooks/useRegionAlerts";
 
 interface AlertTableProps {
-  alerts: AlertRecord[];
+  alerts: AlertRecord[] | RegionAlert[];
   t: Translations;
   lang: Lang;
+}
+
+const LEVEL_TO_NUM: Record<string, RiskLevel> = {
+  GREEN: 1, YELLOW: 2, ORANGE: 3, RED: 4,
+};
+
+function isRegionAlert(a: AlertRecord | RegionAlert): a is RegionAlert {
+  return "alert_level" in a && "composite" in a;
 }
 
 export function AlertTable({ alerts, t, lang }: AlertTableProps) {
@@ -62,57 +71,48 @@ export function AlertTable({ alerts, t, lang }: AlertTableProps) {
           </thead>
           <tbody>
             {alerts.map((alert, idx) => {
-              const meta = RISK_META[alert.level as RiskLevel];
+              const isReal = isRegionAlert(alert);
+              const level = isReal ? LEVEL_TO_NUM[alert.alert_level] ?? 1 : alert.level;
+              const meta = RISK_META[level as RiskLevel];
+              const id = isReal ? alert.region.slice(0, 6) : alert.id.slice(-6);
+              const region = alert.region;
+              const summary = isReal
+                ? `composite=${alert.composite} (L1=${alert.l1.toFixed(0)}/L2=${alert.l2.toFixed(0)}/L3=${alert.l3.toFixed(0)})`
+                : alert.summary;
+              const time = isReal
+                ? (alert.latest_time ? alert.latest_time.slice(0, 10) : "—")
+                : alert.time;
+              const labelText = isReal ? alert.alert_level : `L${alert.level}`;
               return (
                 <tr
-                  key={alert.id}
+                  key={isReal ? alert.region : alert.id}
                   style={{
                     borderTop: "1px solid var(--border)",
                     background: idx % 2 === 0 ? "transparent" : "var(--bg-sub)",
                   }}
                 >
-                  <td
-                    style={{
-                      padding: "8px 12px",
-                      color: "var(--text-tertiary)",
-                      fontFamily: "var(--font-mono)",
-                      fontSize: 10,
-                    }}
-                  >
-                    {alert.id.slice(-6)}
+                  <td style={{ padding: "8px 12px", color: "var(--text-tertiary)", fontFamily: "var(--font-mono)", fontSize: 10 }}>
+                    {id}
                   </td>
                   <td style={{ padding: "8px 12px" }}>
-                    <div style={{ fontWeight: 500 }}>{alert.region}</div>
+                    <div style={{ fontWeight: 500 }}>{region}</div>
                     <div style={{ fontSize: 10, color: "var(--text-tertiary)", marginTop: 1 }}>
-                      {alert.summary.slice(0, 30)}…
+                      {summary.slice(0, 50)}{summary.length > 50 ? "…" : ""}
                     </div>
                   </td>
                   <td style={{ padding: "8px 12px" }}>
                     <span
                       style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 3,
-                        padding: "2px 6px",
-                        fontSize: 10,
-                        fontWeight: 700,
-                        background: `var(--risk-${meta.token})`,
-                        color: "#fff",
+                        display: "inline-flex", alignItems: "center", gap: 3,
+                        padding: "2px 6px", fontSize: 10, fontWeight: 700,
+                        background: `var(--risk-${meta.token})`, color: "#fff",
                       }}
                     >
-                      L{alert.level}
+                      {labelText}
                     </span>
                   </td>
-                  <td
-                    style={{
-                      padding: "8px 12px",
-                      color: "var(--text-secondary)",
-                      fontFamily: "var(--font-mono)",
-                      fontSize: 10,
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {alert.time}
+                  <td style={{ padding: "8px 12px", color: "var(--text-secondary)", fontFamily: "var(--font-mono)", fontSize: 10, whiteSpace: "nowrap" }}>
+                    {time}
                   </td>
                 </tr>
               );
