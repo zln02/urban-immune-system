@@ -1,0 +1,163 @@
+{
+  "generated_at": "2026-04-24T07:33:34.337966+00:00",
+  "git_branch": "fix/alerts-rolling-window",
+  "git_commit": "c791cc3",
+  "stages": {
+    "synthetic": {
+      "data_source": "synthetic",
+      "task": "composite_score (가중평균 회귀)",
+      "data_seed": 42,
+      "n_weeks": 104,
+      "n_alert_positive": 37,
+      "alert_threshold": 55.0,
+      "feature_cols": [
+        "l1_otc",
+        "l2_wastewater",
+        "l3_search",
+        "temperature",
+        "humidity"
+      ],
+      "n_folds_total": 5,
+      "n_folds_valid": 2,
+      "cv_mean_f1": 1.0,
+      "cv_mean_precision": 1.0,
+      "cv_mean_recall": 1.0,
+      "cv_mean_auc_roc": 1.0,
+      "cv_mean_mae": 5.71039512975669,
+      "fold_scores": [
+        {
+          "fold": 1,
+          "mae": 18.4205658057,
+          "f1": NaN,
+          "precision": NaN,
+          "recall": NaN,
+          "auc_roc": NaN
+        },
+        {
+          "fold": 2,
+          "mae": 4.93800519540427,
+          "f1": NaN,
+          "precision": NaN,
+          "recall": NaN,
+          "auc_roc": NaN
+        },
+        {
+          "fold": 3,
+          "mae": 2.1642149563876,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "auc_roc": 1.0
+        },
+        {
+          "fold": 4,
+          "mae": 1.4755027804697693,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "auc_roc": 1.0
+        },
+        {
+          "fold": 5,
+          "mae": 1.553686910821815,
+          "f1": NaN,
+          "precision": NaN,
+          "recall": NaN,
+          "auc_roc": NaN
+        }
+      ],
+      "final_eval": {
+        "mae": 0.16992543126818627,
+        "target_col": "composite_score",
+        "alert_col": "alert_label",
+        "alert_threshold": 55.0,
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "auc_roc": 1.0
+      }
+    },
+    "synthetic_hardened": {
+      "data_source": "synthetic_hardened",
+      "task": "confirmed_future (t+2주 후 확진자 ≥ 70 예측)",
+      "data_seed": 42,
+      "lead_weeks": 2,
+      "n_weeks": 104,
+      "n_alert_positive": 15,
+      "alert_threshold": 70.0,
+      "feature_cols": [
+        "l1_otc",
+        "l2_wastewater",
+        "l3_search",
+        "temperature",
+        "humidity"
+      ],
+      "n_folds_total": 5,
+      "n_folds_valid": 1,
+      "cv_mean_f1": 0.6666666666666666,
+      "cv_mean_precision": 1.0,
+      "cv_mean_recall": 0.5,
+      "cv_mean_auc_roc": 0.9305555555555556,
+      "cv_mean_mae": 8.340271974818137,
+      "fold_scores": [
+        {
+          "fold": 1,
+          "mae": 19.989346084298766,
+          "f1": NaN,
+          "precision": NaN,
+          "recall": NaN,
+          "auc_roc": NaN
+        },
+        {
+          "fold": 2,
+          "mae": 8.62886693880953,
+          "f1": NaN,
+          "precision": NaN,
+          "recall": NaN,
+          "auc_roc": NaN
+        },
+        {
+          "fold": 3,
+          "mae": 4.541555418176213,
+          "f1": NaN,
+          "precision": NaN,
+          "recall": NaN,
+          "auc_roc": NaN
+        },
+        {
+          "fold": 4,
+          "mae": 4.5413620657415885,
+          "f1": 0.6666666666666666,
+          "precision": 1.0,
+          "recall": 0.5,
+          "auc_roc": 0.9305555555555556
+        },
+        {
+          "fold": 5,
+          "mae": 4.000229367064581,
+          "f1": NaN,
+          "precision": NaN,
+          "recall": NaN,
+          "auc_roc": NaN
+        }
+      ],
+      "final_eval": {
+        "mae": 0.8180423568018357,
+        "target_col": "confirmed_future",
+        "alert_col": "alert_future",
+        "alert_threshold": 70.0,
+        "f1": 0.967741935483871,
+        "precision": 0.9375,
+        "recall": 1.0,
+        "auc_roc": 1.0
+      }
+    },
+    "real": {
+      "data_source": "real",
+      "region": "서울특별시",
+      "status": "skipped",
+      "reason": "실데이터 부족 (3계층 교집합 11주, 최소 30주 필요) — 단계 스킵",
+      "n_weeks_3layer_intersection": 11
+    }
+  }
+}

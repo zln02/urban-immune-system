@@ -48,6 +48,11 @@ TARGET_COL = "composite_score"
 ALERT_COL = "alert_label"  # 이진 분류 레이블 (composite > 55 → 1)
 ALERT_THRESHOLD = 55.0
 
+# Hardened task 컬럼: t주 피처로 t+lead주 후 확진자 임계값 초과 예측 (선행 검증)
+HARDENED_TARGET_COL = "confirmed_future"
+HARDENED_ALERT_COL = "alert_future"
+HARDENED_ALERT_THRESHOLD = 70.0
+
 
 def _load_config() -> dict[str, Any]:
     """model_config.yaml에서 xgboost 설정을 로드한다. 없으면 기본값을 반환한다."""
@@ -126,6 +131,12 @@ def generate_synthetic_data(n_weeks: int = 104, seed: int = 42) -> pd.DataFrame:
     # 이진 경보 레이블 (composite > 55 → 1)
     alert_label = (composite_score > ALERT_THRESHOLD).astype(int)
 
+    # Hardened: 선행 검증용 — t주 피처로 t+2주 후 확진자(=confirmed_base) 임계값 초과 예측
+    # 발표용 진짜 검증: "선행 신호로 미래 확진자 임계값 넘김 예측"
+    confirmed_future = np.roll(confirmed_base, -2)  # 2주 후
+    confirmed_future[-2:] = confirmed_base[-2:]
+    alert_future = (confirmed_future > HARDENED_ALERT_THRESHOLD).astype(int)
+
     # 날짜 인덱스 (2023-01-02부터 주 단위)
     date_index = pd.date_range(start="2023-01-02", periods=n_weeks, freq="W-MON")
 
@@ -138,6 +149,8 @@ def generate_synthetic_data(n_weeks: int = 104, seed: int = 42) -> pd.DataFrame:
             "humidity": humidity,
             "composite_score": composite_score,
             "alert_label": alert_label,
+            "confirmed_future": confirmed_future,
+            "alert_future": alert_future,
         },
         index=date_index,
     )
@@ -150,16 +163,28 @@ def generate_synthetic_data(n_weeks: int = 104, seed: int = 42) -> pd.DataFrame:
     return df
 
 
-def train(df: pd.DataFrame, n_splits: int = 5, gap: int = 4) -> dict[str, Any]:
+def train(
+    df: pd.DataFrame,
+    n_splits: int = 5,
+    gap: int = 4,
+    target_col: str = TARGET_COL,
+    alert_col: str = ALERT_COL,
+    alert_threshold: float = ALERT_THRESHOLD,
+    save_checkpoint: bool = True,
+) -> dict[str, Any]:
     """Walk-forward TimeSeriesSplit으로 GradientBoostingRegressor를 학습·저장한다.
 
     Walk-forward 교차검증으로 미래 데이터 누출을 방지한다 (gap=4주).
     최종 모델은 전체 데이터로 재학습 후 체크포인트에 저장한다.
 
     Args:
-        df: FEATURE_COLS + TARGET_COL + ALERT_COL 컬럼을 포함한 DataFrame
+        df: FEATURE_COLS + target_col + alert_col 컬럼을 포함한 DataFrame
         n_splits: TimeSeriesSplit 분할 수 (기본 5)
         gap: 훈련/검증 사이 갭 주 수 (미래 누출 방지, 기본 4)
+        target_col: 회귀 타깃 컬럼 (composite_score 또는 confirmed_future)
+        alert_col: 이진 경보 레이블 컬럼
+        alert_threshold: 회귀값 → 이진 분류 임계값
+        save_checkpoint: 최종 모델 디스크 저장 여부
 
     Returns:
         cv_scores, final_eval 등 학습 결과 요약 dict
@@ -167,8 +192,8 @@ def train(df: pd.DataFrame, n_splits: int = 5, gap: int = 4) -> dict[str, Any]:
     cfg = _load_config()
 
     X = df[FEATURE_COLS].values
-    y = df[TARGET_COL].values
-    y_label = df[ALERT_COL].values
+    y = df[target_col].values
+    y_label = df[alert_col].values
 
     # 하이퍼파라미터: model_config.yaml > 기본값
     params: dict[str, Any] = {
@@ -197,7 +222,7 @@ def train(df: pd.DataFrame, n_splits: int = 5, gap: int = 4) -> dict[str, Any]:
         y_pred_clipped = np.clip(y_pred, 0.0, 100.0)
 
         # 이진 레이블로 분류 지표 계산
-        y_pred_label = (y_pred_clipped > ALERT_THRESHOLD).astype(int)
+        y_pred_label = (y_pred_clipped > alert_threshold).astype(int)
 
         mae = float(np.mean(np.abs(y_pred_clipped - y_val)))
 
@@ -236,14 +261,30 @@ def train(df: pd.DataFrame, n_splits: int = 5, gap: int = 4) -> dict[str, Any]:
     final_model = GradientBoostingRegressor(**params)
     final_model.fit(X, y)
 
-    # 최종 모델 평가
-    final_eval = evaluate(final_model, df)
+    # 최종 모델 평가 (target_col 기반, evaluate는 ALERT_COL 고정이므로 별도 처리)
+    final_pred = np.clip(final_model.predict(X), 0.0, 100.0)
+    final_pred_label = (final_pred > alert_threshold).astype(int)
+    final_eval: dict[str, Any] = {
+        "mae": float(np.mean(np.abs(final_pred - y))),
+        "target_col": target_col,
+        "alert_col": alert_col,
+        "alert_threshold": alert_threshold,
+    }
+    if len(np.unique(y_label)) >= 2 and len(np.unique(final_pred_label)) >= 2:
+        final_eval["f1"] = float(f1_score(y_label, final_pred_label, zero_division=0))
+        final_eval["precision"] = float(precision_score(y_label, final_pred_label, zero_division=0))
+        final_eval["recall"] = float(recall_score(y_label, final_pred_label, zero_division=0))
+        try:
+            final_eval["auc_roc"] = float(roc_auc_score(y_label, final_pred))
+        except ValueError:
+            final_eval["auc_roc"] = float("nan")
     logger.info("최종 모델 평가: %s", final_eval)
 
-    # 체크포인트 저장
-    _CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
-    joblib.dump(final_model, _CHECKPOINT_PATH)
-    logger.info("모델 저장 완료: %s", _CHECKPOINT_PATH)
+    # 체크포인트 저장 (composite task만 — hardened는 발표용 평가, 추론에는 composite 모델 사용)
+    if save_checkpoint:
+        _CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
+        joblib.dump(final_model, _CHECKPOINT_PATH)
+        logger.info("모델 저장 완료: %s", _CHECKPOINT_PATH)
 
     # CV 요약 집계 (nan 제외)
     valid_scores = [s for s in cv_scores if not np.isnan(s["f1"])]
