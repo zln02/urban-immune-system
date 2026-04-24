@@ -10,7 +10,7 @@ interface AIReportCardProps {
 }
 
 export function AIReportCard({ t, lang, region = "전북특별자치도" }: AIReportCardProps) {
-  const { text, streaming, done, error, start, reset } = useAlertStream(region);
+  const { text, citations, streaming, done, error, start, reset } = useAlertStream(region);
 
   return (
     <div
@@ -205,6 +205,58 @@ export function AIReportCard({ t, lang, region = "전북특별자치도" }: AIRe
           </div>
         )}
       </div>
+
+      {/* RAG 인용 출처 패널 — citations 메타이벤트 수신 시 표시 */}
+      {citations.length > 0 && (
+        <div
+          style={{
+            padding: "8px 16px",
+            borderTop: "1px solid var(--border)",
+            background: "var(--bg-sub)",
+            fontSize: 11,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 10,
+              fontWeight: 600,
+              color: "var(--text-secondary)",
+              marginBottom: 6,
+              textTransform: "uppercase",
+              letterSpacing: 0.4,
+            }}
+          >
+            {lang === "ko" ? "참고 가이드 (RAG 검색 결과)" : "Reference guidelines (RAG hits)"}
+          </div>
+          <ol style={{ margin: 0, paddingLeft: 18, color: "var(--text-secondary)", lineHeight: 1.45 }}>
+            {citations.map((c) => (
+              <li key={c.rank} style={{ marginBottom: 3 }}>
+                {c.url ? (
+                  <a
+                    href={c.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: "var(--primary-70)", textDecoration: "none" }}
+                  >
+                    {c.source}
+                  </a>
+                ) : (
+                  <span>{c.source}</span>
+                )}
+                <span
+                  style={{
+                    fontSize: 9,
+                    color: "var(--text-tertiary)",
+                    marginLeft: 6,
+                  }}
+                >
+                  · {c.topic} · {c.score.toFixed(2)}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
 
       {done && (
         <div
