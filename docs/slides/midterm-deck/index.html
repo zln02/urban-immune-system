@@ -637,23 +637,30 @@
         var m=document.getElementById('demo-mock');
         var l=document.getElementById('demo-live');
         var b=document.getElementById('demo-live-toggle');
+        var f=document.getElementById('demo-iframe');
+        var u=document.getElementById('demo-url-text');
+        // 슬라이드가 열린 호스트(localhost 또는 VM IP)에 맞춰 대시보드 URL 자동 매핑
+        var host=location.hostname||'localhost';
+        var dashUrl='http://'+host+':3000/dashboard';
         if(l.style.display==='none'){
+          if(f && f.src !== dashUrl) f.src=dashUrl;
+          if(u) u.textContent=host+':3000/dashboard · 실시간';
           l.style.display='flex'; m.style.display='none'; b.textContent='🖼 스크린샷 모드';
         } else {
           l.style.display='none'; m.style.display='grid'; b.textContent='▶ 라이브 데모 (iframe)';
         }
       })();return false;" style="font-size:16px; font-weight:600; margin-left:18px; padding:8px 14px; border:1px solid #0075de; background:#fff; color:#0075de; border-radius:6px; cursor:pointer; vertical-align:middle;">▶ 라이브 데모 (iframe)</button>
-      <a href="http://localhost:3000/dashboard" target="_blank" rel="noopener" style="font-size:16px; font-weight:600; margin-left:8px; padding:8px 14px; border:1px solid #0075de; background:#0075de; color:#fff; border-radius:6px; text-decoration:none; vertical-align:middle;">↗ 새 탭에서 열기</a>
+      <a id="demo-newtab" href="#" onclick="this.href='http://'+(location.hostname||'localhost')+':3000/dashboard';" target="_blank" rel="noopener" style="font-size:16px; font-weight:600; margin-left:8px; padding:8px 14px; border:1px solid #0075de; background:#0075de; color:#fff; border-radius:6px; text-decoration:none; vertical-align:middle;">↗ 새 탭에서 열기</a>
     </h1>
 
-    <!-- 라이브 iframe (기본 숨김) -->
+    <!-- 라이브 iframe (기본 숨김) — src는 토글 시 현재 호스트 기준으로 주입 -->
     <div id="demo-live" class="demo-frame" style="display:none; flex:1; margin-top:8px; min-height:0; flex-direction:column;">
       <div class="tabs">
         <div class="tl"><span></span><span></span><span></span></div>
-        <div class="url">localhost:3000/dashboard · 실시간</div>
+        <div id="demo-url-text" class="url">:3000/dashboard · 실시간</div>
         <div style="margin-left:auto; font-size:13px; color:#047857; font-weight:600;">● LIVE iframe</div>
       </div>
-      <iframe src="http://localhost:3000/dashboard" style="flex:1; width:100%; border:0; background:#fff;" title="Urban Immune System Live Dashboard"></iframe>
+      <iframe id="demo-iframe" src="about:blank" style="flex:1; width:100%; border:0; background:#fff;" title="Urban Immune System Live Dashboard"></iframe>
     </div>
 
     <!-- Mock (기본 표시) -->
