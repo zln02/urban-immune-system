@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-04-24T07:33:34.337966+00:00",
-  "git_branch": "fix/alerts-rolling-window",
-  "git_commit": "c791cc3",
+  "generated_at": "2026-04-24T11:45:47.319631+00:00",
+  "git_branch": "feat/midterm-deck-design",
+  "git_commit": "5dae9fe",
   "stages": {
     "synthetic": {
       "data_source": "synthetic",
@@ -151,13 +151,6 @@
         "recall": 1.0,
         "auc_roc": 1.0
       }
-    },
-    "real": {
-      "data_source": "real",
-      "region": "서울특별시",
-      "status": "skipped",
-      "reason": "실데이터 부족 (3계층 교집합 11주, 최소 30주 필요) — 단계 스킵",
-      "n_weeks_3layer_intersection": 11
     }
   }
 }
