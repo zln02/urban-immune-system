@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, type CSSProperties } from "react";
 import type { RegionCode } from "@/lib/korea-regions";
 import { regionName } from "@/lib/korea-regions";
 import { RISK_META, type RiskLevel } from "@/lib/risk";
-import type { RiskInfo } from "@/lib/mock-data";
+import type { DistrictData } from "@/lib/mock-data";
 import type { Lang } from "@/lib/i18n";
 
 // ─── GeoJSON 최소 타입 ────────────────────────────────────────────────
@@ -61,7 +61,7 @@ function geomCentroid(geom: GeoPolygon | GeoMultiPolygon): [number, number] {
 
 // ─── 컴포넌트 ─────────────────────────────────────────────────────────
 interface KoreaMapProps {
-  data: Record<RegionCode, RiskInfo>;
+  data: Record<RegionCode, DistrictData>;
   lang: Lang;
   selected?: RegionCode;
   onSelect?: (code: RegionCode) => void;

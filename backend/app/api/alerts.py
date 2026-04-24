@@ -89,6 +89,60 @@ async def get_current_alert(
     }
 
 
+@router.get("/regions")
+async def list_region_alerts(
+    db: AsyncSession = Depends(get_db),
+    days: int = Query(28, ge=7, le=365),
+) -> dict:
+    """전국 17개 시·도 동시 경보 — 최근 N일 평균 + value=0 제외 + 교차검증.
+
+    Frontend AlertTable 1회 호출로 전국 현황 표시 (region별 17번 호출 회피).
+    """
+    query = text(f"""
+        SELECT region, layer, AVG(value) AS value, MAX(time) AS latest
+        FROM layer_signals
+        WHERE layer IN ('otc', 'wastewater', 'search')
+          AND time >= NOW() - INTERVAL '{int(days)} days'
+          AND value > 0
+        GROUP BY region, layer
+    """)
+    result = await db.execute(query)
+    pivot: dict[str, dict] = {}
+    for r in result.mappings().all():
+        rg = r["region"]
+        pivot.setdefault(rg, {"region": rg, "l1": 0.0, "l2": 0.0, "l3": 0.0, "latest": None})
+        layer = r["layer"]
+        if layer == "otc":
+            pivot[rg]["l1"] = float(r["value"])
+        elif layer == "wastewater":
+            pivot[rg]["l2"] = float(r["value"])
+        elif layer == "search":
+            pivot[rg]["l3"] = float(r["value"])
+        latest = r["latest"]
+        if latest and (pivot[rg]["latest"] is None or latest > pivot[rg]["latest"]):
+            pivot[rg]["latest"] = latest
+
+    rows: list[dict] = []
+    for rg, v in pivot.items():
+        composite = round(W1 * v["l1"] + W2 * v["l2"] + W3 * v["l3"], 2)
+        raw_level = _compute_alert_level(composite)
+        n_above = sum(1 for x in (v["l1"], v["l2"], v["l3"]) if x >= 30)
+        # 교차검증: GREEN 외 등급은 2개 이상 30 이상 필수
+        final_level = raw_level if (raw_level == "GREEN" or n_above >= 2) else "GREEN"
+        rows.append({
+            "region": rg,
+            "composite": composite,
+            "alert_level": final_level,
+            "l1": round(v["l1"], 2),
+            "l2": round(v["l2"], 2),
+            "l3": round(v["l3"], 2),
+            "layers_above_30": n_above,
+            "latest_time": str(v["latest"]) if v["latest"] else None,
+        })
+    rows.sort(key=lambda x: x["composite"], reverse=True)
+    return {"window_days": days, "count": len(rows), "alerts": rows}
+
+
 @router.post("/generate")
 async def generate_alert_report(
     region: str = Query("서울특별시", min_length=2, max_length=100),
