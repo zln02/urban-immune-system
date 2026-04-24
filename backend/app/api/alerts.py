@@ -97,15 +97,15 @@ async def list_region_alerts(
 
     Frontend AlertTable 1회 호출로 전국 현황 표시 (region별 17번 호출 회피).
     """
-    query = text(f"""
+    query = text("""
         SELECT region, layer, AVG(value) AS value, MAX(time) AS latest
         FROM layer_signals
         WHERE layer IN ('otc', 'wastewater', 'search')
-          AND time >= NOW() - INTERVAL '{int(days)} days'
+          AND time >= NOW() - make_interval(days => :days)
           AND value > 0
         GROUP BY region, layer
     """)
-    result = await db.execute(query)
+    result = await db.execute(query, {"days": days})
     pivot: dict[str, dict] = {}
     for r in result.mappings().all():
         rg = r["region"]
