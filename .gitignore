@@ -127,3 +127,7 @@ docs/weekly-reports/
 # 회의자료 대용량 파일
 캡스톤_회의자료.pdf
 회의자료_캡스톤디자인.md
+lightning_logs/
+
+# TFT 학습 산출물
+ml/checkpoints/tft_synth/
