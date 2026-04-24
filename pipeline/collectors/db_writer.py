@@ -52,6 +52,7 @@ async def insert_signal(
     value: float,
     raw_value: float | None = None,
     source: str = "",
+    ts: datetime | None = None,
 ) -> None:
     """layer_signals 테이블에 정규화된 신호를 직접 INSERT한다.
 
@@ -61,9 +62,10 @@ async def insert_signal(
         value: 정규화 지수 (0-100)
         raw_value: 원시 측정값 (선택)
         source: 데이터 출처 식별자 (선택)
+        ts: 측정 타임스탬프 (None이면 현재 UTC). 과거 데이터 적재 시 명시.
     """
     pool = await _get_pool()
-    now = datetime.now(timezone.utc)
+    when = ts if ts is not None else datetime.now(timezone.utc)
     try:
         async with pool.acquire() as conn:
             await conn.execute(
@@ -71,7 +73,7 @@ async def insert_signal(
                 INSERT INTO layer_signals (time, layer, region, value, raw_value, source)
                 VALUES ($1, $2, $3, $4, $5, $6)
                 """,
-                now,
+                when,
                 layer,
                 region,
                 round(value, 4),

@@ -73,7 +73,7 @@ graph TB
 | Claude SSE 경보 리포트 | ✅ 실시간 스트리밍 작동 |
 | TFT 예측 모델 | 🔧 가중평균 fallback 사용 중 |
 | Autoencoder 이상탐지 | 🔧 UI 완료, 모델 학습 예정 |
-| pytest | ✅ 22개 통과 |
+| pytest | ✅ 35개 통과 |
 
 ## 개발 로드맵
 
@@ -149,11 +149,11 @@ cd frontend && npm run dev
 
 | 이름 | 역할 | 담당 모듈 |
 | --- | --- | --- |
-| 박진영 | PM · 역할 B+C (파이프라인 + ML/AI 엔진) | `pipeline/`, `ml/` |
-| 이경준 | 역할 B (데이터 파이프라인) | `pipeline/` |
-| 이우형 | 역할 A (Backend + API) | `backend/`, `infra/` |
-| 김나영 | 역할 D1 (Frontend 개발 · API 연동) | `frontend/src/`, `src/` (API 연동) |
-| 박정빈 | 역할 D2 (UX 디자인 · 발표 준비) | `src/styles.py`, `src/map/`, `src/components/`, 발표자료 |
+| 박진영 | PM / ML Lead | `ml/`, 전체 아키텍처, `docs/`, `docs/business/` |
+| 이경준 | Backend | `backend/` |
+| 이우형 | Data Engineer | `pipeline/` |
+| 김나영 | Frontend | `frontend/` (Phase 2 Next.js), `src/` (Phase 1 Streamlit) |
+| 박정빈 | DevOps / QA | `infra/`, `.github/`, `tests/` |
 
 ## 브랜치 전략
 

@@ -1,67 +1,47 @@
-"""Layer 2: KOWAS 하수 바이오마커 수집기.
+"""Layer 2: KOWAS 하수 바이오마커 수집기 (얇은 파사드).
 
-환경부 KOWAS(Korea Wastewater Surveillance) PDF에서
-인플루엔자 바이러스 농도 데이터를 OCR/파싱해 수집한다.
+실제 구현은 모듈 분리:
+  - kowas_downloader.py  : 게시판 크롤링 + PDF 자동 다운로드
+  - kowas_parser.py      : PDF 차트 픽셀 분석 (코로나/인플루엔자/노로 17개 시·도)
+  - kowas_loader.py      : 파싱 + DB 적재 통합 (CLI 진입점)
+
 선행 시간: 임상 확진 대비 약 2~3주 (가장 빠른 선행 신호).
-
-현재: 수동 PDF 추출 → 자동화 목표 (OCR/크롤링 Phase 3~4)
+스케줄러에서 호출 가능한 단일 함수만 노출한다.
 """
 from __future__ import annotations
 
+import asyncio
 import logging
-import re
 from pathlib import Path
 
-import pdfplumber
-
-from pipeline.collectors.db_writer import insert_signal_sync
-from pipeline.collectors.normalization import min_max_normalize
+from pipeline.collectors.kowas_downloader import (
+    DEFAULT_OUTPUT_DIR as KOWAS_DATA_DIR,
+    download_all,
+)
+from pipeline.collectors.kowas_loader import list_local_pdfs, load_pdf
 
 logger = logging.getLogger(__name__)
 
-# KOWAS PDF 데이터 디렉토리 (로컬 수동 다운로드 경로)
-KOWAS_DATA_DIR = Path(__file__).parent.parent / "data" / "kowas"
+
+async def collect_wastewater_weekly(*, weeks: int = 1) -> int:
+    """최신 KOWAS 주간보고를 다운로드 → 파싱 → DB 적재한다.
+
+    Args:
+        weeks: 적재할 최근 주차 수 (기본 1 = 이번 주)
+
+    Returns:
+        DB 적재 건수 합계
+    """
+    download_all(limit=weeks)
+    pdfs = list_local_pdfs()[:weeks]
+    total = 0
+    for pdf_path, year, week in pdfs:
+        n, _ = await load_pdf(pdf_path, year, week)
+        total += n
+    logger.info("KOWAS 적재 완료: %d건 / %d주차", total, len(pdfs))
+    return total
 
 
-def _parse_kowas_pdf(pdf_path: Path) -> list[dict]:
-    """KOWAS PDF에서 주차별 바이러스 농도를 파싱한다."""
-    records = []
-    try:
-        with pdfplumber.open(pdf_path) as pdf:
-            for page in pdf.pages:
-                text = page.extract_text() or ""
-                # TODO: 실제 KOWAS PDF 테이블 구조에 맞게 파싱 로직 구현
-                # 현재는 샘플 패턴 (week, concentration)
-                for match in re.finditer(r"(\d{4})[년\-](\d{1,2})주.*?([\d.]+)\s*copies", text):
-                    year, week, conc = match.groups()
-                    records.append({
-                        "year": int(year),
-                        "week": int(week),
-                        "concentration": float(conc),
-                    })
-    except Exception as exc:
-        logger.error("KOWAS PDF 파싱 실패 (%s): %s", pdf_path.name, exc)
-    return records
-
-def collect_wastewater_from_pdfs(region: str = "서울특별시") -> int:
-    """KOWAS_DATA_DIR 내 모든 PDF를 파싱해 Kafka로 전송한다. 전송 건수 반환."""
-    if not KOWAS_DATA_DIR.exists():
-        logger.warning("KOWAS 데이터 디렉토리가 없습니다: %s", KOWAS_DATA_DIR)
-        return 0
-
-    all_records: list[dict] = []
-    for pdf_file in sorted(KOWAS_DATA_DIR.glob("*.pdf")):
-        all_records.extend(_parse_kowas_pdf(pdf_file))
-
-    if not all_records:
-        logger.warning("파싱된 KOWAS 데이터가 없습니다")
-        return 0
-
-    raw_vals = [r["concentration"] for r in all_records]
-    normalized = min_max_normalize(raw_vals)
-
-    for record, norm_val in zip(all_records, normalized):
-        insert_signal_sync(region, "L2", norm_val, raw_value=record["concentration"], source="kowas_pdf")
-
-    logger.info("Layer 2 (하수) %d건 전송 완료", len(all_records))
-    return len(all_records)
+def collect_wastewater_from_pdfs(weeks: int = 1) -> int:
+    """동기 래퍼 (스케줄러용)."""
+    return asyncio.run(collect_wastewater_weekly(weeks=weeks))
