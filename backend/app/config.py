@@ -15,6 +15,12 @@ class Settings(BaseSettings):
     environment: str = "development"
     allowed_origins: list[str] = ["http://localhost:3000", "http://localhost:8501"]
 
+    # 3계층 앙상블 가중치 (합산 = 1.0)
+    # L2 하수도가 가장 높음 — 임상 2~3주 선행 지표
+    ensemble_weight_l1: float = 0.35   # OTC 약국 구매
+    ensemble_weight_l2: float = 0.40   # 하수도 바이오마커
+    ensemble_weight_l3: float = 0.25   # 검색 트렌드
+
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=False, extra="ignore")
 
     @field_validator("allowed_origins", mode="before")
