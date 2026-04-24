@@ -77,18 +77,21 @@ class EpidemiologyVectorDB:
         return len(points)
 
     def search(self, query: str, top_k: int = 5) -> list[dict]:
-        """쿼리와 유사한 역학 문서 top-k를 반환한다."""
+        """쿼리와 유사한 역학 문서 top-k를 반환한다.
+
+        qdrant-client 1.10+ 의 query_points API를 사용한다 (구 search는 deprecated).
+        """
         if self.client is None or self.embedder is None:
             logger.warning("Qdrant 또는 임베딩 모델이 초기화되지 않아 search 결과를 비웁니다")
             return []
 
         query_vec = self.embedder.encode([query], show_progress_bar=False)[0].tolist()
-        results = self.client.search(
+        response = self.client.query_points(
             collection_name=COLLECTION_NAME,
-            query_vector=query_vec,
+            query=query_vec,
             limit=top_k,
         )
         return [
-            {"score": r.score, "text": r.payload.get("text", ""), "metadata": r.payload}
-            for r in results
+            {"score": p.score, "text": p.payload.get("text", ""), "metadata": p.payload}
+            for p in response.points
         ]
