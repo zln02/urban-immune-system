@@ -1,0 +1,271 @@
+/* ============================================================
+   Notion Design System — Colors & Type
+   ============================================================ */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+:root {
+  /* -------- Color: Core -------- */
+  --color-text: rgba(0, 0, 0, 0.95);        /* near-black (Notion Black) */
+  --color-text-on-dark: #ffffff;
+  --color-bg: #ffffff;                       /* page canvas */
+  --color-bg-alt: #f6f5f4;                   /* warm white — section alt */
+  --color-bg-dark: #31302e;                  /* warm dark surface */
+
+  /* -------- Color: Brand -------- */
+  --color-blue: #0075de;                     /* Notion Blue — CTAs, links */
+  --color-blue-active: #005bab;              /* pressed */
+  --color-focus: #097fe8;                    /* focus ring */
+  --color-link: #0075de;
+  --color-link-on-dark: #62aef0;
+  --color-navy: #213183;                     /* secondary brand */
+
+  /* -------- Color: Warm Neutral Scale -------- */
+  --color-warm-white: #f6f5f4;
+  --color-warm-gray-100: #eceae8;
+  --color-warm-gray-300: #a39e98;            /* muted, disabled, placeholder */
+  --color-warm-gray-500: #615d59;            /* secondary text */
+  --color-warm-gray-700: #45423f;
+  --color-warm-dark: #31302e;
+
+  /* -------- Color: Semantic Accents -------- */
+  --color-teal: #2a9d99;                     /* success */
+  --color-green: #1aae39;                    /* confirmation */
+  --color-orange: #dd5b00;                   /* warning */
+  --color-pink: #ff64c8;                     /* decorative */
+  --color-purple: #391c57;                   /* premium */
+  --color-brown: #523410;                    /* earthy */
+
+  /* -------- Color: Badge / Tinted -------- */
+  --color-badge-blue-bg: #f2f9ff;
+  --color-badge-blue-text: #097fe8;
+
+  /* -------- Color: Roles -------- */
+  --fg-1: rgba(0, 0, 0, 0.95);               /* primary text */
+  --fg-2: #615d59;                           /* secondary text */
+  --fg-3: #a39e98;                           /* muted text */
+  --fg-inverse: #ffffff;
+  --bg-1: #ffffff;                           /* primary surface */
+  --bg-2: #f6f5f4;                           /* alt surface */
+  --bg-3: #eceae8;                           /* subtle fill */
+  --bg-inverse: #31302e;
+
+  /* -------- Borders -------- */
+  --border-whisper: 1px solid rgba(0, 0, 0, 0.1);
+  --border-input: 1px solid #dddddd;
+  --border-color: rgba(0, 0, 0, 0.1);
+
+  /* -------- Shadows (multi-layer, barely-there) -------- */
+  --shadow-card:
+    rgba(0, 0, 0, 0.04) 0px 4px 18px,
+    rgba(0, 0, 0, 0.027) 0px 2.025px 7.84688px,
+    rgba(0, 0, 0, 0.02) 0px 0.8px 2.925px,
+    rgba(0, 0, 0, 0.01) 0px 0.175px 1.04062px;
+
+  --shadow-deep:
+    rgba(0, 0, 0, 0.01) 0px 1px 3px,
+    rgba(0, 0, 0, 0.02) 0px 3px 7px,
+    rgba(0, 0, 0, 0.02) 0px 7px 15px,
+    rgba(0, 0, 0, 0.04) 0px 14px 28px,
+    rgba(0, 0, 0, 0.05) 0px 23px 52px;
+
+  --shadow-focus: 0 0 0 2px var(--color-focus), 0 2px 8px rgba(9, 127, 232, 0.18);
+
+  /* -------- Radii -------- */
+  --radius-micro: 4px;        /* buttons, inputs */
+  --radius-subtle: 5px;       /* list items, menu items */
+  --radius-standard: 8px;     /* small cards */
+  --radius-comfortable: 12px; /* cards, image tops */
+  --radius-large: 16px;       /* hero / featured */
+  --radius-pill: 9999px;      /* badges */
+  --radius-circle: 100%;
+
+  /* -------- Spacing (organic 8px-base) -------- */
+  --space-0: 0;
+  --space-1: 2px;
+  --space-2: 4px;
+  --space-3: 6px;
+  --space-4: 8px;
+  --space-5: 12px;
+  --space-6: 16px;
+  --space-7: 24px;
+  --space-8: 32px;
+  --space-9: 48px;
+  --space-10: 64px;
+  --space-11: 80px;
+  --space-12: 120px;
+
+  /* -------- Type: Family -------- */
+  --font-sans: "NotionInter", "Inter", -apple-system, system-ui,
+    "Segoe UI", Helvetica, "Apple Color Emoji", Arial,
+    "Segoe UI Emoji", "Segoe UI Symbol";
+  --font-feature: "lnum", "locl";
+
+  /* -------- Type: Scale (px) -------- */
+  --fs-display-hero: 64px;
+  --fs-display-2: 54px;
+  --fs-section: 48px;
+  --fs-subhead-lg: 40px;
+  --fs-subhead: 26px;
+  --fs-card-title: 22px;
+  --fs-body-lg: 20px;
+  --fs-body: 16px;
+  --fs-ui: 15px;
+  --fs-caption: 14px;
+  --fs-badge: 12px;
+
+  /* -------- Type: Weight -------- */
+  --fw-read: 400;
+  --fw-interact: 500;
+  --fw-emphasize: 600;
+  --fw-announce: 700;
+
+  /* -------- Layout -------- */
+  --content-max: 1200px;
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+
+html, body {
+  background: var(--bg-1);
+  color: var(--fg-1);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-read);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* ============================================================
+   Semantic Type
+   ============================================================ */
+
+.t-display-hero, h1.hero {
+  font-family: var(--font-sans);
+  font-size: var(--fs-display-hero);
+  font-weight: var(--fw-announce);
+  line-height: 1.0;
+  letter-spacing: -2.125px;
+  font-feature-settings: var(--font-feature);
+  color: var(--fg-1);
+  margin: 0;
+}
+
+.t-display-2 {
+  font-size: var(--fs-display-2);
+  font-weight: var(--fw-announce);
+  line-height: 1.04;
+  letter-spacing: -1.875px;
+  font-feature-settings: var(--font-feature);
+  margin: 0;
+}
+
+.t-section, h2 {
+  font-family: var(--font-sans);
+  font-size: var(--fs-section);
+  font-weight: var(--fw-announce);
+  line-height: 1.0;
+  letter-spacing: -1.5px;
+  font-feature-settings: var(--font-feature);
+  color: var(--fg-1);
+  margin: 0;
+}
+
+.t-subhead-lg, h3 {
+  font-size: var(--fs-subhead-lg);
+  font-weight: var(--fw-announce);
+  line-height: 1.5;
+  color: var(--fg-1);
+  margin: 0;
+}
+
+.t-subhead, h4 {
+  font-size: var(--fs-subhead);
+  font-weight: var(--fw-announce);
+  line-height: 1.23;
+  letter-spacing: -0.625px;
+  color: var(--fg-1);
+  margin: 0;
+}
+
+.t-card-title, h5 {
+  font-size: var(--fs-card-title);
+  font-weight: var(--fw-announce);
+  line-height: 1.27;
+  letter-spacing: -0.25px;
+  color: var(--fg-1);
+  margin: 0;
+}
+
+.t-body-lg {
+  font-size: var(--fs-body-lg);
+  font-weight: var(--fw-emphasize);
+  line-height: 1.4;
+  letter-spacing: -0.125px;
+  color: var(--fg-1);
+}
+
+.t-body, p {
+  font-size: var(--fs-body);
+  font-weight: var(--fw-read);
+  line-height: 1.5;
+  color: var(--fg-1);
+  margin: 0;
+}
+
+.t-body-medium  { font-size: var(--fs-body); font-weight: var(--fw-interact); line-height: 1.5; }
+.t-body-semibold{ font-size: var(--fs-body); font-weight: var(--fw-emphasize); line-height: 1.5; }
+.t-body-bold    { font-size: var(--fs-body); font-weight: var(--fw-announce);  line-height: 1.5; }
+
+.t-ui, .t-nav {
+  font-size: var(--fs-ui);
+  font-weight: var(--fw-emphasize);
+  line-height: 1.33;
+}
+
+.t-caption {
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-interact);
+  line-height: 1.43;
+  color: var(--fg-2);
+}
+
+.t-caption-light {
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-read);
+  line-height: 1.43;
+  color: var(--fg-2);
+}
+
+.t-badge {
+  font-size: var(--fs-badge);
+  font-weight: var(--fw-emphasize);
+  line-height: 1.33;
+  letter-spacing: 0.125px;
+}
+
+.t-micro {
+  font-size: var(--fs-badge);
+  font-weight: var(--fw-read);
+  line-height: 1.33;
+  letter-spacing: 0.125px;
+  color: var(--fg-3);
+}
+
+/* -------- Links -------- */
+a {
+  color: var(--color-link);
+  text-decoration: none;
+}
+a:hover { text-decoration: underline; }
+
+/* -------- Focus -------- */
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  box-shadow: 0 2px 8px rgba(9, 127, 232, 0.15);
+}
