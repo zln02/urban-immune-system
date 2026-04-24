@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..config import settings
 from ..database import get_db
-from ..services.alert_service import get_latest_alert, get_latest_risk_score, save_alert_report
+from ..services.alert_service import get_latest_alert, get_latest_risk_score
 from ..tasks import generate_report_task
 
 router = APIRouter(prefix="/api/v1/alerts", tags=["alerts"])
