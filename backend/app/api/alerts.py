@@ -145,18 +145,35 @@ async def _sse_generator(region: str, signals: dict) -> AsyncIterator[str]:
         yield "data: [DONE]\n\n"
 
 
+# RAG 벡터DB 싱글톤 — 모듈 첫 로드 시 한 번만 초기화 (SentenceTransformer 100MB 모델 캐싱)
+_VDB = None
+
+
+def _get_vdb():
+    global _VDB
+    if _VDB is None:
+        try:
+            from ml.rag.vectordb import EpidemiologyVectorDB
+            _VDB = EpidemiologyVectorDB()
+        except Exception as exc:
+            logger.warning("RAG 벡터DB 초기화 실패 (이후 호출도 빈 컨텍스트 반환): %s", exc)
+            _VDB = False  # 명시적 실패 sentinel — 매번 재시도 방지
+    return _VDB if _VDB is not False else None
+
+
 def _retrieve_rag_context(region: str, signals: dict) -> tuple[str, list[dict]]:
     """현재 신호 상황에 맞는 역학 가이드 top-3을 Qdrant에서 검색.
 
     실패 시 (Qdrant·임베딩 모델 미가동, 컬렉션 비어있음) 빈 컨텍스트 반환 — 호출 측 안전.
     """
+    vdb = _get_vdb()
+    if vdb is None:
+        return "", []
     query = (
         f"{region} 인플루엔자 조기경보 경보레벨={signals.get('alert_level','GREEN')} "
         f"L1={signals.get('l1')} L2={signals.get('l2')} L3={signals.get('l3')}"
     )
     try:
-        from ml.rag.vectordb import EpidemiologyVectorDB
-        vdb = EpidemiologyVectorDB()
         hits = vdb.search(query, top_k=3) or []
     except Exception as exc:
         logger.warning("RAG 검색 스킵: %s", exc)
