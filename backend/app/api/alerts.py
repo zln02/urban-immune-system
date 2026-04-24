@@ -45,16 +45,22 @@ async def get_current_alert(
     region: str = Query("서울특별시", min_length=2, max_length=100),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    """현재 경보 레벨: 최신 3계층 신호 앙상블 + DB 리포트 조회."""
-    # 계층별 최신 신호 조회
+    """현재 경보 레벨: 최근 4주 평균 3계층 신호 앙상블 + DB 리포트 조회.
+
+    단일 시점 noise(수집 실패·spike)에 흔들리지 않도록 최근 28일 평균을 사용한다.
+    value=0 행은 수집 실패로 간주해 평균에서 제외.
+    """
     query = text("""
-        SELECT DISTINCT ON (layer) layer, value, time
+        SELECT layer, AVG(value) AS value
         FROM layer_signals
-        WHERE region = :region AND layer IN ('otc', 'wastewater', 'search')
-        ORDER BY layer, time DESC
+        WHERE region = :region
+          AND layer IN ('otc', 'wastewater', 'search')
+          AND time >= NOW() - INTERVAL '28 days'
+          AND value > 0
+        GROUP BY layer
     """)
     result = await db.execute(query, {"region": region})
-    rows = {r["layer"]: r["value"] for r in result.mappings().all()}
+    rows = {r["layer"]: float(r["value"]) for r in result.mappings().all()}
 
     l1 = rows.get("otc", 0.0)
     l2 = rows.get("wastewater", 0.0)

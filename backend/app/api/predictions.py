@@ -19,15 +19,21 @@ async def get_forecast(
     region: str = Query("서울특별시", min_length=2, max_length=100),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    """ML 모델 기반 위험도 예측 (ML 서비스 미연결 시 가중평균 fallback)."""
+    """ML 모델 기반 위험도 예측 (ML 서비스 미연결 시 가중평균 fallback).
+
+    최근 28일 평균(value > 0)으로 단일 시점 noise를 흡수.
+    """
     query = text("""
-        SELECT DISTINCT ON (layer) layer, value
+        SELECT layer, AVG(value) AS value
         FROM layer_signals
-        WHERE region = :region AND layer IN ('otc', 'wastewater', 'search')
-        ORDER BY layer, time DESC
+        WHERE region = :region
+          AND layer IN ('otc', 'wastewater', 'search', 'aux')
+          AND time >= NOW() - INTERVAL '28 days'
+          AND value > 0
+        GROUP BY layer
     """)
     result = await db.execute(query, {"region": region})
-    signals = {r["layer"]: r["value"] for r in result.mappings().all()}
+    signals = {r["layer"]: float(r["value"]) for r in result.mappings().all()}
 
     if not signals:
         return {
@@ -36,19 +42,17 @@ async def get_forecast(
             "message": "DB에 신호 데이터가 없습니다. 수집기를 먼저 실행하세요.",
         }
 
+    l1 = signals.get("otc", 0.0)
+    l2 = signals.get("wastewater", 0.0)
+    l3 = signals.get("search", 0.0)
+    aux = signals.get("aux", 15.0)
+
     try:
         return await get_risk_prediction(
-            l1=signals.get("L1", 50.0),
-            l2=signals.get("L2", 50.0),
-            l3=signals.get("L3", 50.0),
-            temperature=signals.get("AUX", 15.0),
-            region=region,
+            l1=l1, l2=l2, l3=l3, temperature=aux, region=region,
         )
     except Exception as exc:
         logger.warning("ML 서비스 미연결, fallback 사용: %s", exc)
-        l1 = signals.get("L1", 0.0)
-        l2 = signals.get("L2", 0.0)
-        l3 = signals.get("L3", 0.0)
         score = round(0.35 * l1 + 0.40 * l2 + 0.25 * l3, 2)
         level = "GREEN" if score < 30 else "YELLOW" if score < 55 else "RED"
         return {
@@ -56,5 +60,8 @@ async def get_forecast(
             "status": "fallback",
             "composite_score": score,
             "alert_level": level,
+            "l1_score": l1,
+            "l2_score": l2,
+            "l3_score": l3,
             "message": "ML 서비스 미연결 — 가중평균 fallback",
         }
