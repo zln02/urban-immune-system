@@ -121,9 +121,7 @@ frontend/out/
 
 # PDF / 발표 자료 (Google Drive 별도 보관)
 *.pdf
-docs/slides/*
-!docs/slides/midterm-deck/
-!docs/slides/claude_design_prompt_midterm.md
+docs/slides/
 docs/weekly-reports/
 
 # 회의자료 대용량 파일
