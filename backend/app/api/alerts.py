@@ -4,7 +4,6 @@ from __future__ import annotations
 import json
 import logging
 from collections.abc import AsyncIterator
-from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
@@ -13,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..config import settings
 from ..database import get_db
-from ..services.alert_service import get_latest_alert, get_latest_risk_score, save_alert_report
+from ..services.alert_service import get_latest_alert, get_latest_risk_score
 from ..tasks import generate_report_task
 
 router = APIRouter(prefix="/api/v1/alerts", tags=["alerts"])
@@ -98,15 +97,15 @@ async def list_region_alerts(
 
     Frontend AlertTable 1회 호출로 전국 현황 표시 (region별 17번 호출 회피).
     """
-    query = text(f"""
+    query = text("""
         SELECT region, layer, AVG(value) AS value, MAX(time) AS latest
         FROM layer_signals
         WHERE layer IN ('otc', 'wastewater', 'search')
-          AND time >= NOW() - INTERVAL '{int(days)} days'
+          AND time >= NOW() - make_interval(days => :days)
           AND value > 0
         GROUP BY region, layer
     """)
-    result = await db.execute(query)
+    result = await db.execute(query, {"days": days})
     pivot: dict[str, dict] = {}
     for r in result.mappings().all():
         rg = r["region"]

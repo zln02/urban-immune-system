@@ -5,17 +5,17 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    # 운영 환경에서는 .env 또는 환경변수 DATABASE_URL로 덮어씌움
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=False, extra="ignore")
+
     database_url: str = "postgresql+asyncpg://uis_user:changeme_local@localhost:5432/urban_immune"
     kafka_bootstrap: str = "localhost:9092"
     qdrant_url: str = "http://localhost:6333"
     ml_service_url: str = "http://ml:8001"
+    openai_api_key: str = ""
     anthropic_api_key: str = ""
     llm_model: str = "claude-sonnet-4-6"
     environment: str = "development"
     allowed_origins: list[str] = ["http://localhost:3000", "http://localhost:8501"]
-
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=False, extra="ignore")
 
     @field_validator("allowed_origins", mode="before")
     @classmethod
