@@ -7,7 +7,7 @@ CREATE EXTENSION IF NOT EXISTS timescaledb;
 CREATE TABLE IF NOT EXISTS layer_signals (
     id         BIGSERIAL,
     time       TIMESTAMPTZ    NOT NULL,
-    layer      VARCHAR(10)    NOT NULL,   -- 'L1' | 'L2' | 'L3' | 'AUX'
+    layer      VARCHAR(10)    NOT NULL,   -- 'otc' | 'wastewater' | 'search' | 'weather'
     region     VARCHAR(50)    NOT NULL,
     value      DOUBLE PRECISION NOT NULL, -- Min-Max 정규화 (0~100)
     raw_value  DOUBLE PRECISION,
@@ -47,6 +47,22 @@ CREATE TABLE IF NOT EXISTS alert_reports (
 );
 
 CREATE INDEX IF NOT EXISTS ix_alert_reports_time ON alert_reports (time DESC);
+
+-- KCDC 감염병 확진 통계 (확진자 수 ground truth)
+CREATE TABLE IF NOT EXISTS confirmed_cases (
+    id          BIGSERIAL,
+    time        TIMESTAMPTZ NOT NULL,
+    region      VARCHAR(40) NOT NULL,
+    disease     VARCHAR(40) NOT NULL,
+    case_count  INTEGER     NOT NULL,
+    per_100k    DOUBLE PRECISION,
+    source      VARCHAR(40) DEFAULT 'KCDC',
+    PRIMARY KEY (id, time)
+);
+
+SELECT create_hypertable('confirmed_cases', 'time', if_not_exists => TRUE);
+CREATE INDEX IF NOT EXISTS idx_cc_region_time ON confirmed_cases (region, time DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS uix_cc_time_region_disease ON confirmed_cases (time, region, disease);
 
 -- 연속 집계 (TimescaleDB 자동 롤업) — 주간 평균
 CREATE MATERIALIZED VIEW IF NOT EXISTS layer_signals_weekly

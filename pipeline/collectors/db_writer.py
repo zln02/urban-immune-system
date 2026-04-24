@@ -26,6 +26,12 @@ async def _get_pool() -> asyncpg.Pool:
     global _pool
     if _pool is None:
         db_url = os.getenv("DATABASE_URL", _DEFAULT_DB_URL)
+        # asyncpg는 'postgresql://' 또는 'postgres://' 만 지원
+        # SQLAlchemy용 'postgresql+asyncpg://' scheme을 변환
+        if db_url.startswith("postgresql+asyncpg://"):
+            db_url = db_url.replace("postgresql+asyncpg://", "postgresql://", 1)
+        elif db_url.startswith("postgres+asyncpg://"):
+            db_url = db_url.replace("postgres+asyncpg://", "postgresql://", 1)
         if "changeme" in db_url:
             warnings.warn(
                 "DATABASE_URL에 플레이스홀더 자격증명(changeme)이 포함되어 있습니다. "
@@ -58,7 +64,7 @@ async def insert_signal(
 
     Args:
         region: 지역명 (예: '서울특별시')
-        layer: 계층 코드 ('L1' | 'L2' | 'L3' | 'AUX')
+        layer: 계층 코드 ('otc' | 'wastewater' | 'search' | 'weather')
         value: 정규화 지수 (0-100)
         raw_value: 원시 측정값 (선택)
         source: 데이터 출처 식별자 (선택)
@@ -100,7 +106,7 @@ def insert_signal_sync(
 
     Args:
         region: 지역명
-        layer: 계층 코드
+        layer: 계층 코드 ('otc' | 'wastewater' | 'search' | 'weather')
         value: 정규화 지수 (0-100)
         raw_value: 원시 측정값 (선택)
         source: 데이터 출처 식별자 (선택)

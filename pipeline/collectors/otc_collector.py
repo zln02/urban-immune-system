@@ -39,8 +39,8 @@ def collect_otc_weekly(end_date: datetime | None = None) -> float | None:
         "endDate": end.strftime("%Y-%m-%d"),
         "timeUnit": "week",
         "category": [
-            # TODO: 네이버 쇼핑인사이트 실제 카테고리 ID로 교체
-            {"name": "OTC감기", "param": ["50000008"]},
+            # 일반의약품 감기약 카테고리 (네이버 쇼핑인사이트)
+            {"name": "OTC감기", "param": ["50000167"]},
         ],
         "device": "",
         "ages": [],
@@ -66,11 +66,14 @@ def collect_otc_weekly(end_date: datetime | None = None) -> float | None:
             return None
 
         raw_values = [p["ratio"] for p in results[0].get("data", [])]
-        normalized = min_max_normalize(raw_values)
-        latest = normalized[-1] if normalized else None
+        # 네이버 쇼핑인사이트 ratio는 이미 0-100 지수(max=100 기준)
+        # 구간 내 min-max 재정규화 시 최신 주가 최솟값이면 0으로 왜곡되므로
+        # ratio를 그대로 정규화 지수로 사용한다.
+        latest_raw = raw_values[-1] if raw_values else None
+        latest = round(latest_raw, 2) if latest_raw is not None else None
 
         if latest is not None:
-            insert_signal_sync(TARGET_REGION, "L1", latest, raw_value=raw_values[-1], source="naver_shopping_insight")
+            insert_signal_sync(TARGET_REGION, "otc", latest, raw_value=latest_raw, source="naver_shopping_insight")
             logger.info("Layer 1 (OTC) 수집 완료: %.2f", latest)
         return latest
 

@@ -67,7 +67,7 @@ def collect_search_weekly(end_date: datetime | None = None) -> float | None:
         latest = normalized[-1] if normalized else None
 
         if latest is not None:
-            insert_signal_sync(TARGET_REGION, "L3", latest, raw_value=raw_values[-1], source="naver_datalab")
+            insert_signal_sync(TARGET_REGION, "search", latest, raw_value=raw_values[-1], source="naver_datalab")
             logger.info("Layer 3 (검색어) 수집 완료: %.2f", latest)
         return latest
 
