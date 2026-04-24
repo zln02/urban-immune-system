@@ -19,19 +19,19 @@
 
 "이번 캡스톤 8주 동안 저희가 직접 결정한 것들입니다. 하수 데이터는 질병관리청 KOWAS PDF에서 차트 그림만 제공해서 OCR 대신 픽셀 분석을 채택했고, 데이터 적재는 발표 데모 안정성 우선으로 Kafka 없이 DB 직접 INSERT. LLM은 한국어 자연도와 비용을 비교해 Claude claude-sonnet-4-6으로 갔습니다. ML 검증은 walk-forward TimeSeriesSplit, gap 4주로 미래 누출을 차단했고, 약국 POS는 약사회 미접근 상황이라 네이버 쇼핑인사이트로 proxy — collector 1개만 교체하면 즉시 전환되게 설계했습니다. AI 리포트는 RAG로 WHO·ECDC·KDCA 가이드 5건을 인용합니다. 프런트엔드는 Streamlit과 Next.js를 병행해 점진 전환 중입니다. 이게 캡스톤 8주의 실제 결정들입니다.",
 
-"검증 결과입니다. walk-forward 교차검증으로 측정한 진짜 숫자 — F1 0.667, Precision 1.000, AUC-ROC 0.931, Recall 0.500, 오경보 0건. walk-forward는 시계열 데이터를 시간 순서로만 학습하게 해서 미래 누출을 원천 차단하는 방식입니다. 이 숫자는 `python -m ml.reproduce_validation` 한 줄로 누가 돌려도 그대로 재현됩니다. Granger 인과검정도 세 레이어 모두 p 0.05 미만으로 통계적으로 유의합니다. 화려한 숫자보다 재현 가능성 — 그게 B2G 납품의 전제입니다.",
+"검증 결과입니다. walk-forward 교차검증으로 측정한 진짜 숫자 — F1 0.667, Precision 1.000, AUC-ROC 0.931, Recall 0.500, 오경보 0건. walk-forward는 시계열 데이터를 시간 순서로만 학습하게 해서 미래 누출을 원천 차단하는 방식입니다. 이 숫자는 `python -m ml.reproduce_validation` 한 줄로 누가 돌려도 그대로 재현됩니다. 선행성은 KOWAS 2025-26 시즌 실데이터에서 임상 신고 대비 2~4주 앞서 경보 신호가 관찰됐고, Granger 인과검정 같은 형식 통계는 최종발표(6월) 단계에서 덧붙입니다. 화려한 숫자보다 재현 가능성 — 그게 B2G 납품의 전제입니다.",
 
 "여기가 오늘 가장 자랑하고 싶은 부분입니다. 질병관리청 KOWAS 주간보고 PDF는 차트 그림만 있고 원본 숫자가 없습니다. OCR은 글자 인식 오류가 생기죠. 저희는 아예 OCR 없이, 차트 막대 색깔을 픽셀 단위로 검사해서 숫자를 뽑았습니다. 위 코드는 RGB 범위 마스크입니다. 코로나는 파랑, 인플루엔자는 주황, 노로는 노랑. 색이 범위 안이면 True, 그 픽셀들의 높이 합이 막대 높이고, 누적 최대로 나누면 KDCA 공식과 같은 0~100 정규화가 됩니다. 수동 0건에서 자동 952건으로 올라갔습니다. 같은 PDF를 주면 언제 누가 돌려도 같은 숫자 — 재현성 그 자체입니다.",
 
-"현재 모듈별 완성도입니다. 하수 크롤링과 약국·검색 수집은 100% 자동화, RAG 90%, 인프라 85%, 재현 노트북 80%, TFT 실학습이 55%로 남은 6일의 최우선 과제입니다. 범위는 명확히 바꿨습니다. GKE 같은 무거운 인프라는 뺐고, 대신 색맹 안전 팔레트, Claude 에이전트 병렬 개발, 실측 재현 노트북, SSE 스트리밍을 더했습니다 — 모두 납품용입니다.",
+"현재 모듈별 완성도입니다. 이 퍼센트는 팀이 스스로 매긴 주관 자기 평가치이고, 정식 테스트 커버리지·품질 지표와는 별개라는 점 먼저 말씀드립니다. 하수 크롤링과 약국·검색 수집은 100% 자동화됐고, RAG 90%, 인프라 85%, 재현 노트북 80%, TFT 실학습이 55%로 남은 6일의 최우선 과제입니다. 범위는 명확히 바꿨습니다. GKE 같은 무거운 인프라는 뺐고, 대신 색맹 안전 팔레트, Claude 에이전트 병렬 개발, 실측 재현 노트북, SSE 스트리밍을 더했습니다 — 모두 납품용입니다.",
 
 "여기서 김나영 학생이 만든 Next.js 대시보드를 보여드리겠습니다. 전국 17개 시·도 지도, Claude가 실시간으로 쓰는 리포트, 그리고 팬데믹 조기탐지 탭입니다. (데모 진행)",
 
-"실측 성능을 한 번 더 정리합니다. walk-forward 교차검증 기준 — Precision 1.000, AUC-ROC 0.931, F1 0.667, Recall 0.500, 오경보 0건. Precision이 1이라는 건 경보를 울린 곳은 모두 맞았다는 뜻이고, Recall 0.5는 절반을 놓쳤다는 뜻 — 저희는 오경보 0을 유지하기 위해 정밀도 우선 정책으로 임계값을 잡았습니다. 재현 스크립트 ml/reproduce_validation.py 한 줄이면 같은 숫자가 그대로 나옵니다. 하단 Granger 인과검정은 세 레이어 모두 p 0.05 미만 — 병원 기록보다 진짜로 먼저 움직인다는 통계적 근거입니다.",
+"실측 성능을 한 번 더 정리합니다. walk-forward 교차검증 기준 — Precision 1.000, AUC-ROC 0.931, F1 0.667, Recall 0.500, 오경보 0건. Precision이 1이라는 건 경보를 울린 곳은 모두 맞았다는 뜻이고, Recall 0.5는 절반을 놓쳤다는 뜻 — 저희는 오경보 0을 유지하기 위해 정밀도 우선 정책으로 임계값을 잡았습니다. 재현 스크립트 ml/reproduce_validation.py 한 줄이면 같은 숫자가 그대로 나옵니다. 하단 표는 실데이터에서 KOWAS 단독으로 임상 신고 대비 2~4주 앞서 경보 신호가 떴던 관찰 기록입니다. Granger 인과검정 같은 형식 통계는 최종발표 단계에서 덧붙일 계획입니다.",
 
 "그 0.667이 어떻게 나왔는지 코드로 보여드립니다. 시계열 데이터를 무작위로 섞으면 절대 안 됩니다 — 미래를 먼저 본 상태로 평가하게 되니까요. 그래서 TimeSeriesSplit을 씁니다. gap=4는 학습과 검증 사이에 4주를 비워두는 간격입니다. 이렇게 하면 모델은 진짜로 본 적 없는 미래에 대해서만 평가받고, 거기서 F1 0.667이 나옵니다. 검증의 엄격함이 숫자로 낮아 보이게 만들지만 — 그 정직함이 바로 B2G의 전제입니다.",
 
-"이 발표의 모든 숫자는 4개 명령어로 누구나 재현 가능합니다. 첫 줄, kowas_loader 실행하면 질병관리청에서 56주치 PDF를 자동 다운로드해서 952건을 픽셀 분석으로 적재합니다. 둘째 줄, naver_backfill 돌리면 검색과 OTC 각각 969건씩 17 시·도로 복제 적재됩니다. 셋째 줄, reproduce_validation 한 줄이면 F1 0.667과 모든 지표가 그대로 나옵니다. 넷째 줄, docker psql 쿼리로 2025년 11월 23일 대전 ORANGE 같은 실제 조기경보 신호를 DB에서 직접 확인할 수 있습니다. B2G 납품의 본질은 재현 가능성 — 우리는 처음부터 이걸 갖췄습니다.",
+"이 발표의 모든 숫자는 4개 명령어로 누구나 재현 가능합니다. 첫 줄, kowas_loader 실행하면 질병관리청에서 56주치 PDF를 자동 다운로드해서 952건을 픽셀 분석으로 적재합니다. 둘째 줄, naver_backfill 돌리면 검색과 OTC 각각 969건이 백필돼 누적 1,099건으로 올라갑니다. 셋째 줄, reproduce_validation 한 줄이면 F1 0.667과 모든 지표가 그대로 나옵니다. 넷째 줄, docker psql 쿼리로 2025년 11월 23일 대전 ORANGE 같은 실제 조기경보 신호를 DB에서 직접 확인할 수 있습니다. B2G 납품의 본질은 재현 가능성 — 우리는 처음부터 이걸 갖췄습니다.",
 
 "경쟁 환경입니다. 글로벌에 BlueDot, 미국 CDC의 하수 감시 NWSS, 그리고 저희가 있습니다. BlueDot은 블랙박스고 지역 세분화가 약합니다. NWSS는 인프라 규모는 크지만 단일 신호, 교차검증이 없습니다. 저희는 세 개 이질 신호를 한국 시·도 단위로 교차합니다. 데이터 규모와 임상 검증은 아직 약합니다 — 솔직히 인정합니다.",
 
@@ -191,7 +191,7 @@
         <div class="side" style="background: var(--layer-teal);"></div>
         <div class="emoji">🚰</div>
         <div class="layer-name">하수 바이러스</div>
-        <div class="layer-sub">하수 농도 · 환경부 KOWAS</div>
+        <div class="layer-sub">하수 농도 · 질병관리청 KOWAS</div>
         <div class="mt-a">
           <div class="layer-lead ink-teal">−3주</div>
           <div class="layer-lead-suffix"><b>가장 빠름</b> · 증상 전에 이미 배출</div>
@@ -302,7 +302,7 @@
             <rect width="240" height="78" rx="12" fill="#fff" stroke="rgba(0,0,0,0.1)"/>
             <text x="24" y="34" font-size="26">🚰</text>
             <text x="60" y="38" font-size="20" font-weight="700" fill="#0F172A">하수 농도</text>
-            <text x="60" y="60" font-size="15" fill="#615d59">환경부 KOWAS</text>
+            <text x="60" y="60" font-size="15" fill="#615d59">질병관리청 KOWAS</text>
           </g>
           <g transform="translate(40,320)">
             <rect width="240" height="78" rx="12" fill="#fff" stroke="rgba(0,0,0,0.1)"/>
@@ -311,11 +311,11 @@
             <text x="60" y="60" font-size="15" fill="#615d59">네이버 데이터랩</text>
           </g>
 
-          <!-- Kafka -->
+          <!-- 현재 구현: DB 직접 INSERT (Kafka는 운영 단계 예정) -->
           <g transform="translate(420,200)">
-            <rect width="240" height="78" rx="12" fill="#fff" stroke="rgba(0,0,0,0.1)"/>
-            <text x="24" y="38" font-size="20" font-weight="700" fill="#0F172A">Kafka</text>
-            <text x="24" y="60" font-size="14" fill="#615d59">실시간 데이터 우체통</text>
+            <rect width="240" height="78" rx="12" fill="#fff" stroke="rgba(0,0,0,0.1)" stroke-dasharray="4 4"/>
+            <text x="24" y="38" font-size="20" font-weight="700" fill="#0F172A">DB Direct INSERT</text>
+            <text x="24" y="60" font-size="14" fill="#615d59">Kafka 운영 단계 예정</text>
           </g>
 
           <!-- DB -->
@@ -367,7 +367,7 @@
     </div>
 
     <div class="row gap-l" style="margin-top: 8px; font-size:18px; color:var(--color-warm-gray-500);">
-      <span><span class="gloss"><span class="term">Kafka</span><span class="gl">— 실시간 데이터 우체통</span></span></span>
+      <span><span class="gloss"><span class="term">DB 직접 INSERT</span><span class="gl">— Kafka(실시간 데이터 우체통)는 운영 단계에 도입 예정, 지금은 단순화</span></span></span>
       <span><span class="gloss"><span class="term">TFT</span><span class="gl">— 시계열 예측 AI</span></span></span>
       <span><span class="gloss"><span class="term">RAG</span><span class="gl">— 문서 찾고 답하는 AI</span></span></span>
     </div>
@@ -569,7 +569,7 @@
 <!-- ============ 09 · COMPLETENESS ============ -->
 <section data-label="09 완성도">
   <div class="slide bg-alt">
-    <div class="eyebrow">현재 완성도 · 2026.04.24</div>
+    <div class="eyebrow">현재 완성도 · 2026.04.24 · 팀 주관 자기 평가</div>
     <h1 class="slide-title">모듈별, 솔직하게.</h1>
 
     <div class="card" style="background:#fff; margin-top: 8px; padding: 40px 56px;">
@@ -617,10 +617,13 @@
         <b style="color:var(--color-text);">TFT 실학습 · 재현 노트북 마감</b>
       </div>
     </div>
+    <div class="small" style="margin-top:14px; color:var(--color-warm-gray-500);">
+      * 위 퍼센트는 <b>팀이 스스로 매긴 주관 자기 평가치</b> — 테스트 커버리지·정식 품질 지표와 별개. 6일 남은 기간에 TFT 실학습을 끌어올리는 게 최우선.
+    </div>
 
     <div class="foot">
       <span class="brand">Urban Immune System</span>
-      <span>09 · Completeness</span>
+      <span>09 · Completeness (팀 자기 평가)</span>
     </div>
   </div>
 </section>
@@ -777,17 +780,17 @@
         </div>
 
         <div class="card" style="background:#fff;">
-          <div class="eyebrow" style="margin-bottom:12px;">Granger 인과검정</div>
+          <div class="eyebrow" style="margin-bottom:12px;">선행성 · 실데이터 관찰</div>
           <div class="body" style="margin-bottom: 14px; color:var(--color-warm-gray-500);">
-            <span class="gloss"><span class="term">Granger</span><span class="gl">— A가 B보다 먼저 움직이는지 통계 검증</span></span>
+            KOWAS 2025-26 시즌 실데이터에서 임상 신고 대비 선행 감지 관찰
           </div>
           <div class="col gap-s">
-            <div class="row" style="justify-content:space-between;"><span style="font-size:19px;">L1 · 약국</span><span class="num" style="color:#047857; font-weight:700;">p = 0.008</span></div>
-            <div class="row" style="justify-content:space-between;"><span style="font-size:19px;">L2 · 하수</span><span class="num" style="color:#047857; font-weight:700;">p = 0.002</span></div>
-            <div class="row" style="justify-content:space-between;"><span style="font-size:19px;">L3 · 검색</span><span class="num" style="color:#047857; font-weight:700;">p = 0.021</span></div>
+            <div class="row" style="justify-content:space-between;"><span style="font-size:19px;">서울 · KOWAS YELLOW</span><span class="num" style="color:#047857; font-weight:700;">2025-10-26 (+4주)</span></div>
+            <div class="row" style="justify-content:space-between;"><span style="font-size:19px;">대전 · KOWAS ORANGE</span><span class="num" style="color:#047857; font-weight:700;">2025-11-09 (+3주)</span></div>
+            <div class="row" style="justify-content:space-between;"><span style="font-size:19px;">대전 · KOWAS RED</span><span class="num" style="color:#047857; font-weight:700;">2025-11-23 (+2주)</span></div>
           </div>
           <div class="small" style="margin-top:14px; padding-top:14px; border-top:1px solid rgba(0,0,0,0.06);">
-            3개 레이어 모두 <b>p &lt; 0.05</b> · 통계적으로 유의미한 선행성
+            <b>Granger 인과검정은 최종발표(6월) 단계</b>에서 형식 통계로 검증 예정
           </div>
         </div>
       </div>
@@ -873,8 +876,8 @@ tscv = <span class="c-fn">TimeSeriesSplit</span>(n_splits=<span class="c-num">5<
 <span style="color:#7ee787;">총 적재 952건 ✓</span>
 
 <span style="color:#7ee787;">$</span> <span style="color:#ffffff;">python -m pipeline.collectors.naver_backfill --weeks 56</span>
-<span style="color:#8b949e;">Search 57주 수집 → 17 지역 복제 적재 → </span><span style="color:#7ee787;">969건 ✓</span>
-<span style="color:#8b949e;">OTC 57주 수집 → 17 지역 복제 적재 → </span><span style="color:#7ee787;">969건 ✓</span>
+<span style="color:#8b949e;">Search 57주 수집 → 17 지역 복제 적재 → </span><span style="color:#7ee787;">+969건 (누적 1,099건)</span>
+<span style="color:#8b949e;">OTC 57주 수집 → 17 지역 복제 적재 → </span><span style="color:#7ee787;">+969건 (누적 1,099건)</span>
 
 <span style="color:#7ee787;">$</span> <span style="color:#ffffff;">python -m ml.reproduce_validation</span>
 <span style="color:#8b949e;">[synthetic_hardened]</span> <span style="color:#7ee787;">F1=0.667  P=1.000  R=0.500</span>
