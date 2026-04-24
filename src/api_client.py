@@ -8,7 +8,7 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-API_BASE = os.getenv("UIS_API_URL", "http://localhost:8000")
+API_BASE = os.getenv("UIS_API_URL", "http://localhost:8001")
 
 
 def _get(endpoint: str, params: dict | None = None) -> dict | None:
