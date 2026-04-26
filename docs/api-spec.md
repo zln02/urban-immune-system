@@ -62,9 +62,6 @@ TFT 7/14/21일 위험도 예측.
 }
 ```
 
-### `GET /predictions/anomaly`
-Deep Autoencoder 이상탐지 결과.
-
 ---
 
 ## 경보 API (`/alerts`)

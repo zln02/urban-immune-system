@@ -145,3 +145,5 @@ def test_risk_score_row_instantiation() -> None:
     assert row.region == "서울특별시"
     assert row.composite_score == 42.5
     assert row.alert_level == "YELLOW"
+
+

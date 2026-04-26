@@ -14,23 +14,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/predictions", tags=["predictions"])
 
 
-@router.get("/anomaly")
-async def get_anomaly_scores(
-    region: str = Query("서울특별시", min_length=2, max_length=100),
-    days: int = Query(28, ge=1, le=365),
-) -> dict:
-    """이상탐지 스코어 조회 (Autoencoder 재구성 오차 기반).
-
-    Phase 3에서 ml/anomaly/autoencoder.py 와 연결 예정. 현재는 스텁.
-    """
-    return {
-        "region": region,
-        "days": days,
-        "anomaly_scores": [],
-        "status": "not_implemented",
-    }
-
-
 @router.get("/forecast")
 async def get_forecast(
     region: str = Query("서울특별시", min_length=2, max_length=100),
