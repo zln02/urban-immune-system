@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..config import settings
 from ..database import get_db
 from ..services.alert_service import get_latest_alert, get_latest_risk_score, save_alert_report
+from ..services.report_pdf import build_alert_pdf
 from ..tasks import generate_report_task
 
 router = APIRouter(prefix="/api/v1/alerts", tags=["alerts"])
@@ -443,3 +444,23 @@ async def explain_alert_report(
             "created_at": str(row.get("created_at")) if row.get("created_at") else None,
         },
     }
+
+
+@router.get("/report-pdf")
+async def export_alert_pdf(
+    region: str = Query("서울특별시", min_length=2, max_length=100),
+    db: AsyncSession = Depends(get_db),
+) -> StreamingResponse:
+    """4페이지 PDF 리포트 다운로드 — 표지 + 3계층 시계열 + 분석 + AI 본문."""
+    from urllib.parse import quote
+    pdf_bytes = await build_alert_pdf(region, db)
+    fname = f"UIS_alert_{region}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M')}.pdf"
+    return StreamingResponse(
+        iter([pdf_bytes]),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": (
+                f"attachment; filename=\"UIS_alert.pdf\"; filename*=UTF-8''{quote(fname)}"
+            ),
+        },
+    )
