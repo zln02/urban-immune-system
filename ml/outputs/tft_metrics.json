@@ -150,5 +150,48 @@
       6.766496181488037
     ]
   },
-  "attention_summary": null
+  "attention_summary": {
+    "encoder_attention_shape": [
+      5,
+      3,
+      2,
+      24
+    ],
+    "encoder_variable_importance_shape": [
+      5,
+      24,
+      1,
+      8
+    ],
+    "mean_attention_per_encoder_step": [
+      0.0416666679084301,
+      0.04163032025098801,
+      0.041587717831134796
+    ],
+    "mean_encoder_variable_importance": [
+      [
+        0.15218883752822876,
+        0.26860493421554565,
+        0.09187308698892593,
+        0.022541455924510956,
+        0.061541471630334854,
+        0.08648339658975601,
+        0.22394393384456635,
+        0.0928228348493576
+      ]
+    ],
+    "encoder_variable_names": [
+      "encoder_length",
+      "confirmed_future_center",
+      "confirmed_future_scale",
+      "time_idx",
+      "relative_time_idx",
+      "l1_otc",
+      "l2_wastewater",
+      "l3_search",
+      "temperature",
+      "humidity",
+      "confirmed_future"
+    ]
+  }
 }
