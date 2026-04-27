@@ -30,3 +30,21 @@ export const KOREA_REGIONS: Region[] = [
 export function regionName(code: RegionCode, lang: "ko" | "en"): string {
   return KOREA_REGIONS.find((r) => r.code === code)?.name[lang] ?? code;
 }
+
+const NAME_TO_CODE: Record<string, RegionCode> = KOREA_REGIONS.reduce(
+  (acc, r) => {
+    acc[r.name.ko] = r.code;
+    return acc;
+  },
+  {} as Record<string, RegionCode>,
+);
+
+const NAME_ALIASES: Record<string, RegionCode> = {
+  "전북특별자치도": "JB",
+  "강원도": "GW",
+  "제주도": "JJ",
+};
+
+export function regionCodeFromName(name: string): RegionCode | null {
+  return NAME_TO_CODE[name] ?? NAME_ALIASES[name] ?? null;
+}

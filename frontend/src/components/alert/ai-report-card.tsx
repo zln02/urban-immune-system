@@ -1,4 +1,5 @@
 "use client";
+import { useState, type ReactNode } from "react";
 import { I } from "@/components/ui/icons";
 import { useAlertStream } from "@/hooks/useAlertStream";
 import type { Translations, Lang } from "@/lib/i18n";
@@ -9,8 +10,147 @@ interface AIReportCardProps {
   region?: string;
 }
 
+// **bold** 인라인 처리
+function renderInline(s: string): ReactNode[] {
+  const parts = s.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((p, i) =>
+    p.startsWith("**") && p.endsWith("**") ? (
+      <strong key={i} style={{ color: "var(--text)", fontWeight: 700 }}>
+        {p.slice(2, -2)}
+      </strong>
+    ) : (
+      <span key={i}>{p}</span>
+    ),
+  );
+}
+
+// 마크다운 → React 노드 변환 (경량 — # / ## / ### / **bold** / - / 1. / --- 만 처리)
+function renderMarkdown(md: string): ReactNode[] {
+  const out: ReactNode[] = [];
+  const lines = md.split("\n");
+  let bulletBuffer: string[] = [];
+  const flushBullets = (key: number) => {
+    if (bulletBuffer.length === 0) return;
+    out.push(
+      <ul
+        key={`ul-${key}`}
+        style={{ margin: "4px 0 8px 0", paddingLeft: 18, lineHeight: 1.7 }}
+      >
+        {bulletBuffer.map((b, i) => (
+          <li key={i} style={{ marginBottom: 2 }}>
+            {renderInline(b)}
+          </li>
+        ))}
+      </ul>,
+    );
+    bulletBuffer = [];
+  };
+
+  lines.forEach((raw, idx) => {
+    const line = raw.trimEnd();
+    if (!line.trim()) {
+      flushBullets(idx);
+      out.push(<div key={`sp-${idx}`} style={{ height: 6 }} />);
+      return;
+    }
+    if (line.startsWith("---")) {
+      flushBullets(idx);
+      out.push(
+        <hr
+          key={`hr-${idx}`}
+          style={{
+            border: "none",
+            borderTop: "1px solid var(--border)",
+            margin: "8px 0",
+          }}
+        />,
+      );
+      return;
+    }
+    if (line.startsWith("### ")) {
+      flushBullets(idx);
+      out.push(
+        <div key={idx} style={{ fontSize: 12, fontWeight: 700, color: "var(--text)", marginTop: 8 }}>
+          {renderInline(line.slice(4))}
+        </div>,
+      );
+      return;
+    }
+    if (line.startsWith("## ")) {
+      flushBullets(idx);
+      out.push(
+        <div
+          key={idx}
+          style={{
+            fontSize: 13,
+            fontWeight: 700,
+            color: "var(--primary-70)",
+            marginTop: 10,
+            marginBottom: 4,
+          }}
+        >
+          {renderInline(line.slice(3))}
+        </div>,
+      );
+      return;
+    }
+    if (line.startsWith("# ")) {
+      flushBullets(idx);
+      out.push(
+        <div
+          key={idx}
+          style={{ fontSize: 14, fontWeight: 700, color: "var(--primary-70)", marginBottom: 4 }}
+        >
+          {renderInline(line.slice(2))}
+        </div>,
+      );
+      return;
+    }
+    if (/^[-*]\s+/.test(line)) {
+      bulletBuffer.push(line.replace(/^[-*]\s+/, ""));
+      return;
+    }
+    if (/^\d+\.\s+/.test(line)) {
+      flushBullets(idx);
+      out.push(
+        <div key={idx} style={{ paddingLeft: 14, textIndent: -14 }}>
+          {renderInline(line)}
+        </div>,
+      );
+      return;
+    }
+    flushBullets(idx);
+    out.push(<div key={idx}>{renderInline(line)}</div>);
+  });
+  flushBullets(9999);
+  return out;
+}
+
 export function AIReportCard({ t, lang, region = "전북특별자치도" }: AIReportCardProps) {
   const { text, citations, streaming, done, error, start, reset } = useAlertStream(region);
+  const [pdfDownloading, setPdfDownloading] = useState(false);
+
+  const downloadPdf = async () => {
+    if (pdfDownloading) return;
+    try {
+      setPdfDownloading(true);
+      const url = `/api/v1/alerts/report-pdf?region=${encodeURIComponent(region)}`;
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) throw new Error(`PDF ${res.status}`);
+      const blob = await res.blob();
+      const link = document.createElement("a");
+      const objUrl = URL.createObjectURL(blob);
+      link.href = objUrl;
+      link.download = `UIS_alert_${region}_${new Date().toISOString().slice(0, 10)}.pdf`;
+      link.click();
+      URL.revokeObjectURL(objUrl);
+    } catch (e) {
+      console.error(e);
+      alert(lang === "ko" ? "PDF 생성 실패 — 백엔드 로그 확인 필요" : "PDF generation failed");
+    } finally {
+      setPdfDownloading(false);
+    }
+  };
 
   return (
     <div
@@ -182,13 +322,12 @@ export function AIReportCard({ t, lang, region = "전북특별자치도" }: AIRe
           <div
             style={{
               fontSize: 12,
-              lineHeight: 1.7,
-              color: "var(--text)",
-              whiteSpace: "pre-wrap",
+              lineHeight: 1.6,
+              color: "var(--text-secondary)",
               fontFamily: "var(--font-sans)",
             }}
           >
-            {text}
+            {renderMarkdown(text)}
             {streaming && (
               <span
                 style={{
@@ -267,30 +406,32 @@ export function AIReportCard({ t, lang, region = "전북특별자치도" }: AIRe
             color: "var(--text-tertiary)",
             display: "flex",
             justifyContent: "space-between",
+            alignItems: "center",
           }}
         >
-          <span>{lang === "ko" ? "생성 완료" : "Generation complete"}</span>
+          <span>{lang === "ko" ? "생성 완료 · PDF로 내려받기" : "Generation complete"}</span>
           <button
             type="button"
+            onClick={downloadPdf}
+            disabled={pdfDownloading}
             style={{
               fontSize: 10,
-              background: "none",
+              fontWeight: 600,
+              padding: "4px 10px",
+              background: pdfDownloading ? "var(--border)" : "var(--primary-70)",
               border: "none",
-              color: "var(--primary-70)",
-              cursor: "pointer",
+              color: "#fff",
+              cursor: pdfDownloading ? "wait" : "pointer",
               fontFamily: "inherit",
-            }}
-            onClick={() => {
-              const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = `uis-alert-report-${region}.txt`;
-              a.click();
-              URL.revokeObjectURL(url);
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 5,
             }}
           >
-            <I.Download size={11} stroke="var(--primary-70)" /> {lang === "ko" ? "다운로드" : "Download"}
+            <I.Download size={11} stroke="#fff" />
+            {pdfDownloading
+              ? lang === "ko" ? "PDF 생성 중…" : "Generating…"
+              : lang === "ko" ? "PDF 다운로드" : "Download PDF"}
           </button>
         </div>
       )}
