@@ -1,82 +1,8 @@
 {
-  "generated_at": "2026-04-24T11:45:47.319631+00:00",
-  "git_branch": "feat/midterm-deck-design",
-  "git_commit": "5dae9fe",
+  "generated_at": "2026-04-27T08:48:03.726167+00:00",
+  "git_branch": "feat/dashboard-pdf-report",
+  "git_commit": "7284213",
   "stages": {
-    "synthetic": {
-      "data_source": "synthetic",
-      "task": "composite_score (가중평균 회귀)",
-      "data_seed": 42,
-      "n_weeks": 104,
-      "n_alert_positive": 37,
-      "alert_threshold": 55.0,
-      "feature_cols": [
-        "l1_otc",
-        "l2_wastewater",
-        "l3_search",
-        "temperature",
-        "humidity"
-      ],
-      "n_folds_total": 5,
-      "n_folds_valid": 2,
-      "cv_mean_f1": 1.0,
-      "cv_mean_precision": 1.0,
-      "cv_mean_recall": 1.0,
-      "cv_mean_auc_roc": 1.0,
-      "cv_mean_mae": 5.71039512975669,
-      "fold_scores": [
-        {
-          "fold": 1,
-          "mae": 18.4205658057,
-          "f1": NaN,
-          "precision": NaN,
-          "recall": NaN,
-          "auc_roc": NaN
-        },
-        {
-          "fold": 2,
-          "mae": 4.93800519540427,
-          "f1": NaN,
-          "precision": NaN,
-          "recall": NaN,
-          "auc_roc": NaN
-        },
-        {
-          "fold": 3,
-          "mae": 2.1642149563876,
-          "f1": 1.0,
-          "precision": 1.0,
-          "recall": 1.0,
-          "auc_roc": 1.0
-        },
-        {
-          "fold": 4,
-          "mae": 1.4755027804697693,
-          "f1": 1.0,
-          "precision": 1.0,
-          "recall": 1.0,
-          "auc_roc": 1.0
-        },
-        {
-          "fold": 5,
-          "mae": 1.553686910821815,
-          "f1": NaN,
-          "precision": NaN,
-          "recall": NaN,
-          "auc_roc": NaN
-        }
-      ],
-      "final_eval": {
-        "mae": 0.16992543126818627,
-        "target_col": "composite_score",
-        "alert_col": "alert_label",
-        "alert_threshold": 55.0,
-        "f1": 1.0,
-        "precision": 1.0,
-        "recall": 1.0,
-        "auc_roc": 1.0
-      }
-    },
     "synthetic_hardened": {
       "data_source": "synthetic_hardened",
       "task": "confirmed_future (t+2주 후 확진자 ≥ 70 예측)",
@@ -151,6 +77,37 @@
         "recall": 1.0,
         "auc_roc": 1.0
       }
+    },
+    "realistic": {
+      "status": "ok",
+      "data_source": "17regions_backtest",
+      "task": "alert_classification (composite ≥ alert_threshold)",
+      "n_regions": 17,
+      "cv_mean_f1": 0.621,
+      "cv_mean_precision": 0.507,
+      "cv_mean_recall": 0.838,
+      "cv_mean_far": 0.557,
+      "skipped_regions": [],
+      "source_file": "analysis/outputs/backtest_17regions.json",
+      "lead_time_weeks": {
+        "l1_otc": 8.0,
+        "l2_wastewater": 2.0,
+        "l3_search": 3.0,
+        "composite": 3.0
+      },
+      "ccf_max": {
+        "l1_otc": 0.5653,
+        "l2_wastewater": 0.3649,
+        "l3_search": 0.6013,
+        "composite": 0.5875
+      },
+      "granger_p": {
+        "l1_otc": 0.1031,
+        "l2_wastewater": 0.267,
+        "l3_search": 0.0073,
+        "composite": 0.0209
+      },
+      "analysis_window": "2025-09 ~ 2026-03"
     }
   }
 }

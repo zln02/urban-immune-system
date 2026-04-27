@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 type Tone = "safe" | "caution" | "warning" | "alert";
 
 interface KpiCardProps {
@@ -9,6 +11,8 @@ interface KpiCardProps {
   tone?: Tone;
   sparkData?: number[];
   sparkColor?: string;
+  /** 라벨 옆에 ⓘ 도움말 아이콘 등 우측 슬롯 */
+  labelSuffix?: ReactNode;
 }
 
 const TONE_COLOR: Record<Tone, string> = {
@@ -34,7 +38,7 @@ function Spark({ data, color }: { data: number[]; color: string }) {
   );
 }
 
-export function KpiCard({ label, value, total, unit, delta, tone = "safe", sparkData, sparkColor }: KpiCardProps) {
+export function KpiCard({ label, value, total, unit, delta, tone = "safe", sparkData, sparkColor, labelSuffix }: KpiCardProps) {
   const color = TONE_COLOR[tone];
   return (
     <div
@@ -48,8 +52,9 @@ export function KpiCard({ label, value, total, unit, delta, tone = "safe", spark
         gap: 6,
       }}
     >
-      <div className="t-label-01" style={{ color: "var(--text-tertiary)" }}>
-        {label}
+      <div className="t-label-01" style={{ color: "var(--text-tertiary)", display: "flex", alignItems: "center" }}>
+        <span>{label}</span>
+        {labelSuffix}
       </div>
       <div
         style={{

@@ -151,3 +151,21 @@ async def get_prediction_explain(
         },
         "interpretation": interpretation,
     }
+
+
+@router.get("/anomaly")
+async def get_anomaly_scores(
+    region: str = Query("서울특별시", min_length=2, max_length=100),
+    days: int = Query(28, ge=7, le=365),
+) -> dict:
+    """이상탐지 스코어 (Autoencoder 재구성 오차) — Phase 3 스텁.
+
+    ml/anomaly/autoencoder.py 학습 후 연결 예정. 발표 시점에는 미구현 명시.
+    """
+    return {
+        "region": region,
+        "days": days,
+        "anomaly_scores": [],
+        "status": "not_implemented",
+        "message": "Autoencoder 학습 미완 — Phase 3 로드맵 (ml/anomaly/autoencoder.py)",
+    }

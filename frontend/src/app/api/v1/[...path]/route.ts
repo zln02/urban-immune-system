@@ -29,16 +29,27 @@ async function proxy(
   }
 
   const upstream = await fetch(target, init);
-  const body = await upstream.arrayBuffer();
-  return new Response(body, {
+  const upstreamCt = upstream.headers.get("content-type") || "application/json";
+  const isStream = upstreamCt.includes("text/event-stream");
+
+  const respHeaders: Record<string, string> = {
+    "content-type": upstreamCt,
+    "cache-control": "no-store",
+  };
+  if (isStream) {
+    respHeaders["x-accel-buffering"] = "no";
+    respHeaders["connection"] = "keep-alive";
+  }
+
+  // SSE / 청크 응답은 buffer 금지 — body 스트림 그대로 통과
+  return new Response(upstream.body, {
     status: upstream.status,
-    headers: {
-      "content-type":
-        upstream.headers.get("content-type") || "application/json",
-      "cache-control": "no-store",
-    },
+    headers: respHeaders,
   });
 }
+
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 export {
   proxy as GET,
