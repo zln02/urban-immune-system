@@ -1,19 +1,17 @@
-"""17개 시·도 전체 멀티-리전 백테스트 (FAR 개선 게이트 적용 전·후 비교 포함).
+"""17개 시·도 전체 멀티-리전 백테스트.
 
 기존 backtest_2025_flu_multi.py 의 4지역을 17개 시·도 전체로 확장.
-게이트 A(L2 미달 차단)·게이트 B(2계층 교차검증) 적용 전·후 FAR 비교 포함.
+게이트 B(2계층 교차검증) 만 적용. 게이트 A(L2 미달 차단)는 sweep 결과 폐기.
 
 산출물:
   analysis/outputs/backtest_17regions.json
   analysis/outputs/backtest_17regions_metrics.png
   analysis/outputs/backtest_17regions_timeline.png
-  analysis/outputs/far_comparison.png  (게이트 적용 전·후)
 
 정직한 제약:
   - 확진 ground truth: 17개 지역 모두 confirmed_cases 보유
   - L2(하수) 데이터 일부 지역 carry-forward 적용
   - scorer 가중치·임계값 변경 없음 (L1=0.35, L2=0.40, L3=0.25)
-  - FAR 개선 게이트 상수: _L2_GATE_THRESHOLD=25, _CROSS_VALIDATION_MIN_LAYERS=2
 """
 from __future__ import annotations
 
@@ -45,7 +43,6 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from analysis.backtest_2025_flu import run_backtest  # noqa: E402
 from pipeline.scorer import (  # noqa: E402
-    _L2_GATE_THRESHOLD,
     _CROSS_VALIDATION_MIN_LAYERS,
     _CROSS_VALIDATION_LAYER_THRESHOLD,
     _RED_THRESHOLD,
@@ -196,7 +193,7 @@ def plot_17regions_timeline(results: dict[str, dict], out_path: Path) -> None:
     fig.patch.set_facecolor("#f8fafc")
     fig.suptitle(
         "UIS 17개 시·도 백테스트 — composite 시계열 (2025-W40 ~ 2026-W08)\n"
-        f"게이트 A: L2<{_L2_GATE_THRESHOLD:.0f}→GREEN차단, 게이트 B: {_CROSS_VALIDATION_MIN_LAYERS}계층이상{_CROSS_VALIDATION_LAYER_THRESHOLD:.0f}+",
+        f"게이트 B (2계층 교차검증): {_CROSS_VALIDATION_MIN_LAYERS}계층이상{_CROSS_VALIDATION_LAYER_THRESHOLD:.0f}+",
         fontsize=13, fontweight="bold", y=0.99,
     )
 
@@ -330,8 +327,8 @@ def plot_far_comparison(
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 7))
     fig.patch.set_facecolor("#f8fafc")
     fig.suptitle(
-        "FAR 개선 게이트 적용 전·후 비교\n"
-        f"게이트 A: L2<{_L2_GATE_THRESHOLD:.0f}→GREEN차단(RED예외) | 게이트 B: {_CROSS_VALIDATION_MIN_LAYERS}계층이상{_CROSS_VALIDATION_LAYER_THRESHOLD:.0f}+",
+        "게이트 B (2계층 교차검증) 적용 전·후 비교\n"
+        f"게이트 B: {_CROSS_VALIDATION_MIN_LAYERS}계층이상{_CROSS_VALIDATION_LAYER_THRESHOLD:.0f}+",
         fontsize=13, fontweight="bold",
     )
 
@@ -451,10 +448,10 @@ def build_17regions_json(
     return {
         "description": "UIS 17개 시·도 백테스트 (2025-W40 ~ 2026-W08)",
         "gate_config": {
-            "l2_gate_threshold":              _L2_GATE_THRESHOLD,
             "cross_validation_min_layers":    _CROSS_VALIDATION_MIN_LAYERS,
             "cross_validation_layer_threshold": _CROSS_VALIDATION_LAYER_THRESHOLD,
             "red_threshold":                  _RED_THRESHOLD,
+            "gate_a_status":                  "discarded (sweep 결과 sweet spot 없음)",
         },
         "regions": regions_out,
         "summary": {
@@ -511,8 +508,8 @@ def recompute_no_gate(results_with_gate: dict[str, dict]) -> dict[str, dict]:
 # ─────────────────────── 엔트리포인트 ────────────────────────────────────────
 async def _main() -> None:
     logger.info("=== UIS 17개 시·도 백테스트 시작 ===")
-    logger.info("게이트 A: L2 < %.1f → GREEN (RED 예외)", _L2_GATE_THRESHOLD)
-    logger.info("게이트 B: %d계층 이상 %.1f+ 필요", _CROSS_VALIDATION_MIN_LAYERS, _CROSS_VALIDATION_LAYER_THRESHOLD)
+    logger.info("게이트 B: %d계층 이상 %.1f+ 필요 (게이트 A 폐기됨)",
+                _CROSS_VALIDATION_MIN_LAYERS, _CROSS_VALIDATION_LAYER_THRESHOLD)
 
     results: dict[str, dict] = {}
 

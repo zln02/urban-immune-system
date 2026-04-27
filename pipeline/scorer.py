@@ -33,20 +33,25 @@ logger = logging.getLogger(__name__)
 _DEFAULT_DB_URL = "postgresql://uis_user:changeme_local@localhost:5432/urban_immune"
 
 # ---------------------------------------------------------------------------
-# FAR 개선 게이트 상수
+# 경보 결정 상수
 # ---------------------------------------------------------------------------
+#
+# 게이트 A (L2 하수 미달 시 GREEN 강제) 는 17지역 sweep 결과 임계값 어느 값도
+# 'Recall ≥ 0.85 & FAR < 0.55 & F1 ≥ 0.66' 충족 못해서 폐기. (analysis/outputs/
+# l2_gate_sweep.json 참조). L2 데이터 sparse + carry-forward 가 근본 원인이라
+# 임계값 튜닝으로 해결 불가능 → L2 데이터 품질 개선 (Phase 2 KOWAS 자동 크롤링)
+# 후 재검토.
+#
+# 게이트 B (2계층 교차검증) 는 유지. CLAUDE.md 의 "단일 신호 단독 경보 금지" 와
+# Google Flu Trends 실패 교훈을 코드로 강제하는 핵심 룰.
 
-# 게이트 A: L2(하수) 가 이 값 미만이면 composite 무관하게 GREEN 강제
-# (단, RED 예외: composite >= _RED_THRESHOLD 이면 게이트 A 우회)
-_L2_GATE_THRESHOLD: float = 25.0
-
-# 게이트 B: YELLOW 이상 발령을 위해 30 이상이어야 하는 최소 계층 수
+# 게이트 B: YELLOW 이상 발령을 위해 임계값 이상이어야 하는 최소 계층 수
 _CROSS_VALIDATION_MIN_LAYERS: int = 2
 
 # 게이트 B: 각 계층이 '기여 중' 으로 인정받는 최소 점수
 _CROSS_VALIDATION_LAYER_THRESHOLD: float = 30.0
 
-# RED 레벨 임계값 (게이트 A 우회 조건 판단용)
+# RED 레벨 임계값
 _RED_THRESHOLD: float = 75.0
 
 # DB 커넥션 풀 싱글톤
@@ -104,10 +109,6 @@ def determine_alert_level(
 ) -> str:
     """composite_score 와 계층별 값으로 경보 레벨을 결정한다.
 
-    게이트 A — L2 하수 미달 시 YELLOW 차단:
-      l2 < _L2_GATE_THRESHOLD(25.0) 이면 composite 와 무관하게 GREEN 강제.
-      단, composite >= _RED_THRESHOLD(75.0) 인 RED 는 게이트 A 우회.
-
     게이트 B — 2계층 교차검증 강제:
       YELLOW 이상 발령은 L1/L2/L3 중 _CROSS_VALIDATION_MIN_LAYERS(2)개 이상이
       _CROSS_VALIDATION_LAYER_THRESHOLD(30.0) 이상일 때만 가능.
@@ -134,22 +135,6 @@ def determine_alert_level(
 
     # GREEN 은 게이트 검사 불필요
     if raw_level == "GREEN":
-        return "GREEN"
-
-    # 게이트 A: L2(하수) 미달 시 YELLOW/ORANGE 차단 (RED 는 우회)
-    safe_l2 = l2 if l2 is not None else 0.0
-    if raw_level != "RED" and safe_l2 < _L2_GATE_THRESHOLD:
-        logger.info(
-            "게이트A 차단 (l2=%.1f < %.1f) — %s → GREEN 다운그레이드 "
-            "(l1=%.1f l2=%.1f l3=%.1f composite=%.1f)",
-            safe_l2,
-            _L2_GATE_THRESHOLD,
-            raw_level,
-            l1 or 0.0,
-            l2 or 0.0,
-            l3 or 0.0,
-            composite,
-        )
         return "GREEN"
 
     # 게이트 B: _CROSS_VALIDATION_MIN_LAYERS 개 이상 계층이
