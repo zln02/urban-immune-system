@@ -211,15 +211,19 @@ async def _close_pool() -> None:
 async def _fetch_latest_signals(
     pool: asyncpg.Pool,
     region: str,
+    pathogen: str = "influenza",
 ) -> dict[str, float | None]:
     """해당 지역의 L1/L2/L3 최신 값을 각각 조회한다.
 
     layer_signals 에서 region 별로 각 계층(otc / wastewater / search) 의
-    가장 최근 row 를 가져온다.
+    가장 최근 row 를 가져온다. L2(KOWAS)는 pathogen 으로 분리 적재되므로
+    동일 pathogen 의 신호만 가져온다. L1/L3 는 인플루엔자 전제로 적재되므로
+    pathogen 인자 무시 (모든 row 가 default 'influenza').
 
     Args:
         pool: asyncpg 커넥션 풀
         region: 지역명
+        pathogen: 병원체 라벨. 현재 인플루엔자 점수 계산만 지원.
 
     Returns:
         {'otc': float|None, 'wastewater': float|None, 'search': float|None,
@@ -234,9 +238,11 @@ async def _fetch_latest_signals(
         FROM layer_signals
         WHERE region = $1
           AND layer IN ('otc', 'wastewater', 'search')
+          AND pathogen = $2
         ORDER BY layer, time DESC
         """,
         region,
+        pathogen,
     )
 
     result: dict[str, float | None] = {

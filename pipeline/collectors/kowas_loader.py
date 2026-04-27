@@ -37,8 +37,9 @@ from pipeline.collectors.kowas_parser import (
 logger = logging.getLogger(__name__)
 
 WASTEWATER_LAYER = "wastewater"
-# DB 적재 대상 병원체 — 인플루엔자만 시스템 점수로 사용
-DB_TARGET_PATHOGEN: Pathogen = "influenza"
+# DB 적재 대상 병원체 — 3종 모두 적재 (인플루엔자만 점수 계산에 사용,
+# 코로나·노로는 신호 수집만. scorer.py 가 pathogen='influenza' 로 필터)
+DB_TARGET_PATHOGENS: tuple[Pathogen, ...] = ("influenza", "covid", "norovirus")
 JSON_CACHE_DIR = PDF_DIR / "parsed"
 
 # 파일명에서 연·주 추출: kowas_2026_w15.pdf
@@ -66,12 +67,12 @@ def list_local_pdfs(pdf_dir: Path = PDF_DIR) -> list[tuple[Path, int, int]]:
 async def insert_readings(readings: list[WeeklyReading], report_date: datetime) -> int:
     """파서 결과를 layer_signals 테이블에 적재.
 
-    인플루엔자(DB_TARGET_PATHOGEN)만 적재 — 다른 병원체는 JSON 캐시에만 보존되어
-    alerts.py의 DISTINCT ON (layer) 쿼리에서 비결정적 선택을 방지한다.
+    DB_TARGET_PATHOGENS 에 속하는 병원체만 적재. pathogen 컬럼으로 분리되므로
+    scorer.py 의 pathogen 필터로 인플루엔자만 점수 계산되고 나머지는 신호로만 보존.
     """
     inserted = 0
     for r in readings:
-        if r.pathogen != DB_TARGET_PATHOGEN:
+        if r.pathogen not in DB_TARGET_PATHOGENS:
             continue
         try:
             await insert_signal(
@@ -81,6 +82,7 @@ async def insert_readings(readings: list[WeeklyReading], report_date: datetime) 
                 raw_value=float(r.bar_count),
                 source=f"kowas:{r.pathogen}",
                 ts=report_date,
+                pathogen=r.pathogen,
             )
             inserted += 1
         except Exception as exc:
