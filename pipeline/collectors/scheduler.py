@@ -25,6 +25,7 @@ from pipeline.collectors.search_collector import collect_search_weekly
 from pipeline.collectors.wastewater import collect_wastewater_from_pdfs
 from pipeline.collectors.weather_collector import collect_weather
 from pipeline.collectors.kcdc_collector import collect_and_insert_weekly
+from pipeline.collectors.kowas_downloader import download_latest
 from pipeline.report_trigger import run_nightly_reports
 from pipeline.scorer import run_weekly_scoring
 
@@ -36,6 +37,15 @@ scheduler = BlockingScheduler(timezone="Asia/Seoul")
 scheduler.add_job(collect_otc_weekly, CronTrigger(day_of_week="mon", hour=9, minute=0), id="otc")
 scheduler.add_job(collect_search_weekly, CronTrigger(day_of_week="mon", hour=9, minute=5), id="search")
 scheduler.add_job(collect_wastewater_from_pdfs, CronTrigger(day_of_week="tue", hour=10, minute=0), id="wastewater")
+
+# 매주 화요일 09:30 — KOWAS 주간 PDF 자동 다운로드 (파싱 10:00 이전에 선행 실행)
+scheduler.add_job(
+    download_latest,
+    CronTrigger(day_of_week="tue", hour=9, minute=30),
+    id="weekly_kowas_download",
+    name="KOWAS 주간보고 PDF 자동 다운로드",
+    kwargs={"weeks": 4},
+)
 scheduler.add_job(collect_weather, CronTrigger(minute=0), id="weather")
 
 # 매주 수요일 11:00 — L1(월09:00)·L2(화10:00)·L3(월09:05) 수집 완료 이후

@@ -150,6 +150,99 @@ def download_pdf(
     return len(resp.content)
 
 
+def _download_reports(
+    reports: list[KowasReport],
+    output_dir: Path,
+    skip_existing: bool = True,
+) -> dict[str, int]:
+    """리포트 목록을 실제로 다운로드하는 내부 공통 함수."""
+    output_dir.mkdir(parents=True, exist_ok=True)
+    stats = {"downloaded": 0, "skipped": 0, "failed": 0}
+
+    with _make_client() as client:
+        total = len(reports)
+        for i, report in enumerate(reports, 1):
+            target = output_dir / report.filename
+            if skip_existing and target.exists() and target.stat().st_size > 0:
+                stats["skipped"] += 1
+                logger.debug("스킵 (이미 존재): %s", target.name)
+                continue
+
+            try:
+                links = fetch_pdf_links(client, report)
+                if not links:
+                    logger.warning("첨부파일 없음: %s (%s)", report.title, report.bbs_doc_no)
+                    stats["failed"] += 1
+                    continue
+
+                # 다중 첨부 시 첫 번째만 (주간보고 본문 PDF) — 부록은 .filename에 _attN 추가
+                referer = (
+                    f"{DETAIL_URL}?q_bbsSn={BBS_SN}"
+                    f"&q_bbsDocNo={report.bbs_doc_no}&q_clsfNo={CLSF_NO}"
+                )
+                file_sn, file_id = links[0]
+                size = download_pdf(client, file_sn, file_id, target, referer)
+                stats["downloaded"] += 1
+                logger.info(
+                    "[%d/%d] 다운로드 완료 %s (%.1fMB)",
+                    i, total, target.name, size / 1024 / 1024,
+                )
+
+                # 부록 첨부 (있는 경우)
+                for j, (sn, fid) in enumerate(links[1:], start=2):
+                    att_path = output_dir / f"{target.stem}_att{j}.pdf"
+                    if skip_existing and att_path.exists():
+                        continue
+                    try:
+                        download_pdf(client, sn, fid, att_path, referer)
+                    except Exception as exc:
+                        logger.warning("부록 다운로드 실패 %s: %s", att_path.name, exc)
+
+                time.sleep(1.0)  # 서버 부하 방지 (1초 이상 준수)
+            except Exception as exc:
+                logger.error("다운로드 실패 %s: %s", report.title, exc)
+                stats["failed"] += 1
+
+    return stats
+
+
+def download_latest(
+    weeks: int = 4,
+    output_dir: Path = DEFAULT_OUTPUT_DIR,
+    *,
+    skip_existing: bool = True,
+) -> list[Path]:
+    """최근 N주차 KOWAS 주간보고 PDF를 다운로드한다.
+
+    이미 존재하는 파일은 스킵(idempotent). 스케줄러의 주간 크론 잡에서 호출된다.
+
+    Args:
+        weeks: 최근 몇 주차까지 다운로드할지 (기본 4주)
+        output_dir: 저장 디렉토리
+        skip_existing: 이미 존재하는 파일 건너뛰기
+
+    Returns:
+        새로 다운로드된 PDF 경로 목록
+    """
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    with _make_client() as client:
+        reports = list_reports(client)
+
+    logger.info("KOWAS 게시판에서 %d건 발견, 최근 %d주 대상", len(reports), weeks)
+    recent = reports[:weeks]
+
+    stats = _download_reports(recent, output_dir, skip_existing=skip_existing)
+    logger.info("최근 %d주 다운로드 완료: %s", weeks, stats)
+
+    downloaded: list[Path] = []
+    for report in recent:
+        p = output_dir / report.filename
+        if p.exists() and p.stat().st_size > 0:
+            downloaded.append(p)
+    return downloaded
+
+
 def download_all(
     output_dir: Path = DEFAULT_OUTPUT_DIR,
     *,
@@ -166,54 +259,15 @@ def download_all(
     Returns:
         {"downloaded": N, "skipped": M, "failed": F}
     """
-    output_dir.mkdir(parents=True, exist_ok=True)
-    stats = {"downloaded": 0, "skipped": 0, "failed": 0}
-
     with _make_client() as client:
         reports = list_reports(client)
-        logger.info("KOWAS 게시판에서 %d건 발견", len(reports))
 
-        if limit is not None:
-            reports = reports[:limit]
+    logger.info("KOWAS 게시판에서 %d건 발견", len(reports))
 
-        for i, report in enumerate(reports, 1):
-            target = output_dir / report.filename
-            if skip_existing and target.exists() and target.stat().st_size > 0:
-                stats["skipped"] += 1
-                continue
+    if limit is not None:
+        reports = reports[:limit]
 
-            try:
-                links = fetch_pdf_links(client, report)
-                if not links:
-                    logger.warning("첨부파일 없음: %s (%s)", report.title, report.bbs_doc_no)
-                    stats["failed"] += 1
-                    continue
-
-                # 다중 첨부 시 첫 번째만 (주간보고 본문 PDF) — 부록은 .filename에 _attN 추가
-                referer = f"{DETAIL_URL}?q_bbsSn={BBS_SN}&q_bbsDocNo={report.bbs_doc_no}&q_clsfNo={CLSF_NO}"
-                file_sn, file_id = links[0]
-                size = download_pdf(client, file_sn, file_id, target, referer)
-                stats["downloaded"] += 1
-                logger.info(
-                    "[%d/%d] 다운로드 완료 %s (%.1fMB)",
-                    i, len(reports), target.name, size / 1024 / 1024,
-                )
-
-                # 부록 첨부 (있는 경우)
-                for j, (sn, fid) in enumerate(links[1:], start=2):
-                    att_path = output_dir / f"{target.stem}_att{j}.pdf"
-                    if skip_existing and att_path.exists():
-                        continue
-                    try:
-                        download_pdf(client, sn, fid, att_path, referer)
-                    except Exception as exc:
-                        logger.warning("부록 다운로드 실패 %s: %s", att_path.name, exc)
-
-                time.sleep(0.7)  # 서버 부하 방지
-            except Exception as exc:
-                logger.exception("다운로드 실패 %s: %s", report.title, exc)
-                stats["failed"] += 1
-
+    stats = _download_reports(reports, output_dir, skip_existing=skip_existing)
     logger.info("완료: %s", stats)
     return stats
 
@@ -228,13 +282,30 @@ if __name__ == "__main__":
     )
     parser = argparse.ArgumentParser(description="KOWAS 주간보고 PDF 일괄 다운로더")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT_DIR)
-    parser.add_argument("--limit", type=int, default=None, help="다운로드 최대 건수")
+    parser.add_argument("--weeks", type=int, default=None, help="최근 N주차만 다운로드 (미지정 시 전체)")
+    parser.add_argument("--limit", type=int, default=None, help="--all 모드에서 최대 다운로드 건수")
     parser.add_argument("--no-skip", action="store_true", help="기존 파일 무시하고 재다운")
+    # --headless / --no-headless: httpx 기반이므로 실제로 브라우저 헤드리스 모드와 무관하지만
+    # 미션 CLI 호환성과 향후 Playwright 전환 대비를 위해 플래그로 수용 (현재는 무시)
+    parser.add_argument("--headless", dest="headless", action="store_true", default=True,
+                        help="헤드리스 모드 (기본값, 현재 httpx 기반이므로 무의미)")
+    parser.add_argument("--no-headless", dest="headless", action="store_false",
+                        help="헤드리스 OFF (현재 httpx 기반이므로 무의미)")
     args = parser.parse_args()
 
-    result = download_all(
-        output_dir=args.output,
-        skip_existing=not args.no_skip,
-        limit=args.limit,
-    )
-    print(f"\n결과: {result}")
+    if args.weeks is not None:
+        paths = download_latest(
+            weeks=args.weeks,
+            output_dir=args.output,
+            skip_existing=not args.no_skip,
+        )
+        print(f"\n결과: 다운로드 {len(paths)}건")
+        for p in paths:
+            print(f"  {p.name}  ({p.stat().st_size // 1024}KB)")
+    else:
+        result = download_all(
+            output_dir=args.output,
+            skip_existing=not args.no_skip,
+            limit=args.limit,
+        )
+        print(f"\n결과: {result}")
