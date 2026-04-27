@@ -12,11 +12,14 @@ import { LayerCard } from "@/components/alert/layer-card";
 import { AIReportCard } from "@/components/alert/ai-report-card";
 import { AlertTable } from "@/components/alert/alert-table";
 import { AnomalyPanel } from "@/components/anomaly/anomaly-panel";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 
 import { KOREA_REGIONS, regionName, regionCodeFromName, type RegionCode } from "@/lib/korea-regions";
 import { RISK_META } from "@/lib/risk";
 import { DICT, type Lang } from "@/lib/i18n";
-import { mockAlerts, mockDistricts, mockSeries, type DistrictData } from "@/lib/mock-data";
+import { mockAlerts, mockDistricts, mockSeries, type DistrictData, type AlertRecord } from "@/lib/mock-data";
+
+type AlertRecordLike = AlertRecord;
 import { useOtcTrend, useSearchTrend } from "@/hooks/useNaverTrend";
 import { useWastewaterSeries } from "@/hooks/useSignalTimeseries";
 import { useRegionAlerts, type RegionAlert } from "@/hooks/useRegionAlerts";
@@ -75,9 +78,22 @@ export default function DashboardPage() {
   const realAlerts = regionAlertsQuery.data?.alerts ?? [];
   const districts = realAlerts.length > 0 ? buildDistrictsFromAlerts(realAlerts) : mockDistricts;
   const atRiskCount = Object.values(districts).filter((d) => d.risk >= 3).length;
-  // AlertBanner / KpiCard 는 기존 mockAlerts 유지 (AlertRecord 타입)
-  const activeAlerts = mockAlerts;
-  // AlertTable 만 실데이터 (RegionAlert 타입) 분리
+
+  // AlertBanner / KpiCard / AlertTable 모두 실 regionAlerts 기반 (mockAlerts 의존 제거)
+  // GREEN 만 있으면 activeAlerts = [] → AlertBanner 자동 숨김
+  const activeAlerts: AlertRecordLike[] = realAlerts
+    .filter((a) => a.alert_level !== "GREEN")
+    .map((a, i) => ({
+      id: `RT-${i}`,
+      region: a.region,
+      regionCode: (regionCodeFromName(a.region) ?? "SL") as RegionCode,
+      level: LEVEL_TO_RISK[a.alert_level] ?? 1,
+      time: a.latest_time?.slice(0, 16).replace("T", " ") || "",
+      summary: `composite ${a.composite.toFixed(1)} · L1 ${a.l1.toFixed(1)} / L2 ${a.l2.toFixed(1)} / L3 ${a.l3.toFixed(1)} (${a.layers_above_30}계층 임계 초과)`,
+    }));
+  const allGreen = realAlerts.length > 0 && activeAlerts.length === 0;
+
+  // AlertTable 은 모든 17지역 보여주기 위해 별도로 real 데이터 사용
   const tableAlerts: typeof mockAlerts | NonNullable<typeof regionAlertsQuery.data>["alerts"] =
     realAlerts.length > 0 ? realAlerts : mockAlerts;
 
@@ -387,8 +403,9 @@ export default function DashboardPage() {
         </div>
 
         <div>
-          <div className="t-label-01" style={sidebarLabel}>
-            {lang === "en" ? "Active signal layers" : "활성 신호 레이어"}
+          <div className="t-label-01" style={{ ...sidebarLabel, display: "flex", alignItems: "center" }}>
+            <span>{lang === "en" ? "Active signal layers" : "활성 신호 레이어"}</span>
+            <InfoTooltip term="three_layer" />
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {[
@@ -427,8 +444,9 @@ export default function DashboardPage() {
         </div>
 
         <div>
-          <div className="t-label-01" style={sidebarLabel}>
-            {lang === "en" ? "Alert thresholds (fixed)" : "경보 임계값 (고정)"}
+          <div className="t-label-01" style={{ ...sidebarLabel, display: "flex", alignItems: "center" }}>
+            <span>{lang === "en" ? "Alert thresholds (fixed)" : "경보 임계값 (고정)"}</span>
+            <InfoTooltip term="composite" />
           </div>
           <div style={{ fontSize: 11, color: "var(--text-secondary)", lineHeight: 1.6 }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -560,7 +578,34 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <AlertBanner alerts={activeAlerts} t={t} lang={lang} confidence={0.93} />
+        {allGreen ? (
+          <div
+            role="status"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: "10px 16px",
+              background: "var(--risk-safe)",
+              color: "#fff",
+            }}
+          >
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#fff", flexShrink: 0 }} />
+            <span style={{ fontWeight: 700, fontSize: 12 }}>
+              {lang === "ko" ? "전국 안전 (GREEN)" : "Nationwide safe (GREEN)"}
+            </span>
+            <span style={{ fontSize: 12, opacity: 0.9 }}>
+              {lang === "ko"
+                ? "17개 시·도 모두 종합 위험도 30 미만 — 활성 경보 0건"
+                : "All 17 regions below composite=30 — 0 active alerts"}
+            </span>
+            <span style={{ marginLeft: "auto", fontSize: 11, opacity: 0.85 }}>
+              {lang === "ko" ? "최신 갱신" : "Updated"} {realAlerts[0]?.latest_time?.slice(0, 10) || "—"}
+            </span>
+          </div>
+        ) : (
+          <AlertBanner alerts={activeAlerts} t={t} lang={lang} confidence={0.93} />
+        )}
 
         <div
           style={{
@@ -570,20 +615,27 @@ export default function DashboardPage() {
           }}
         >
           <KpiCard
-            label={t.kpi_alerts}
+            label={lang === "ko" ? "활성 경보" : "Active alerts"}
+            labelSuffix={<InfoTooltip term="alert_level" />}
             value={activeAlerts.length}
-            delta={`+${activeAlerts.filter((a) => a.level === 4).length} L4`}
-            tone="alert"
+            delta={
+              activeAlerts.length === 0
+                ? (lang === "ko" ? "전국 안전 (GREEN)" : "All GREEN")
+                : `${activeAlerts.filter((a) => a.level >= 3).length} ORANGE+`
+            }
+            tone={activeAlerts.length === 0 ? "safe" : "alert"}
           />
           <KpiCard
-            label={t.kpi_at_risk}
+            label={lang === "ko" ? "위험 지역" : "At-risk regions"}
+            labelSuffix={<InfoTooltip term="composite" />}
             value={atRiskCount}
             total={17}
-            delta={lang === "en" ? "of 17" : "/17"}
-            tone={atRiskCount > 3 ? "warning" : "caution"}
+            delta={lang === "en" ? "of 17 (composite≥55)" : "composite≥55"}
+            tone={atRiskCount > 3 ? "warning" : atRiskCount > 0 ? "caution" : "safe"}
           />
           <KpiCard
-            label={t.kpi_lead}
+            label={lang === "ko" ? "선행 시간" : "Lead time"}
+            labelSuffix={<InfoTooltip term="leadtime" />}
             value={leadDaysDisplay ?? "—"}
             unit={lang === "en" ? "days" : "일"}
             delta={leadWeeksComposite !== undefined
@@ -595,6 +647,7 @@ export default function DashboardPage() {
           />
           <KpiCard
             label={lang === "en" ? "Backtest F1" : "백테스트 F1"}
+            labelSuffix={<InfoTooltip term="f1" />}
             value={backtestF1 !== undefined ? backtestF1.toFixed(3) : "—"}
             delta={backtestRecall !== undefined
               ? `Recall ${backtestRecall.toFixed(3)} · 17지역`
@@ -843,7 +896,10 @@ export default function DashboardPage() {
               flexWrap: "wrap",
             }}
           >
-            <span style={{ fontWeight: 600, color: "var(--text)" }}>{t.granger}</span>
+            <span style={{ fontWeight: 600, color: "var(--text)", display: "inline-flex", alignItems: "center" }}>
+              {t.granger}
+              <InfoTooltip term="granger" />
+            </span>
             {grangerP ? (
               <>
                 <span>

@@ -2,6 +2,7 @@
 import { useState, type ReactNode } from "react";
 import { I } from "@/components/ui/icons";
 import { useAlertStream } from "@/hooks/useAlertStream";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 import type { Translations, Lang } from "@/lib/i18n";
 
 interface AIReportCardProps {
@@ -174,6 +175,8 @@ export function AIReportCard({ t, lang, region = "전북특별자치도" }: AIRe
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <I.Sparkle size={14} stroke="var(--primary-70)" />
           <span style={{ fontSize: 13, fontWeight: 600 }}>{t.ai_report_title}</span>
+          <InfoTooltip term="rag" />
+          <InfoTooltip term="sse" />
         </div>
         <div style={{ display: "flex", gap: 6 }}>
           {done && (
