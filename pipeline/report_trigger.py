@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
+import json
 import logging
 import os
 from typing import Any
@@ -173,6 +175,11 @@ async def _insert_alert_report(
     alert_level: str,
     summary: str,
     session: AsyncSession,
+    triggered_by: str = "system_scheduler",
+    trigger_source: str | None = None,
+    feature_values: dict | None = None,
+    rag_sources: list | None = None,
+    model_metadata: dict | None = None,
 ) -> int:
     """alert_reports 테이블에 리포트 행을 INSERT한다.
 
@@ -181,13 +188,26 @@ async def _insert_alert_report(
         alert_level: 경보 레벨 (YELLOW/ORANGE/RED)
         summary: Claude 생성 리포트 텍스트
         session: 비동기 DB 세션
+        triggered_by: 호출 유형 ('system_scheduler' | 'manual_cli' | 'api_request')
+        trigger_source: 호출자 식별 정보 (CLI args, IP, user_id 등)
+        feature_values: L1/L2/L3 원시값 + composite JSONB (XAI)
+        rag_sources: 인용한 가이드라인 리스트 [{topic, score, source}] (XAI)
+        model_metadata: 모델 메타데이터 {model, max_tokens, system_prompt_hash} (XAI)
     Returns:
         삽입된 행의 id
     """
     result = await session.execute(
         text("""
-            INSERT INTO alert_reports (time, region, alert_level, summary, model_used)
-            VALUES (NOW(), :region, :alert_level, :summary, :model_used)
+            INSERT INTO alert_reports (
+                time, region, alert_level, summary, model_used,
+                triggered_by, trigger_source,
+                feature_values, rag_sources, model_metadata
+            )
+            VALUES (
+                NOW(), :region, :alert_level, :summary, :model_used,
+                :triggered_by, :trigger_source,
+                :feature_values::jsonb, :rag_sources::jsonb, :model_metadata::jsonb
+            )
             RETURNING id
         """),
         {
@@ -195,6 +215,17 @@ async def _insert_alert_report(
             "alert_level": alert_level,
             "summary": summary,
             "model_used": _HAIKU_MODEL,
+            "triggered_by": triggered_by,
+            "trigger_source": trigger_source,
+            "feature_values": (
+                json.dumps(feature_values, ensure_ascii=False) if feature_values is not None else None
+            ),
+            "rag_sources": (
+                json.dumps(rag_sources, ensure_ascii=False) if rag_sources is not None else None
+            ),
+            "model_metadata": (
+                json.dumps(model_metadata, ensure_ascii=False) if model_metadata is not None else None
+            ),
         },
     )
     await session.commit()
@@ -202,13 +233,19 @@ async def _insert_alert_report(
     return row[0] if row else -1
 
 
-async def generate_latest_alert_report(region: str) -> dict[str, Any] | None:
+async def generate_latest_alert_report(
+    region: str,
+    triggered_by: str = "system_scheduler",
+    trigger_source: str | None = None,
+) -> dict[str, Any] | None:
     """region의 최신 risk_score를 읽어 Claude 리포트를 생성하고 DB에 저장한다.
 
     GREEN 경보는 비용 절감을 위해 스킵한다.
 
     Args:
         region: 지역명 (예: "서울특별시")
+        triggered_by: 호출 유형 ('system_scheduler' | 'manual_cli' | 'api_request')
+        trigger_source: 호출자 식별 정보 (CLI args, IP, user_id 등)
     Returns:
         생성된 alert_report 딕셔너리 또는 None (GREEN 스킵 / 데이터 없음)
     Raises:
@@ -251,8 +288,45 @@ async def generate_latest_alert_report(region: str) -> dict[str, Any] | None:
         logger.info("Claude Haiku 호출 시작: region=%s, level=%s", region, alert_level)
         report_text = await _call_claude_haiku(prompt)
 
+        # XAI 메타데이터 구성
+        feature_values: dict[str, Any] = {
+            "l1": signals["l1"],
+            "l2": signals["l2"],
+            "l3": signals["l3"],
+            "composite": signals["composite"],
+            "signal_time": signals["time"],
+        }
+
+        rag_sources: list[dict[str, Any]] = [
+            {
+                "topic": (d.get("metadata") or {}).get("topic", ""),
+                "score": round(float(d.get("score", 0.0)), 4),
+                "source": (d.get("metadata") or {}).get("source", ""),
+            }
+            for d in rag_docs
+        ]
+
+        # system_prompt_hash: SHA256 앞 16자 — 프롬프트 버전 추적용 (내용 노출 없음)
+        system_prompt_hash = hashlib.sha256(_SYSTEM_PROMPT.encode()).hexdigest()[:16]
+        model_metadata: dict[str, Any] = {
+            "model": _HAIKU_MODEL,
+            "max_tokens": 1200,
+            "system_prompt_hash": system_prompt_hash,
+            "prompt_version": "v2",
+        }
+
         async with session_factory() as session:
-            report_id = await _insert_alert_report(region, alert_level, report_text, session)
+            report_id = await _insert_alert_report(
+                region,
+                alert_level,
+                report_text,
+                session,
+                triggered_by=triggered_by,
+                trigger_source=trigger_source,
+                feature_values=feature_values,
+                rag_sources=rag_sources,
+                model_metadata=model_metadata,
+            )
 
         logger.info("alert_reports INSERT 완료: id=%d, region=%s", report_id, region)
         return {
@@ -261,21 +335,35 @@ async def generate_latest_alert_report(region: str) -> dict[str, Any] | None:
             "alert_level": alert_level,
             "summary": report_text,
             "model_used": _HAIKU_MODEL,
+            "triggered_by": triggered_by,
+            "feature_values": feature_values,
+            "rag_sources": rag_sources,
+            "model_metadata": model_metadata,
         }
     finally:
         await engine.dispose()
 
 
-async def run_nightly_reports() -> int:
+async def run_nightly_reports(
+    triggered_by: str = "system_scheduler",
+    trigger_source: str | None = None,
+) -> int:
     """전국 17개 시·도 순회하며 YELLOW/ORANGE/RED 경보 리포트를 생성한다.
 
+    Args:
+        triggered_by: 호출 유형 ('system_scheduler' | 'manual_cli' | 'api_request')
+        trigger_source: 호출자 식별 정보
     Returns:
         실제 생성·저장된 리포트 건수
     """
     generated = 0
     for region in ALL_REGIONS:
         try:
-            result = await generate_latest_alert_report(region)
+            result = await generate_latest_alert_report(
+                region,
+                triggered_by=triggered_by,
+                trigger_source=trigger_source,
+            )
             if result is not None:
                 generated += 1
                 logger.info("리포트 생성 완료: region=%s, id=%d", region, result["id"])
@@ -297,15 +385,25 @@ def _cli() -> None:
     group.add_argument("--all", action="store_true", help="전국 17개 시·도 일괄 실행")
     args = parser.parse_args()
 
+    import sys
+    trigger_source = " ".join(sys.argv[1:])  # CLI 호출 인수 감사 기록
+
     if args.all:
-        count = asyncio.run(run_nightly_reports())
+        count = asyncio.run(run_nightly_reports(triggered_by="manual_cli", trigger_source=trigger_source))
         print(f"[완료] 총 {count}건 생성")
     else:
-        result = asyncio.run(generate_latest_alert_report(args.region))
+        result = asyncio.run(
+            generate_latest_alert_report(
+                args.region,
+                triggered_by="manual_cli",
+                trigger_source=trigger_source,
+            )
+        )
         if result is None:
             print(f"[스킵] {args.region}: risk_scores 없음 또는 GREEN 경보")
         else:
             print(f"[완료] id={result['id']}, level={result['alert_level']}")
+            print(f"[triggered_by] {result['triggered_by']}")
             print(f"[summary 앞 300자]\n{result['summary'][:300]}")
 
 

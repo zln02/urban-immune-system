@@ -43,7 +43,16 @@ CREATE TABLE IF NOT EXISTS alert_reports (
     summary          TEXT           NOT NULL,
     recommendations  TEXT,
     model_used       VARCHAR(50),
-    created_at       TIMESTAMPTZ    DEFAULT NOW()
+    created_at       TIMESTAMPTZ    DEFAULT NOW(),
+
+    -- 감사로그 (ISMS-P 2.9 대응)
+    triggered_by     VARCHAR(50)    DEFAULT 'system_scheduler',  -- 'system_scheduler' | 'manual_cli' | 'api_request'
+    trigger_source   TEXT,                                        -- 호출자 식별 (CLI args, IP, user_id 등)
+
+    -- XAI 메타데이터
+    feature_values   JSONB,          -- l1/l2/l3 원시값 + 정규화값 + composite
+    rag_sources      JSONB,          -- 인용한 가이드라인 [{topic, score, source}]
+    model_metadata   JSONB           -- {model, max_tokens, system_prompt_hash, prompt_version}
 );
 
 CREATE INDEX IF NOT EXISTS ix_alert_reports_time ON alert_reports (time DESC);
