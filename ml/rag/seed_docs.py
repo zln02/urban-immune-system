@@ -1,9 +1,10 @@
-"""중간발표용 RAG 시드 문서 — 역학 가이드라인 5건 임베딩.
+"""RAG 시드 문서 — 역학 가이드라인 10건 임베딩.
 
 각 문서는 공개 가이드라인의 핵심 메시지를 한국어로 정리한 것이며,
 metadata.source / metadata.url에 원 출처를 명시한다.
 
 추후 확장 시 이 모듈에 dict를 추가하고 다시 실행하면 upsert로 갱신된다.
+목표: 10~20편 (WHO/KCDC 감염병 가이드라인 포함).
 """
 from __future__ import annotations
 
@@ -94,6 +95,92 @@ SEED_DOCS: list[dict] = [
             "url": "https://dl.acm.org/doi/10.1145/1541880.1541882",
             "lang": "ko-summary",
             "topic": "novelty_detection",
+        },
+    },
+    # ── 확장 문서 (6~10) ─────────────────────────────────────────────────────
+    {
+        "id": 6,
+        "text": (
+            "미국 CDC NWSS(국가 하수감시 시스템)는 2020년 코로나19 대응을 계기로 전국 규모의 하수 역학 감시 인프라를 "
+            "구축했다. 수천 개 처리장에서 SARS-CoV-2 RNA를 주기적으로 측정해 임상 보고보다 4~6일 먼저 유행 상승을 "
+            "탐지하는 것으로 보고됐다. NWSS는 독감·RSV·노로바이러스 등 다중 병원체로 확장 중이며, "
+            "지역별 데이터를 공개 대시보드로 제공한다. 우리 시스템(L2 하수도 계층)은 이 프레임워크를 "
+            "한국 KOWAS 데이터에 적용한 것으로, 국제 표준 감시 방법론과 정렬된다."
+        ),
+        "metadata": {
+            "source": "CDC National Wastewater Surveillance System (NWSS)",
+            "url": "https://www.cdc.gov/nwss/index.html",
+            "lang": "ko-summary",
+            "topic": "wastewater_surveillance_us",
+        },
+    },
+    {
+        "id": 7,
+        "text": (
+            "Lim et al. (2021)은 International Journal of Forecasting에 발표한 논문에서 "
+            "Temporal Fusion Transformer(TFT)를 제안했다. TFT는 다변량 시계열 예측에서 "
+            "변수 선택 네트워크(VSN), 게이티드 잔차 네트워크(GRN), 다중 헤드 어텐션을 결합해 "
+            "단기·중기·장기 패턴을 동시에 학습한다. 어텐션 가중치로 \"어느 시점, 어느 변수가 예측에 기여했는지\" "
+            "해석할 수 있어 보건당국의 의사결정 신뢰성을 높인다. 전기 소비·소매 판매 등 다양한 도메인에서 "
+            "LSTM·DeepAR 대비 우수한 성능을 보였으며, 감염병 시계열 예측에도 적용 가능하다."
+        ),
+        "metadata": {
+            "source": "Lim et al., \"Temporal Fusion Transformers for Interpretable Multi-horizon Time Series Forecasting\", Int. J. Forecasting 2021",
+            "url": "https://doi.org/10.1016/j.ijforecast.2021.03.012",
+            "lang": "ko-summary",
+            "topic": "tft_interpretable_forecasting",
+        },
+    },
+    {
+        "id": 8,
+        "text": (
+            "WHO GOARN(글로벌 발병 경보·대응 네트워크)은 2000년 설립 이후 전 세계 감염병 조기경보의 "
+            "다중 신호 통합 표준을 제시해 왔다. GOARN은 공식 임상 보고(indicator-based)와 "
+            "인터넷 뉴스·여행·동물 신호(event-based)를 병행 모니터링하며, "
+            "단일 출처 경보를 절대 금지하고 최소 2개 이상 독립 신호가 교차 확인된 후에만 "
+            "공식 경보를 발령하는 '삼각검증(triangulation)' 원칙을 운용한다. "
+            "이 원칙은 우리 다중 신호 앙상블 경보(YELLOW: 2개 신호 30% 이상, RED: 3개 신호 50% 이상) "
+            "설계의 직접적인 학술 근거다."
+        ),
+        "metadata": {
+            "source": "WHO Global Outbreak Alert and Response Network (GOARN)",
+            "url": "https://www.who.int/initiatives/goarn",
+            "lang": "ko-summary",
+            "topic": "who_goarn_multi_source",
+        },
+    },
+    {
+        "id": 9,
+        "text": (
+            "scikit-learn의 TimeSeriesSplit은 시계열 데이터의 미래 정보 누출(data leakage)을 방지하기 위해 "
+            "훈련 세트가 항상 테스트 세트보다 시간상 앞선 구조로 분할하는 walk-forward 교차검증 클래스다. "
+            "`gap` 파라미터로 훈련-테스트 사이에 빈 구간을 두면 실전 운용 환경(예: 4주 지연 보고)을 "
+            "시뮬레이션할 수 있다. 감염병 예측 모델 평가 시 랜덤 K-Fold 사용은 금지되며 "
+            "반드시 TimeSeriesSplit(n_splits=5, gap=4) 또는 동등한 walk-forward 방식을 써야 한다. "
+            "이 방법론은 오버피팅 탐지와 실환경 성능 추정 간 괴리를 최소화한다."
+        ),
+        "metadata": {
+            "source": "scikit-learn Documentation: TimeSeriesSplit",
+            "url": "https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.TimeSeriesSplit.html",
+            "lang": "ko-summary",
+            "topic": "walk_forward_cv",
+        },
+    },
+    {
+        "id": 10,
+        "text": (
+            "ISMS-P(정보보호 및 개인정보보호 관리체계) 인증은 한국인터넷진흥원(KISA)이 운영하는 "
+            "국내 최고 수준의 정보보호 인증 제도다. 공공기관 납품 소프트웨어는 주요 심사 항목인 "
+            "2.9 시스템 및 서비스 운영관리(로그·접근기록)와 3.1~3.4 개인정보 수집·보유·파기 요건을 충족해야 한다. "
+            "감염병 감시 시스템은 민감 의료·위치 정보를 처리할 경우 별도 동의와 가명처리 의무가 발생한다. "
+            "우리 시스템은 개인 식별 정보 없는 집계 신호만 처리하므로 3종 개인정보 처리 조항은 해당 없으나, "
+            "2.9 로그 보존(6개월 이상)과 접근통제 요건은 반드시 준수해야 B2G 납품이 가능하다."
+        ),
+        "metadata": {
+            "source": "한국인터넷진흥원(KISA) ISMS-P 인증기준",
+            "url": "https://isms.kisa.or.kr/main/ispims/intro/",
+            "lang": "ko",
+            "topic": "isms_p_b2g_compliance",
         },
     },
 ]
