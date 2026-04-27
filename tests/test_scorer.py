@@ -8,12 +8,22 @@
 5. GREEN 정상 경로 — 낮은 composite 는 교차검증 없이 GREEN
 6. ORANGE 경계 — 55 ≤ composite < 75, 2계층 이상 30 이상
 7. RED 경계 + 교차검증 실패 시 GREEN 다운그레이드
+8. 단독 계층 차단 — 한 계층만 30+ 이면 GREEN 다운그레이드
+
+NOTE: 게이트 A (L2 미달 시 GREEN 강제) 는 17지역 sweep 결과 임계값 어느 값도
+sweet spot 못 찾아서 폐기 (analysis/outputs/l2_gate_sweep.json). 게이트 B
+(2계층 교차검증) 만 유지.
 """
 from __future__ import annotations
 
 import pytest
 
-from pipeline.scorer import determine_alert_level, RiskScoreRow
+from pipeline.scorer import (
+    determine_alert_level,
+    RiskScoreRow,
+    _CROSS_VALIDATION_MIN_LAYERS,
+    _CROSS_VALIDATION_LAYER_THRESHOLD,
+)
 
 
 # ---------------------------------------------------------------------------

@@ -32,6 +32,28 @@ logger = logging.getLogger(__name__)
 
 _DEFAULT_DB_URL = "postgresql://uis_user:changeme_local@localhost:5432/urban_immune"
 
+# ---------------------------------------------------------------------------
+# 경보 결정 상수
+# ---------------------------------------------------------------------------
+#
+# 게이트 A (L2 하수 미달 시 GREEN 강제) 는 17지역 sweep 결과 임계값 어느 값도
+# 'Recall ≥ 0.85 & FAR < 0.55 & F1 ≥ 0.66' 충족 못해서 폐기. (analysis/outputs/
+# l2_gate_sweep.json 참조). L2 데이터 sparse + carry-forward 가 근본 원인이라
+# 임계값 튜닝으로 해결 불가능 → L2 데이터 품질 개선 (Phase 2 KOWAS 자동 크롤링)
+# 후 재검토.
+#
+# 게이트 B (2계층 교차검증) 는 유지. CLAUDE.md 의 "단일 신호 단독 경보 금지" 와
+# Google Flu Trends 실패 교훈을 코드로 강제하는 핵심 룰.
+
+# 게이트 B: YELLOW 이상 발령을 위해 임계값 이상이어야 하는 최소 계층 수
+_CROSS_VALIDATION_MIN_LAYERS: int = 2
+
+# 게이트 B: 각 계층이 '기여 중' 으로 인정받는 최소 점수
+_CROSS_VALIDATION_LAYER_THRESHOLD: float = 30.0
+
+# RED 레벨 임계값
+_RED_THRESHOLD: float = 75.0
+
 # DB 커넥션 풀 싱글톤
 _pool: asyncpg.Pool | None = None
 
@@ -87,8 +109,10 @@ def determine_alert_level(
 ) -> str:
     """composite_score 와 계층별 값으로 경보 레벨을 결정한다.
 
-    YELLOW 이상은 반드시 2개 이상 계층이 30 이상이어야 발령.
-    L3 단독 고값이어도 교차검증 없으면 GREEN/YELLOW 이하로 제한.
+    게이트 B — 2계층 교차검증 강제:
+      YELLOW 이상 발령은 L1/L2/L3 중 _CROSS_VALIDATION_MIN_LAYERS(2)개 이상이
+      _CROSS_VALIDATION_LAYER_THRESHOLD(30.0) 이상일 때만 가능.
+      단독 계층만 30+ 이면 GREEN 다운그레이드.
 
     Args:
         composite: 가중합 점수 (0-100)
@@ -99,13 +123,8 @@ def determine_alert_level(
     Returns:
         'GREEN' | 'YELLOW' | 'ORANGE' | 'RED'
     """
-    # 30 이상인 계층 수 카운트 (None 은 0으로 처리)
-    above_threshold = sum(
-        1 for v in (l1, l2, l3) if v is not None and v >= 30
-    )
-
     # composite 기반 원래 레벨 결정
-    if composite >= 75:
+    if composite >= _RED_THRESHOLD:
         raw_level = "RED"
     elif composite >= 55:
         raw_level = "ORANGE"
@@ -114,12 +133,23 @@ def determine_alert_level(
     else:
         raw_level = "GREEN"
 
-    # 2개 이상 계층 교차검증 없으면 GREEN 으로 강제 다운그레이드
-    if raw_level in ("YELLOW", "ORANGE", "RED") and above_threshold < 2:
+    # GREEN 은 게이트 검사 불필요
+    if raw_level == "GREEN":
+        return "GREEN"
+
+    # 게이트 B: _CROSS_VALIDATION_MIN_LAYERS 개 이상 계층이
+    # _CROSS_VALIDATION_LAYER_THRESHOLD 이상이어야 YELLOW+ 발령
+    above_threshold = sum(
+        1 for v in (l1, l2, l3)
+        if v is not None and v >= _CROSS_VALIDATION_LAYER_THRESHOLD
+    )
+    if above_threshold < _CROSS_VALIDATION_MIN_LAYERS:
         logger.info(
-            "교차검증 실패 (30 이상 계층 %d개) — %s → GREEN 다운그레이드 "
+            "게이트B 차단 (%.1f+ 계층 %d개 < %d개) — %s → GREEN 다운그레이드 "
             "(l1=%.1f l2=%.1f l3=%.1f composite=%.1f)",
+            _CROSS_VALIDATION_LAYER_THRESHOLD,
             above_threshold,
+            _CROSS_VALIDATION_MIN_LAYERS,
             raw_level,
             l1 or 0.0,
             l2 or 0.0,
