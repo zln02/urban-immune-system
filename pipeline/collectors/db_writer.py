@@ -59,6 +59,7 @@ async def insert_signal(
     raw_value: float | None = None,
     source: str = "",
     ts: datetime | None = None,
+    pathogen: str = "influenza",
 ) -> None:
     """layer_signals 테이블에 정규화된 신호를 직접 INSERT한다.
 
@@ -69,6 +70,8 @@ async def insert_signal(
         raw_value: 원시 측정값 (선택)
         source: 데이터 출처 식별자 (선택)
         ts: 측정 타임스탬프 (None이면 현재 UTC). 과거 데이터 적재 시 명시.
+        pathogen: 병원체 라벨 ('influenza' | 'covid' | 'norovirus'). 기본 인플루엔자.
+            L1 OTC, L3 검색, AUX 기상은 인플루엔자 전제이며 L2 KOWAS만 3종 분리 적재.
     """
     pool = await _get_pool()
     when = ts if ts is not None else datetime.now(timezone.utc)
@@ -76,8 +79,8 @@ async def insert_signal(
         async with pool.acquire() as conn:
             await conn.execute(
                 """
-                INSERT INTO layer_signals (time, layer, region, value, raw_value, source)
-                VALUES ($1, $2, $3, $4, $5, $6)
+                INSERT INTO layer_signals (time, layer, region, value, raw_value, source, pathogen)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
                 """,
                 when,
                 layer,
@@ -85,10 +88,14 @@ async def insert_signal(
                 round(value, 4),
                 raw_value,
                 source,
+                pathogen,
             )
-        logger.debug("DB INSERT 완료 → %s | %s | %.2f", layer, region, value)
+        logger.debug("DB INSERT 완료 → %s/%s | %s | %.2f", layer, pathogen, region, value)
     except Exception as exc:
-        logger.error("layer_signals INSERT 실패 (layer=%s region=%s): %s", layer, region, exc)
+        logger.error(
+            "layer_signals INSERT 실패 (layer=%s pathogen=%s region=%s): %s",
+            layer, pathogen, region, exc,
+        )
         raise
 
 
