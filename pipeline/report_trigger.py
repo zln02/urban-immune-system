@@ -17,6 +17,8 @@ from dotenv import load_dotenv
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from ml.rag.vectordb import EpidemiologyVectorDB
+
 load_dotenv()
 
 logger = logging.getLogger(__name__)
@@ -26,6 +28,30 @@ ALERT_LEVELS_TO_REPORT = {"YELLOW", "ORANGE", "RED"}
 
 # 비용 절감용 Haiku 모델 (지시에 따라 claude-haiku-4-5-20251001 고정)
 _HAIKU_MODEL = "claude-haiku-4-5-20251001"
+
+# RAG 검색용 vectordb 싱글톤 (sentence-transformers 모델 로드 비용 회피)
+_RAG_TOP_K = 5
+_RAG_DOC_MAX_CHARS = 350
+_vdb_singleton: EpidemiologyVectorDB | None = None
+
+
+def _get_vdb() -> EpidemiologyVectorDB:
+    """프로세스 수명 동안 EpidemiologyVectorDB를 1회만 초기화한다."""
+    global _vdb_singleton
+    if _vdb_singleton is None:
+        _vdb_singleton = EpidemiologyVectorDB()
+    return _vdb_singleton
+
+
+def _fetch_rag_context(region: str, alert_level: str) -> list[dict]:
+    """Qdrant에서 가이드라인 top-k를 검색한다. 실패 시 빈 리스트."""
+    try:
+        vdb = _get_vdb()
+        query = f"{region} {alert_level} 인플루엔자 조기경보 다중신호 교차검증"
+        return vdb.search(query, top_k=_RAG_TOP_K)
+    except Exception:
+        logger.exception("RAG 검색 실패, 가이드라인 없이 진행")
+        return []
 
 _SYSTEM_PROMPT = """당신은 공중보건 전문가입니다.
 3-Layer 감염병 조기경보 시스템(약국 OTC + 하수 바이오마커 + 검색어 트렌드)의
@@ -51,16 +77,21 @@ def _get_engine():
     return create_async_engine(db_url, echo=False)
 
 
-def _build_report_prompt(region: str, signals: dict[str, Any]) -> str:
-    """L1/L2/L3, composite_score, alert_level 주입 프롬프트 생성.
+def _build_report_prompt(
+    region: str,
+    signals: dict[str, Any],
+    rag_docs: list[dict] | None = None,
+) -> str:
+    """L1/L2/L3, composite_score, alert_level + 선택적 RAG 가이드라인 주입.
 
     Args:
         region: 지역명
         signals: time, l1, l2, l3, composite, alert_level 포함 딕셔너리
+        rag_docs: Qdrant 검색 결과 (text/metadata 포함). None 또는 빈 리스트면 가이드라인 섹션 생략.
     Returns:
         Claude 사용자 프롬프트 문자열
     """
-    return (
+    base = (
         f"지역: {region}\n"
         f"분석 시점: {signals.get('time', 'N/A')}\n\n"
         "## 현재 신호 요약\n"
@@ -68,13 +99,25 @@ def _build_report_prompt(region: str, signals: dict[str, Any]) -> str:
         f"- Layer 2 (하수 바이오마커): {signals.get('l2', 'N/A')} / 100\n"
         f"- Layer 3 (검색어 트렌드): {signals.get('l3', 'N/A')} / 100\n"
         f"- 종합 위험도 점수: {signals.get('composite', 'N/A')} / 100\n"
-        f"- 경보 레벨: {signals.get('alert_level', 'N/A')}\n\n"
-        "위 데이터를 바탕으로 다음 항목을 포함한 경보 리포트를 작성하세요:\n"
+        f"- 경보 레벨: {signals.get('alert_level', 'N/A')}\n"
+    )
+
+    if rag_docs:
+        guideline_lines = []
+        for i, d in enumerate(rag_docs, 1):
+            topic = (d.get("metadata") or {}).get("topic", "guideline")
+            text_excerpt = " ".join(d.get("text", "").split())[:_RAG_DOC_MAX_CHARS]
+            guideline_lines.append(f"[참고 {i} · {topic}] {text_excerpt}")
+        base += "\n## 관련 역학 가이드라인 (RAG 인용)\n" + "\n\n".join(guideline_lines) + "\n"
+
+    base += (
+        "\n위 데이터와 가이드라인을 바탕으로 다음 항목을 포함한 경보 리포트를 작성하세요:\n"
         "1. 현황 요약 (2~3문장)\n"
-        "2. 각 Layer 신호 해석\n"
+        "2. 각 Layer 신호 해석 — 가이드라인을 인용해 근거 명시\n"
         "3. 7/14/21일 전망\n"
         "4. 권고 조치 (시민 대상 / 보건 당국 대상)"
     )
+    return base
 
 
 async def _call_claude_haiku(prompt: str) -> str:
@@ -196,7 +239,15 @@ async def generate_latest_alert_report(region: str) -> dict[str, Any] | None:
             "alert_level": alert_level,
         }
 
-        prompt = _build_report_prompt(region, signals)
+        rag_docs = _fetch_rag_context(region, alert_level)
+        logger.info(
+            "RAG 검색 결과: region=%s, docs=%d (top topic=%s)",
+            region,
+            len(rag_docs),
+            (rag_docs[0].get("metadata") or {}).get("topic") if rag_docs else "n/a",
+        )
+
+        prompt = _build_report_prompt(region, signals, rag_docs=rag_docs)
         logger.info("Claude Haiku 호출 시작: region=%s, level=%s", region, alert_level)
         report_text = await _call_claude_haiku(prompt)
 
