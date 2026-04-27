@@ -378,3 +378,68 @@ async def _stream_claude(prompt: str) -> AsyncIterator[str]:
     ) as stream:
         async for text in stream.text_stream:
             yield text
+
+
+@router.get("/explain/{report_id}")
+async def explain_alert_report(
+    report_id: int,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """특정 경보 리포트의 XAI 설명 반환.
+
+    alert_reports 테이블의 feature_values, rag_sources, model_metadata,
+    triggered_by, trigger_source 컬럼을 그대로 펼쳐 응답한다.
+    JSONB 컬럼이 NULL 이면 빈 객체/빈 배열을 반환한다 (404 아님).
+    """
+    result = await db.execute(
+        text("""
+            SELECT id, region, alert_level, summary,
+                   triggered_by, trigger_source, created_at,
+                   feature_values, rag_sources, model_metadata
+            FROM alert_reports
+            WHERE id = :report_id
+            LIMIT 1
+        """),
+        {"report_id": report_id},
+    )
+    row = result.mappings().first()
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"report_id={report_id} 를 찾을 수 없습니다.")
+
+    # JSONB 컬럼: DB에서 이미 dict/list로 deserialize 되거나 문자열로 올 수 있음
+    def _jsonb(val: object, default: object) -> object:
+        if val is None:
+            return default
+        if isinstance(val, (dict, list)):
+            return val
+        try:
+            return json.loads(str(val))
+        except Exception:
+            return default
+
+    raw_fv = _jsonb(row.get("feature_values"), {})
+    decision_factors: dict = {}
+    if isinstance(raw_fv, dict):
+        decision_factors = {
+            k: v for k, v in raw_fv.items()
+            if k in ("l1_otc", "l2_wastewater", "l3_search", "composite")
+        }
+
+    rag_raw = _jsonb(row.get("rag_sources"), [])
+    rag_citations: list = rag_raw if isinstance(rag_raw, list) else []
+
+    return {
+        "report_id": report_id,
+        "region": row.get("region"),
+        "alert_level": row.get("alert_level"),
+        "summary": row.get("summary"),
+        "decision_factors": decision_factors,
+        "feature_values": raw_fv,
+        "rag_citations": rag_citations,
+        "model_metadata": _jsonb(row.get("model_metadata"), {}),
+        "audit": {
+            "triggered_by": row.get("triggered_by"),
+            "trigger_source": row.get("trigger_source"),
+            "created_at": str(row.get("created_at")) if row.get("created_at") else None,
+        },
+    }
