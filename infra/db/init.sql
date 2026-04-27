@@ -12,11 +12,13 @@ CREATE TABLE IF NOT EXISTS layer_signals (
     value      DOUBLE PRECISION NOT NULL, -- Min-Max 정규화 (0~100)
     raw_value  DOUBLE PRECISION,
     source     VARCHAR(100),
+    pathogen   VARCHAR(20)    DEFAULT 'influenza',  -- 'influenza' | 'covid' | 'norovirus'
     PRIMARY KEY (id, time)
 );
 
 SELECT create_hypertable('layer_signals', 'time', if_not_exists => TRUE);
 CREATE INDEX IF NOT EXISTS ix_layer_signals_layer_region ON layer_signals (layer, region, time DESC);
+CREATE INDEX IF NOT EXISTS ix_layer_signals_pathogen_time ON layer_signals (pathogen, time DESC);
 
 -- 융합 리스크 점수
 CREATE TABLE IF NOT EXISTS risk_scores (
