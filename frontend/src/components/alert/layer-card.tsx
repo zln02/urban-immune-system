@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 
 interface LayerCardProps {
   title: string;
@@ -8,6 +9,9 @@ interface LayerCardProps {
   change: number;
   color: string;
   icon: ReactNode;
+  /** "전국 단일값" 같은 제약 표기. 회색 chip 으로 렌더 + tooltip */
+  caveatLabel?: string;
+  caveatTooltip?: { title: string; body: string };
 }
 
 function Spark({ data, color }: { data: number[]; color: string }) {
@@ -30,7 +34,7 @@ function Spark({ data, color }: { data: number[]; color: string }) {
   );
 }
 
-export function LayerCard({ title, sub, data, value, change, color, icon }: LayerCardProps) {
+export function LayerCard({ title, sub, data, value, change, color, icon, caveatLabel, caveatTooltip }: LayerCardProps) {
   const isUp = change >= 0;
   return (
     <div
@@ -47,7 +51,28 @@ export function LayerCard({ title, sub, data, value, change, color, icon }: Laye
       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
         <span style={{ color }}>{icon}</span>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 12, fontWeight: 600 }}>{title}</div>
+          <div style={{ fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+            <span>{title}</span>
+            {caveatLabel && (
+              <span
+                style={{
+                  fontSize: 9,
+                  fontWeight: 600,
+                  padding: "1px 6px",
+                  background: "var(--bg-sub)",
+                  color: "var(--text-tertiary)",
+                  border: "1px solid var(--border)",
+                  letterSpacing: 0.2,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {caveatLabel}
+              </span>
+            )}
+            {caveatTooltip && (
+              <InfoTooltip title={caveatTooltip.title} body={caveatTooltip.body} size={12} />
+            )}
+          </div>
           <div style={{ fontSize: 10, color: "var(--text-tertiary)" }}>{sub}</div>
         </div>
         <div

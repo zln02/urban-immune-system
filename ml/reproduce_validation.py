@@ -42,6 +42,44 @@ logger = logging.getLogger(__name__)
 
 OUTPUT_DIR = Path(__file__).parent / "outputs"
 OUTPUT_PATH = OUTPUT_DIR / "validation.json"
+BACKTEST_17_PATH = Path(__file__).parent.parent / "analysis" / "outputs" / "backtest_17regions.json"
+LEAD_TIME_PATH = Path(__file__).parent.parent / "analysis" / "outputs" / "lead_time_summary.json"
+
+
+def _load_realistic_stage() -> dict[str, Any]:
+    """analysis/outputs 의 17지역 백테스트 + lead_time 산출물을 realistic stage 로 통합.
+
+    deck 의 F1 0.621 / Recall 0.838 / +5.9주 선행 등 실데이터 측정값이
+    validation.json 한 파일에서 단일 출처로 재현 가능하도록 한다.
+    """
+    if not BACKTEST_17_PATH.exists():
+        return {
+            "status": "missing",
+            "reason": f"{BACKTEST_17_PATH} 가 없음. analysis/backtest_2025_flu_multi_17regions.py 먼저 실행.",
+        }
+
+    backtest = json.loads(BACKTEST_17_PATH.read_text(encoding="utf-8"))
+    summary = backtest.get("summary", {})
+    out: dict[str, Any] = {
+        "status": "ok",
+        "data_source": "17regions_backtest",
+        "task": "alert_classification (composite ≥ alert_threshold)",
+        "n_regions": summary.get("ok_regions"),
+        "cv_mean_f1": summary.get("mean_f1"),
+        "cv_mean_precision": summary.get("mean_precision"),
+        "cv_mean_recall": summary.get("mean_recall"),
+        "cv_mean_far": summary.get("mean_far_with_gate"),
+        "skipped_regions": summary.get("skipped_regions", []),
+        "source_file": str(BACKTEST_17_PATH.relative_to(Path(__file__).parent.parent)),
+    }
+
+    if LEAD_TIME_PATH.exists():
+        lead = json.loads(LEAD_TIME_PATH.read_text(encoding="utf-8"))
+        out["lead_time_weeks"] = lead.get("signal_lead_weeks", {})
+        out["ccf_max"] = lead.get("ccf_max", {})
+        out["granger_p"] = lead.get("granger_p", {})
+        out["analysis_window"] = lead.get("window")
+    return out
 
 
 def _summary_from_train_result(result: dict[str, Any]) -> dict[str, Any]:
@@ -227,6 +265,13 @@ def main() -> int:
             logger.exception("real 단계 실패")
             result["stages"]["real"] = {"status": "error", "error": str(exc)}
 
+    # realistic stage = 17지역 백테스트 단일 출처 통합 (deck F1 0.621 출처)
+    try:
+        result["stages"]["realistic"] = _load_realistic_stage()
+    except Exception as exc:
+        logger.exception("realistic 단계 실패")
+        result["stages"]["realistic"] = {"status": "error", "error": str(exc)}
+
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
     logger.info("결과 저장: %s", args.output)
@@ -249,6 +294,19 @@ def main() -> int:
         _print(f"real ({real.get('region', '?')})", real)
     else:
         print(f"  [real] {real.get('status', 'N/A')}: {real.get('reason', '')}")
+
+    realistic = result["stages"].get("realistic", {})
+    if realistic.get("status") == "ok":
+        comp_lead = (realistic.get("lead_time_weeks") or {}).get("composite")
+        print(
+            f"  [{'realistic_17regions':<20}] F1={realistic['cv_mean_f1']:.3f}  "
+            f"P={realistic['cv_mean_precision']:.3f}  R={realistic['cv_mean_recall']:.3f}  "
+            f"FAR={realistic['cv_mean_far']:.3f}  "
+            f"(n_regions={realistic.get('n_regions', '?')}, "
+            f"lead_composite={comp_lead}주)"
+        )
+    else:
+        print(f"  [realistic] {realistic.get('status', 'N/A')}: {realistic.get('reason', '')}")
 
     return 0
 

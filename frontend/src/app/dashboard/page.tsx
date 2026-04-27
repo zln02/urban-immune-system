@@ -826,6 +826,14 @@ export default function DashboardPage() {
               change={otcChange}
               color="var(--layer-pharmacy)"
               icon={<I.Pharmacy size={14} />}
+              caveatLabel={lang === "ko" ? "전국 단일값" : "Nationwide only"}
+              caveatTooltip={{
+                title: lang === "ko" ? "L1 OTC — 전국 단일값" : "L1 OTC — nationwide only",
+                body:
+                  lang === "ko"
+                    ? "네이버 쇼핑인사이트 API 정책상 전국 통합 지표만 제공. 17지역에 동일값으로 표시됩니다. 진짜 시·도 차등 신호는 HIRA OpenAPI(시·군·구 의약품 청구) 연결 후 (Phase 2, 6월)."
+                    : "Naver shopping insight API only exposes a single nationwide value. Real per-region L1 signal will land after HIRA OpenAPI integration in Phase 2.",
+              }}
             />
             <LayerCard
               title={t.layer_sewage}
@@ -844,6 +852,14 @@ export default function DashboardPage() {
               change={searchChange}
               color="var(--layer-search)"
               icon={<I.Search size={14} />}
+              caveatLabel={lang === "ko" ? "전국 단일값" : "Nationwide only"}
+              caveatTooltip={{
+                title: lang === "ko" ? "L3 검색 — 전국 단일값" : "L3 search — nationwide only",
+                body:
+                  lang === "ko"
+                    ? "네이버 데이터랩 검색 트렌드 API도 전국 통합 지표만 제공. 17지역에 동일값. 시·도/시·군·구 차등은 통신3사·카드 데이터 연계로 Phase 3 예정."
+                    : "Naver datalab search trends API exposes nationwide value only.",
+              }}
             />
           </div>
         </div>
