@@ -123,6 +123,8 @@ frontend/out/
 *.pdf
 docs/slides/
 docs/weekly-reports/
+# Next.js 정적 미러 (sync-slides.sh 로 로컬·서버에서 재생성)
+frontend/public/slides/
 
 # 회의자료 대용량 파일
 캡스톤_회의자료.pdf
