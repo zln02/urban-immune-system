@@ -277,6 +277,23 @@ export default function DashboardPage() {
             />
             <span>{dataSourceLabel} · {hasOtc || hasSearch ? "실시간" : t.header_sync}</span>
           </div>
+          <a
+            href="/slides/index.html"
+            target="_blank"
+            rel="noopener"
+            aria-label={lang === "en" ? "Open midterm presentation slides" : "중간발표 슬라이드 열기"}
+            style={{
+              ...iconBtnDark,
+              padding: "0 10px",
+              textDecoration: "none",
+              fontSize: 11,
+              fontWeight: 600,
+              gap: 4,
+            }}
+          >
+            <span aria-hidden>📊</span>
+            <span>{lang === "en" ? "Slides" : "발표"}</span>
+          </a>
           <button
             type="button"
             aria-label={lang === "en" ? "Toggle language" : "언어 전환"}

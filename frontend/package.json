@@ -3,11 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "predev": "bash ../scripts/sync-slides.sh || true",
     "dev": "next dev -p 3000",
+    "prebuild": "bash ../scripts/sync-slides.sh || true",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "sync:slides": "bash ../scripts/sync-slides.sh"
   },
   "dependencies": {
     "next": "^14.2.3",
