@@ -19,6 +19,8 @@ backend = [
     "asyncpg>=0.29",
     "sqlalchemy[asyncio]>=2.0",
     "python-dotenv>=1.0",
+    "reportlab>=4.0",
+    "matplotlib>=3.8",
 ]
 pipeline = [
     "kafka-python>=2.0.2",
