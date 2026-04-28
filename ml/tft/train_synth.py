@@ -23,11 +23,11 @@ import warnings
 from datetime import datetime, timezone
 from pathlib import Path
 
+# pytorch_forecasting 1.7+은 `lightning.pytorch` 를 사용하므로 trainer/콜백도 동일 패키지에서 import
+import lightning.pytorch as pl
 import numpy as np
 import pandas as pd
 import torch
-# pytorch_forecasting 1.7+은 `lightning.pytorch` 를 사용하므로 trainer/콜백도 동일 패키지에서 import
-import lightning.pytorch as pl
 from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
 from lightning.pytorch.loggers import CSVLogger
 from pytorch_forecasting import TemporalFusionTransformer, TimeSeriesDataSet
@@ -110,8 +110,16 @@ def _attention_summary(model: TemporalFusionTransformer, dataset: TimeSeriesData
         encoder_attention = out["encoder_attention"]
         encoder_variables = out["encoder_variables"]
 
-        attn_t = encoder_attention.float() if isinstance(encoder_attention, torch.Tensor) else torch.as_tensor(encoder_attention).float()
-        var_t = encoder_variables.float() if isinstance(encoder_variables, torch.Tensor) else torch.as_tensor(encoder_variables).float()
+        attn_t = (
+            encoder_attention.float()
+            if isinstance(encoder_attention, torch.Tensor)
+            else torch.as_tensor(encoder_attention).float()
+        )
+        var_t = (
+            encoder_variables.float()
+            if isinstance(encoder_variables, torch.Tensor)
+            else torch.as_tensor(encoder_variables).float()
+        )
 
         # encoder time step별 평균 attention (전체 batch + heads + target step 평균)
         # shape (B, T_enc, heads, T_enc) → (T_enc,) 마지막 query축에 대한 평균

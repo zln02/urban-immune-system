@@ -33,7 +33,6 @@ from ml.xgboost.model import (
     HARDENED_ALERT_COL,
     HARDENED_ALERT_THRESHOLD,
     HARDENED_TARGET_COL,
-    TARGET_COL,
     generate_synthetic_data,
     train,
 )
@@ -285,7 +284,8 @@ def main() -> int:
                 f"  [{label:<20}] F1={s['cv_mean_f1']:.3f}  "
                 f"P={s['cv_mean_precision']:.3f}  R={s['cv_mean_recall']:.3f}  "
                 f"AUC={s['cv_mean_auc_roc']:.3f}  MAE={s['cv_mean_mae']:.2f}  "
-                f"(n_weeks={s.get('n_weeks', '?')}, valid_folds={s.get('n_folds_valid', '?')}/{s.get('n_folds_total', '?')})"
+                f"(n_weeks={s.get('n_weeks', '?')}, "
+                f"valid_folds={s.get('n_folds_valid', '?')}/{s.get('n_folds_total', '?')})"
             )
 
     _print("synthetic_hardened", result["stages"].get("synthetic_hardened", {}))

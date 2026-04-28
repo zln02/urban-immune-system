@@ -26,6 +26,8 @@ from pathlib import Path
 from pipeline.collectors.db_writer import insert_signal
 from pipeline.collectors.kowas_downloader import (
     DEFAULT_OUTPUT_DIR as PDF_DIR,
+)
+from pipeline.collectors.kowas_downloader import (
     download_all,
 )
 from pipeline.collectors.kowas_parser import (

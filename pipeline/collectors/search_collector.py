@@ -14,6 +14,7 @@
 """
 from __future__ import annotations
 
+
 # 후방 호환을 위한 export 보존 — 외부에서 import하면 즉시 안내 예외 발생
 def collect_search_weekly(*args, **kwargs):  # noqa: D401, ANN001, ANN002, ANN003
     raise RuntimeError(

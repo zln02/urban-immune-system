@@ -13,7 +13,6 @@ from datetime import datetime, timedelta, timezone
 import httpx
 
 from pipeline.collectors.db_writer import insert_signal_sync
-from pipeline.collectors.normalization import min_max_normalize
 
 logger = logging.getLogger(__name__)
 DATALAB_URL = "https://openapi.naver.com/v1/datalab/shopping/categories"

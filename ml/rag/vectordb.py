@@ -92,6 +92,10 @@ class EpidemiologyVectorDB:
             limit=top_k,
         )
         return [
-            {"score": p.score, "text": p.payload.get("text", ""), "metadata": p.payload}
+            {
+                "score": p.score,
+                "text": (p.payload or {}).get("text", ""),
+                "metadata": p.payload or {},
+            }
             for p in response.points
         ]

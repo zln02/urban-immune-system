@@ -128,11 +128,11 @@ async def get_prediction_explain(
     ]
 
     # 해석 문자열 — 상위 2개 변수 기반 자동 생성
-    top2 = [fi["variable"] for fi in feature_importance[:2]]
+    top2: list[str] = [str(fi["variable"]) for fi in feature_importance[:2]]
     interpretation = (
         f"{top2[0]}와 {top2[1]}가 가장 중요한 결정 요인"
         if len(top2) == 2
-        else (top2[0] + "가 가장 중요한 결정 요인" if top2 else "변수 정보 없음")
+        else (f"{top2[0]}가 가장 중요한 결정 요인" if top2 else "변수 정보 없음")
     )
 
     return {

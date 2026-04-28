@@ -84,7 +84,7 @@ jobs:
       - run: npm run lint
       - run: npm run type-check
 
-  # ── 기존 src/ 테스트 (하위 호환) ─────────────────────────
+  # ── 통합 테스트 (모든 의존성 포함) ─────────────────────────
   legacy-test:
     name: Legacy src/ Tests
     runs-on: ubuntu-latest
@@ -94,5 +94,5 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-      - run: pip install -e ".[dev]"
+      - run: pip install -e ".[all]"
       - run: pytest tests --cov=src --cov-report=term-missing

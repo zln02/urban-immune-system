@@ -6,6 +6,7 @@ metadata.source / metadata.url에 원 출처를 명시한다.
 추후 확장 시 이 모듈에 dict를 추가하고 다시 실행하면 upsert로 갱신된다.
 목표: 10~20편 (WHO/KCDC 감염병 가이드라인 포함).
 """
+# ruff: noqa: E501  -- 가이드라인 인용 본문은 줄 분할 시 의미가 깨져 한 줄 유지
 from __future__ import annotations
 
 import argparse

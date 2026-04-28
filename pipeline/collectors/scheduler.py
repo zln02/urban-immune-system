@@ -10,22 +10,24 @@
 TimescaleDB layer_signals 테이블에 직접 INSERT한다.
 (발표 데모 단순화 옵션: cron + DB INSERT, Kafka Consumer 불필요)
 """
+# ruff: noqa: E402  -- load_dotenv() 가 먼저 환경변수를 채운 뒤에 collector 모듈을 import 해야 함
 import logging
 
 from dotenv import load_dotenv
+
 load_dotenv()
+
+import asyncio
 
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 
-import asyncio
-
-from pipeline.collectors.otc_collector import collect_otc_weekly
-from pipeline.collectors.naver_backfill import run_backfill
-from pipeline.collectors.wastewater import collect_wastewater_from_pdfs
-from pipeline.collectors.weather_collector import collect_weather
 from pipeline.collectors.kcdc_collector import collect_and_insert_weekly
 from pipeline.collectors.kowas_downloader import download_latest
+from pipeline.collectors.naver_backfill import run_backfill
+from pipeline.collectors.otc_collector import collect_otc_weekly
+from pipeline.collectors.wastewater import collect_wastewater_from_pdfs
+from pipeline.collectors.weather_collector import collect_weather
 from pipeline.report_trigger import run_nightly_reports
 from pipeline.scorer import run_weekly_scoring
 

@@ -8,6 +8,7 @@ ReportLab + matplotlib 로 4페이지 구성:
 
 폰트: NanumGothic (시스템 설치 가정 — 캡스톤 GCP VM에 기본 포함)
 """
+# ruff: noqa: E501  -- ReportLab Paragraph 한국어 본문은 한 줄 유지가 가독성에 유리
 from __future__ import annotations
 
 import io
@@ -17,13 +18,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib import font_manager
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.lib.units import cm, mm
+from reportlab.lib.units import mm
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
@@ -348,7 +350,7 @@ async def build_alert_pdf(region: str, db: AsyncSession) -> bytes:
     story.append(Spacer(1, 4 * mm))
     claim = lead.get("one_sentence_claim", "")
     if claim:
-        story.append(Paragraph(f"<b>핵심 결론</b>", h3))
+        story.append(Paragraph("<b>핵심 결론</b>", h3))
         story.append(Paragraph(claim, base))
     story.append(Spacer(1, 6 * mm))
 
