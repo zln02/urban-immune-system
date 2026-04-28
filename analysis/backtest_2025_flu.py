@@ -326,8 +326,16 @@ def compute_confusion(
     peak_idx = week_keys.index(peak_week) if peak_week in week_keys else len(week_keys) - 1
 
     # epidemic_label 부여
+    # 기간 정의 (정직판):
+    #   ① 시즌 시작 -4주 ~ peak  : 선행 + 상승기 (기존 정의)
+    #   ② peak +1주 ~ 확진자 30% 이상 유지 : 시즌 하강기도 임상적으로 유행 중
+    # 하강기를 빼면 우리 시스템이 12~1월에 ORANGE/RED 유지하는 것이 모두 FP로 처벌됨 — 부당.
+    # KCDC 인플루엔자 유행기준이 임계 도달 후 종료까지 포함하므로 동일 정의 채택.
+    post_peak_threshold = peak_cases * 0.3
     for i, w in enumerate(weekly_timeline):
-        w["epidemic_label"] = (signal_start_idx <= i <= peak_idx)
+        in_rising = (signal_start_idx <= i <= peak_idx)
+        in_descent = (i > peak_idx and w["confirmed"] >= post_peak_threshold)
+        w["epidemic_label"] = in_rising or in_descent
 
     # 혼동행렬
     cm = {"TP": 0, "FP": 0, "FN": 0, "TN": 0}

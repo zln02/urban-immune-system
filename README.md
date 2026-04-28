@@ -20,9 +20,11 @@
 
 ## 검증 결과
 
-- **F1-Score**: 0.71 | **Precision**: 1.00 (오경보 0건)
+- **F1**: 0.84 | **Precision**: 0.96 | **Recall**: 0.77 | **FAR**: 0.16
+- **Lead time**: 임상 신고 peak 대비 평균 **5.9주 선행**
+- 17 시·도 walk-forward 백테스트 · KCDC 인플루엔자 유행기준 정의 · 1,020건 ground truth
 - **Granger 인과검정**: 3개 Layer 모두 p < 0.05
-- 2024-25 인플루엔자 시즌 실데이터 기반
+- 2025-26 인플루엔자 시즌 실데이터 기반 (`analysis/outputs/backtest_17regions.json`)
 
 ## 아키텍처
 

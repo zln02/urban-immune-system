@@ -25,7 +25,7 @@ from datetime import date, datetime, timedelta, timezone
 
 import httpx
 
-from pipeline.collectors.db_writer import insert_signal
+from pipeline.collectors.db_writer import delete_signal_range, insert_signal
 from pipeline.collectors.normalization import min_max_normalize
 
 logger = logging.getLogger(__name__)
@@ -95,10 +95,17 @@ async def backfill_layer(
     source: str,
     regions: list[str],
 ) -> int:
-    """단일 layer 시계열을 17개 region에 복제 적재."""
+    """단일 layer 시계열을 17개 region에 복제 적재.
+
+    멱등성: 동일 (layer, source) 의 시계열 시작점 이후 행을 일괄 삭제 후 재적재.
+    weekly 잡이 매주 동일 56주 데이터를 INSERT 해도 누적되지 않는다.
+    """
     if not series:
         logger.warning("%s: 시계열 비어있음", layer)
         return 0
+    start_ts = datetime.combine(series[0][0], datetime.min.time(), tzinfo=timezone.utc)
+    await delete_signal_range(layer=layer, source=source, start_ts=start_ts)
+
     raw = [v for _, v in series]
     norm = min_max_normalize(raw)
     inserted = 0
@@ -116,6 +123,55 @@ async def backfill_layer(
     return inserted
 
 
+async def run_backfill(
+    weeks: int = 56,
+    layers: str = "both",
+    regions: str = "all",
+) -> dict[str, int]:
+    """scheduler/CLI 양쪽에서 호출 가능한 백필 코어.
+
+    Args:
+        weeks: 백필 주차 수
+        layers: 'both' | 'otc' | 'search'
+        regions: 'all' (17개 시·도) | 'single' (서울만)
+
+    Returns:
+        {'search': 적재건수, 'otc': 적재건수}
+    """
+    end = date.today()
+    start = end - timedelta(weeks=weeks)
+    logger.info("백필 범위: %s ~ %s (%d주)", start, end, weeks)
+    region_list = SIDO_ALL if regions == "all" else ["서울특별시"]
+    counts: dict[str, int] = {}
+
+    with _client() as client:
+        if layers in ("both", "search"):
+            try:
+                ser = fetch_search_series(client, start, end)
+                logger.info("Search %d주 수집 → %d 지역 복제 적재", len(ser), len(region_list))
+                counts["search"] = await backfill_layer(
+                    "search", ser, "naver_datalab", region_list,
+                )
+                logger.info("search 적재 %d건", counts["search"])
+            except Exception as exc:
+                logger.exception("Search 백필 실패: %s", exc)
+                counts["search"] = 0
+
+        if layers in ("both", "otc"):
+            try:
+                ser = fetch_shopping_series(client, start, end)
+                logger.info("OTC %d주 수집 → %d 지역 복제 적재", len(ser), len(region_list))
+                counts["otc"] = await backfill_layer(
+                    "otc", ser, "naver_shopping", region_list,
+                )
+                logger.info("otc 적재 %d건", counts["otc"])
+            except Exception as exc:
+                logger.exception("OTC 백필 실패: %s", exc)
+                counts["otc"] = 0
+
+    return counts
+
+
 async def main() -> int:
     parser = argparse.ArgumentParser(description="Naver OTC/Search 시계열 백필")
     parser.add_argument("--weeks", type=int, default=56, help="백필 주차 수 (기본 1년+여유)")
@@ -128,30 +184,7 @@ async def main() -> int:
                         format="%(asctime)s [%(levelname)s] %(message)s",
                         datefmt="%H:%M:%S")
 
-    end = date.today()
-    start = end - timedelta(weeks=args.weeks)
-    logger.info("백필 범위: %s ~ %s (%d주)", start, end, args.weeks)
-    regions = SIDO_ALL if args.regions == "all" else ["서울특별시"]
-
-    with _client() as client:
-        if args.layers in ("both", "search"):
-            try:
-                ser = fetch_search_series(client, start, end)
-                logger.info("Search %d주 수집 → %d 지역 복제 적재", len(ser), len(regions))
-                n = await backfill_layer("search", ser, "naver_datalab", regions)
-                logger.info("search 적재 %d건", n)
-            except Exception as exc:
-                logger.exception("Search 백필 실패: %s", exc)
-
-        if args.layers in ("both", "otc"):
-            try:
-                ser = fetch_shopping_series(client, start, end)
-                logger.info("OTC %d주 수집 → %d 지역 복제 적재", len(ser), len(regions))
-                n = await backfill_layer("otc", ser, "naver_shopping", regions)
-                logger.info("otc 적재 %d건", n)
-            except Exception as exc:
-                logger.exception("OTC 백필 실패: %s", exc)
-
+    await run_backfill(weeks=args.weeks, layers=args.layers, regions=args.regions)
     return 0
 
 

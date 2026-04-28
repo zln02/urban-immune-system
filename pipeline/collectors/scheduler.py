@@ -21,7 +21,7 @@ from apscheduler.triggers.cron import CronTrigger
 import asyncio
 
 from pipeline.collectors.otc_collector import collect_otc_weekly
-from pipeline.collectors.search_collector import collect_search_weekly
+from pipeline.collectors.naver_backfill import run_backfill
 from pipeline.collectors.wastewater import collect_wastewater_from_pdfs
 from pipeline.collectors.weather_collector import collect_weather
 from pipeline.collectors.kcdc_collector import collect_and_insert_weekly
@@ -35,7 +35,20 @@ logger = logging.getLogger(__name__)
 scheduler = BlockingScheduler(timezone="Asia/Seoul")
 
 scheduler.add_job(collect_otc_weekly, CronTrigger(day_of_week="mon", hour=9, minute=0), id="otc")
-scheduler.add_job(collect_search_weekly, CronTrigger(day_of_week="mon", hour=9, minute=5), id="search")
+
+
+# L3 검색은 DataLab API가 지역 분리를 미지원하므로 backfill 패턴(전국 56주 → 17지역 복제)으로
+# weekly 호출. backfill_layer 내부 멱등성 DELETE로 중복 누적 방지.
+def _run_search_backfill_sync() -> None:
+    asyncio.run(run_backfill(weeks=56, layers="search", regions="all"))
+
+
+scheduler.add_job(
+    _run_search_backfill_sync,
+    CronTrigger(day_of_week="mon", hour=9, minute=5),
+    id="search",
+    name="L3 검색 트렌드 56주 백필 (17지역 복제)",
+)
 scheduler.add_job(collect_wastewater_from_pdfs, CronTrigger(day_of_week="tue", hour=10, minute=0), id="wastewater")
 
 # 매주 화요일 09:30 — KOWAS 주간 PDF 자동 다운로드 (파싱 10:00 이전에 선행 실행)

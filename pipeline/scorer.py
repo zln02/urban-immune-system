@@ -18,7 +18,7 @@ import logging
 import os
 import warnings
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import asyncpg
@@ -212,6 +212,7 @@ async def _fetch_latest_signals(
     pool: asyncpg.Pool,
     region: str,
     pathogen: str = "influenza",
+    as_of: datetime | None = None,
 ) -> dict[str, float | None]:
     """해당 지역의 L1/L2/L3 최신 값을 각각 조회한다.
 
@@ -224,6 +225,8 @@ async def _fetch_latest_signals(
         pool: asyncpg 커넥션 풀
         region: 지역명
         pathogen: 병원체 라벨. 현재 인플루엔자 점수 계산만 지원.
+        as_of: 이 시점 이전(포함)의 신호만 조회. None=현재 시점 (기존 동작).
+            과거 시점 risk_scores 백필에 사용.
 
     Returns:
         {'otc': float|None, 'wastewater': float|None, 'search': float|None,
@@ -239,10 +242,12 @@ async def _fetch_latest_signals(
         WHERE region = $1
           AND layer IN ('otc', 'wastewater', 'search')
           AND pathogen = $2
+          AND ($3::timestamptz IS NULL OR time <= $3)
         ORDER BY layer, time DESC
         """,
         region,
         pathogen,
+        as_of,
     )
 
     result: dict[str, float | None] = {
@@ -282,7 +287,16 @@ async def compute_risk_scores_for_region(
     """
     w1, w2, w3 = _load_weights()
     pool = await _get_pool()
-    signals = await _fetch_latest_signals(pool, region)
+    # target_date 끝(23:59:59 UTC)을 기준으로 그날 적재된 신호까지 포함.
+    # INSERT 시 score_time 은 별도로 00:00 으로 저장 (라인 318 근처).
+    as_of = datetime(
+        target_date.year,
+        target_date.month,
+        target_date.day,
+        23, 59, 59,
+        tzinfo=timezone.utc,
+    )
+    signals = await _fetch_latest_signals(pool, region, as_of=as_of)
 
     l1 = signals["otc"]
     l2 = signals["wastewater"]
@@ -426,19 +440,95 @@ async def run_weekly_scoring() -> int:
 
 
 # ---------------------------------------------------------------------------
+# 과거 시점 시뮬레이션 백필
+# ---------------------------------------------------------------------------
+
+async def backfill_risk_scores(
+    start_date: date,
+    end_date: date,
+    step_days: int = 7,
+) -> int:
+    """과거 시점들에 대해 risk_scores 를 시뮬레이션 적재한다.
+
+    각 시점의 layer_signals (그 시점 이전 최신값) 으로 composite_score 를 계산해
+    risk_scores 에 INSERT/UPDATE. 발표 데모에서 1년치 경보 타임라인을 보여주기 위함.
+
+    Args:
+        start_date: 시작 날짜 (포함)
+        end_date: 종료 날짜 (포함)
+        step_days: 시점 간 간격 (기본 7일 = 주간)
+
+    Returns:
+        처리된 (region, time) 행 수
+    """
+    pool = await _get_pool()
+    regions: list[str] = [
+        row["region"]
+        for row in await pool.fetch(
+            "SELECT DISTINCT region FROM layer_signals ORDER BY region"
+        )
+    ]
+    if not regions:
+        logger.warning("layer_signals 가 비어있어 백필 불가")
+        return 0
+
+    total = 0
+    cur = start_date
+    weeks = 0
+    while cur <= end_date:
+        weeks += 1
+        week_count = 0
+        for region in regions:
+            try:
+                row = await compute_risk_scores_for_region(region, cur)
+                if row is None:
+                    continue
+                await _upsert_risk_score(pool, row)
+                week_count += 1
+            except Exception as exc:
+                logger.error("백필 실패 region=%s date=%s: %s", region, cur, exc)
+        logger.info("시점 %s — %d/%d 지역 처리", cur, week_count, len(regions))
+        total += week_count
+        cur = cur + timedelta(days=step_days)
+
+    logger.info("backfill_risk_scores 완료 — %d주 × 평균지역 = %d행", weeks, total)
+    return total
+
+
+# ---------------------------------------------------------------------------
 # 직접 실행 엔트리포인트
 # ---------------------------------------------------------------------------
 
 async def _main() -> None:
-    """python -m pipeline.scorer 실행 시 호출된다."""
+    """python -m pipeline.scorer [--backfill START END] 실행 시 호출된다."""
+    import argparse
+
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
     )
-    logger.info("=== 앙상블 scorer 수동 실행 시작 ===")
+    parser = argparse.ArgumentParser(description="앙상블 scorer")
+    parser.add_argument(
+        "--backfill",
+        nargs=2,
+        metavar=("START", "END"),
+        help="과거 시점 시뮬레이션 백필 (YYYY-MM-DD YYYY-MM-DD)",
+    )
+    parser.add_argument("--step-days", type=int, default=7,
+                        help="백필 시점 간 간격 (기본 7일)")
+    args = parser.parse_args()
+
     try:
-        count = await run_weekly_scoring()
-        logger.info("완료 — risk_scores 적재 건수: %d", count)
+        if args.backfill:
+            start = date.fromisoformat(args.backfill[0])
+            end = date.fromisoformat(args.backfill[1])
+            logger.info("=== risk_scores 백필 시작: %s ~ %s ===", start, end)
+            count = await backfill_risk_scores(start, end, step_days=args.step_days)
+            logger.info("백필 완료 — 적재 행 수: %d", count)
+        else:
+            logger.info("=== 앙상블 scorer 수동 실행 시작 ===")
+            count = await run_weekly_scoring()
+            logger.info("완료 — risk_scores 적재 건수: %d", count)
     finally:
         await _close_pool()
 

@@ -99,6 +99,36 @@ async def insert_signal(
         raise
 
 
+async def delete_signal_range(
+    layer: str,
+    source: str,
+    start_ts: datetime,
+) -> int:
+    """layer_signals 에서 (layer, source, time >= start_ts) 범위를 삭제한다.
+
+    백필 잡의 멱등성 보장용. source로 한정해 다른 출처(예: kowas:* )는 영향 없음.
+
+    Returns:
+        삭제된 행 수
+    """
+    pool = await _get_pool()
+    async with pool.acquire() as conn:
+        result = await conn.execute(
+            """
+            DELETE FROM layer_signals
+            WHERE layer = $1 AND source = $2 AND time >= $3
+            """,
+            layer,
+            source,
+            start_ts,
+        )
+    deleted = int(result.split()[-1]) if result else 0
+    if deleted:
+        logger.info("멱등성 DELETE: layer=%s source=%s ≥%s → %d행 제거",
+                    layer, source, start_ts.date(), deleted)
+    return deleted
+
+
 def insert_signal_sync(
     region: str,
     layer: str,
