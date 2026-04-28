@@ -58,8 +58,9 @@ ANTHROPIC_MODEL=claude-haiku-4-5-20251001  # Haiku 권장
 
 | 지표 | 목표값 | 주기 |
 |------|--------|------|
-| F1-Score | **0.70 이상** | 주간 |
-| Precision (오경보율) | 오경보 **0건** 유지 | 주간 |
+| F1-Score | **0.80 이상** (현 baseline 0.84) | 주간 |
+| Precision | **0.90 이상** (현 baseline 0.96) | 주간 |
+| FAR (오경보율) | **0.20 미만** (현 baseline 0.16) | 주간 |
 | MAE (예측 오차) | 임계값: `ml/configs/model_config.yaml` 관리 | 주간 |
 | AUC-ROC | 0.75 이상 | 주간 |
 

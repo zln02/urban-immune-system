@@ -1,7 +1,8 @@
 "use client";
 import { useState, useCallback, useRef } from "react";
 
-const BACKEND = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8001";
+import { API_BASE } from "@/lib/api";
+const BACKEND = API_BASE;
 
 export interface RagCitation {
   rank: number;

@@ -13,7 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..config import settings
 from ..database import get_db
-from ..services.alert_service import get_latest_alert, get_latest_risk_score, save_alert_report
+from ..services.alert_service import get_latest_alert, get_latest_risk_score
+from ..services.report_pdf import build_alert_pdf
 from ..tasks import generate_report_task
 
 router = APIRouter(prefix="/api/v1/alerts", tags=["alerts"])
@@ -40,41 +41,80 @@ def _compute_alert_level(score: float) -> str:
     return "RED"
 
 
+def _reverify_alert(
+    composite: float, l1: float, l2: float, l3: float, stored: str | None,
+) -> str:
+    """risk_scores row 저장값이 교차검증 규칙과 일치하는지 재검증.
+
+    과거 스키마·수동 INSERT로 오염된 row가 있어도 최종 응답은 항상 규칙에 맞게 강제.
+    규칙: composite 기반 raw_level + (GREEN 외 등급은 2개 이상 계층이 30 이상이어야 발령)
+    """
+    raw = _compute_alert_level(composite)
+    n_above = sum(1 for v in (l1, l2, l3) if v is not None and v >= 30)
+    final = raw if (raw == "GREEN" or n_above >= 2) else "GREEN"
+    if stored and stored != final:
+        logger.warning(
+            "risk_scores 저장 라벨(%s)이 교차검증 결과(%s)와 다름 — 재검증 값으로 대체 "
+            "(composite=%.2f, l1=%.1f l2=%.1f l3=%.1f, layers_above_30=%d)",
+            stored, final, composite, l1, l2, l3, n_above,
+        )
+    return final
+
+
 @router.get("/current")
 async def get_current_alert(
     region: str = Query("서울특별시", min_length=2, max_length=100),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
-    """현재 경보 레벨: 최근 4주 평균 3계층 신호 앙상블 + DB 리포트 조회.
+    """현재 경보 레벨: risk_scores 최신 row 기준 + DB 리포트 조회.
 
-    단일 시점 noise(수집 실패·spike)에 흔들리지 않도록 최근 28일 평균을 사용한다.
-    value=0 행은 수집 실패로 간주해 평균에서 제외.
+    risk_scores에 해당 region row가 있으면 최신 row의 점수·레벨을 그대로 사용.
+    row가 없으면 layer_signals 28일 평균 앙상블로 fallback.
+    summary/recommendations는 alert_reports 최신 row에서 조회.
     """
-    query = text("""
-        SELECT layer, AVG(value) AS value
-        FROM layer_signals
-        WHERE region = :region
-          AND layer IN ('otc', 'wastewater', 'search')
-          AND time >= NOW() - INTERVAL '28 days'
-          AND value > 0
-        GROUP BY layer
-    """)
-    result = await db.execute(query, {"region": region})
-    rows = {r["layer"]: float(r["value"]) for r in result.mappings().all()}
+    # 1차: risk_scores 최신 row 조회
+    risk = await get_latest_risk_score(region, db)
 
-    l1 = rows.get("otc", 0.0)
-    l2 = rows.get("wastewater", 0.0)
-    l3 = rows.get("search", 0.0)
-    composite = round(W1 * l1 + W2 * l2 + W3 * l3, 2)
-    alert_level = _compute_alert_level(composite)
+    if risk is not None:
+        # risk_scores row 기반 — 단 저장된 alert_level이 규칙과 다를 수 있으므로 재검증
+        l1 = float(risk.get("l1_score") or 0.0)
+        l2 = float(risk.get("l2_score") or 0.0)
+        l3 = float(risk.get("l3_score") or 0.0)
+        composite = round(float(risk.get("composite_score") or 0.0), 2)
+        stored_level = str(risk.get("alert_level") or "GREEN")
+        alert_level = _reverify_alert(composite, l1, l2, l3, stored_level)
+        logger.info(
+            "risk_scores 기반 (재검증 적용): region=%s composite=%.2f level=%s",
+            region, composite, alert_level,
+        )
+    else:
+        # fallback: layer_signals 28일 평균 앙상블
+        logger.info("risk_scores 없음 → layer_signals 28일 평균 fallback: region=%s", region)
+        query = text("""
+            SELECT layer, AVG(value) AS value
+            FROM layer_signals
+            WHERE region = :region
+              AND layer IN ('otc', 'wastewater', 'search')
+              AND time >= NOW() - INTERVAL '28 days'
+              AND value > 0
+            GROUP BY layer
+        """)
+        result = await db.execute(query, {"region": region})
+        rows = {r["layer"]: float(r["value"]) for r in result.mappings().all()}
 
-    # 교차검증: YELLOW 이상은 2개 이상 계층 30 이상 필수
-    layers_above_30 = sum(1 for v in [l1, l2, l3] if v >= 30)
-    if alert_level != "GREEN" and layers_above_30 < 2:
-        alert_level = "GREEN"
-        logger.info("교차검증 미충족 (%d개 계층) → GREEN 유지", layers_above_30)
+        l1 = rows.get("otc", 0.0)
+        l2 = rows.get("wastewater", 0.0)
+        l3 = rows.get("search", 0.0)
+        composite = round(W1 * l1 + W2 * l2 + W3 * l3, 2)
+        alert_level = _compute_alert_level(composite)
 
-    # 최신 리포트 조회
+        # 교차검증: YELLOW 이상은 2개 이상 계층 30 이상 필수
+        layers_above_30 = sum(1 for v in [l1, l2, l3] if v >= 30)
+        if alert_level != "GREEN" and layers_above_30 < 2:
+            alert_level = "GREEN"
+            logger.info("교차검증 미충족 (%d개 계층) → GREEN 유지", layers_above_30)
+
+    # 최신 리포트 조회 (alert_reports — 기존 로직 유지)
     alert = await get_latest_alert(region, db)
     return {
         "region": region,
@@ -94,11 +134,34 @@ async def list_region_alerts(
     db: AsyncSession = Depends(get_db),
     days: int = Query(28, ge=7, le=365),
 ) -> dict:
-    """전국 17개 시·도 동시 경보 — 최근 N일 평균 + value=0 제외 + 교차검증.
+    """전국 17개 시·도 동시 경보 — risk_scores 최신 row 기반 + fallback layer_signals.
 
+    각 region의 최신 risk_scores row를 먼저 조회.
+    risk_scores에 해당 region이 없으면 layer_signals 28일 평균으로 fallback.
     Frontend AlertTable 1회 호출로 전국 현황 표시 (region별 17번 호출 회피).
     """
-    query = text(f"""
+    # 1차: risk_scores에서 모든 지역의 최신 row 조회 (DISTINCT ON)
+    risk_query = text("""
+        SELECT DISTINCT ON (region) region, l1_score, l2_score, l3_score,
+               composite_score, alert_level, time
+        FROM risk_scores
+        ORDER BY region, time DESC
+    """)
+    risk_result = await db.execute(risk_query)
+    risk_rows = {
+        r["region"]: {
+            "l1": float(r["l1_score"] or 0.0),
+            "l2": float(r["l2_score"] or 0.0),
+            "l3": float(r["l3_score"] or 0.0),
+            "composite": float(r["composite_score"] or 0.0),
+            "alert_level": str(r["alert_level"] or "GREEN"),
+            "latest": r["time"],
+        }
+        for r in risk_result.mappings().all()
+    }
+
+    # 2차: layer_signals fallback (risk_scores에 없는 region만)
+    fallback_query = text(f"""
         SELECT region, layer, AVG(value) AS value, MAX(time) AS latest
         FROM layer_signals
         WHERE layer IN ('otc', 'wastewater', 'search')
@@ -106,10 +169,13 @@ async def list_region_alerts(
           AND value > 0
         GROUP BY region, layer
     """)
-    result = await db.execute(query)
+    fallback_result = await db.execute(fallback_query)
     pivot: dict[str, dict] = {}
-    for r in result.mappings().all():
+    for r in fallback_result.mappings().all():
         rg = r["region"]
+        # risk_scores에 있으면 skip (fallback 불필요)
+        if rg in risk_rows:
+            continue
         pivot.setdefault(rg, {"region": rg, "l1": 0.0, "l2": 0.0, "l3": 0.0, "latest": None})
         layer = r["layer"]
         if layer == "otc":
@@ -123,12 +189,38 @@ async def list_region_alerts(
             pivot[rg]["latest"] = latest
 
     rows: list[dict] = []
+
+    # risk_scores 기반 경보 — 저장 라벨 재검증 (과거 스키마 오염 방어)
+    for rg, v in risk_rows.items():
+        final_level = _reverify_alert(
+            v["composite"], v["l1"], v["l2"], v["l3"], v["alert_level"],
+        )
+        logger.info(
+            "risk_scores 기반 (재검증): region=%s composite=%.2f level=%s",
+            rg, v["composite"], final_level,
+        )
+        rows.append({
+            "region": rg,
+            "composite": round(v["composite"], 2),
+            "alert_level": final_level,
+            "l1": round(v["l1"], 2),
+            "l2": round(v["l2"], 2),
+            "l3": round(v["l3"], 2),
+            "layers_above_30": sum(1 for x in (v["l1"], v["l2"], v["l3"]) if x >= 30),
+            "latest_time": str(v["latest"]) if v["latest"] else None,
+        })
+
+    # layer_signals fallback (risk_scores 없는 region)
     for rg, v in pivot.items():
         composite = round(W1 * v["l1"] + W2 * v["l2"] + W3 * v["l3"], 2)
         raw_level = _compute_alert_level(composite)
         n_above = sum(1 for x in (v["l1"], v["l2"], v["l3"]) if x >= 30)
         # 교차검증: GREEN 외 등급은 2개 이상 30 이상 필수
         final_level = raw_level if (raw_level == "GREEN" or n_above >= 2) else "GREEN"
+        logger.info(
+            "layer_signals fallback: region=%s composite=%.2f level=%s",
+            rg, composite, final_level,
+        )
         rows.append({
             "region": rg,
             "composite": composite,
@@ -287,3 +379,88 @@ async def _stream_claude(prompt: str) -> AsyncIterator[str]:
     ) as stream:
         async for text in stream.text_stream:
             yield text
+
+
+@router.get("/explain/{report_id}")
+async def explain_alert_report(
+    report_id: int,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """특정 경보 리포트의 XAI 설명 반환.
+
+    alert_reports 테이블의 feature_values, rag_sources, model_metadata,
+    triggered_by, trigger_source 컬럼을 그대로 펼쳐 응답한다.
+    JSONB 컬럼이 NULL 이면 빈 객체/빈 배열을 반환한다 (404 아님).
+    """
+    result = await db.execute(
+        text("""
+            SELECT id, region, alert_level, summary,
+                   triggered_by, trigger_source, created_at,
+                   feature_values, rag_sources, model_metadata
+            FROM alert_reports
+            WHERE id = :report_id
+            LIMIT 1
+        """),
+        {"report_id": report_id},
+    )
+    row = result.mappings().first()
+    if row is None:
+        raise HTTPException(status_code=404, detail=f"report_id={report_id} 를 찾을 수 없습니다.")
+
+    # JSONB 컬럼: DB에서 이미 dict/list로 deserialize 되거나 문자열로 올 수 있음
+    def _jsonb(val: object, default: object) -> object:
+        if val is None:
+            return default
+        if isinstance(val, (dict, list)):
+            return val
+        try:
+            return json.loads(str(val))
+        except Exception:
+            return default
+
+    raw_fv = _jsonb(row.get("feature_values"), {})
+    decision_factors: dict = {}
+    if isinstance(raw_fv, dict):
+        decision_factors = {
+            k: v for k, v in raw_fv.items()
+            if k in ("l1_otc", "l2_wastewater", "l3_search", "composite")
+        }
+
+    rag_raw = _jsonb(row.get("rag_sources"), [])
+    rag_citations: list = rag_raw if isinstance(rag_raw, list) else []
+
+    return {
+        "report_id": report_id,
+        "region": row.get("region"),
+        "alert_level": row.get("alert_level"),
+        "summary": row.get("summary"),
+        "decision_factors": decision_factors,
+        "feature_values": raw_fv,
+        "rag_citations": rag_citations,
+        "model_metadata": _jsonb(row.get("model_metadata"), {}),
+        "audit": {
+            "triggered_by": row.get("triggered_by"),
+            "trigger_source": row.get("trigger_source"),
+            "created_at": str(row.get("created_at")) if row.get("created_at") else None,
+        },
+    }
+
+
+@router.get("/report-pdf")
+async def export_alert_pdf(
+    region: str = Query("서울특별시", min_length=2, max_length=100),
+    db: AsyncSession = Depends(get_db),
+) -> StreamingResponse:
+    """4페이지 PDF 리포트 다운로드 — 표지 + 3계층 시계열 + 분석 + AI 본문."""
+    from urllib.parse import quote
+    pdf_bytes = await build_alert_pdf(region, db)
+    fname = f"UIS_alert_{region}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M')}.pdf"
+    return StreamingResponse(
+        iter([pdf_bytes]),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": (
+                f"attachment; filename=\"UIS_alert.pdf\"; filename*=UTF-8''{quote(fname)}"
+            ),
+        },
+    )

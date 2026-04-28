@@ -19,6 +19,9 @@ backend = [
     "asyncpg>=0.29",
     "sqlalchemy[asyncio]>=2.0",
     "python-dotenv>=1.0",
+    "reportlab>=4.0",
+    "matplotlib>=3.8",
+    "taskiq>=0.11",
 ]
 pipeline = [
     "kafka-python>=2.0.2",
@@ -58,7 +61,7 @@ select = ["E", "F", "W", "I"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-v --tb=short"
+addopts = "-v --tb=short --ignore=tests/load"
 
 [tool.mypy]
 python_version = "3.11"

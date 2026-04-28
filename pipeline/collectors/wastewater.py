@@ -12,10 +12,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from pathlib import Path
 
 from pipeline.collectors.kowas_downloader import (
-    DEFAULT_OUTPUT_DIR as KOWAS_DATA_DIR,
     download_all,
 )
 from pipeline.collectors.kowas_loader import list_local_pdfs, load_pdf

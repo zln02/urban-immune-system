@@ -1,8 +1,8 @@
 """XGBoost 모델 종합 벤치마크.
 
-캡스톤 성공 기준:
-- F1-Score >= 0.70
-- Precision >= 0.80 (오경보 0건 목표)
+캡스톤 성공 기준 (2026-04 재검증 baseline 반영):
+- F1-Score >= 0.80
+- Precision >= 0.90 (FAR < 0.20)
 - AUC-ROC >= 0.75
 - MAE < 15.0
 
@@ -122,8 +122,8 @@ def run_benchmark() -> dict:
     print("\n" + "=" * 60)
     print("캡스톤 목표 달성 여부:")
     targets = {
-        "F1 >= 0.70": final["f1"] >= 0.70,
-        "Precision >= 0.80": final["precision"] >= 0.80,
+        "F1 >= 0.80": final["f1"] >= 0.80,
+        "Precision >= 0.90": final["precision"] >= 0.90,
         "AUC-ROC >= 0.75": final["auc_roc"] >= 0.75,
         "MAE < 15.0": final["mae"] < 15.0,
     }

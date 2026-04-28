@@ -12,14 +12,43 @@ import { LayerCard } from "@/components/alert/layer-card";
 import { AIReportCard } from "@/components/alert/ai-report-card";
 import { AlertTable } from "@/components/alert/alert-table";
 import { AnomalyPanel } from "@/components/anomaly/anomaly-panel";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 
-import { KOREA_REGIONS, regionName, type RegionCode } from "@/lib/korea-regions";
+import { KOREA_REGIONS, regionName, regionCodeFromName, type RegionCode } from "@/lib/korea-regions";
 import { RISK_META } from "@/lib/risk";
 import { DICT, type Lang } from "@/lib/i18n";
-import { mockAlerts, mockDistricts, mockSeries } from "@/lib/mock-data";
+import { mockAlerts, mockDistricts, mockSeries, type DistrictData, type AlertRecord } from "@/lib/mock-data";
+
+type AlertRecordLike = AlertRecord;
 import { useOtcTrend, useSearchTrend } from "@/hooks/useNaverTrend";
 import { useWastewaterSeries } from "@/hooks/useSignalTimeseries";
-import { useRegionAlerts } from "@/hooks/useRegionAlerts";
+import { useRegionAlerts, type RegionAlert } from "@/hooks/useRegionAlerts";
+import { useLeadTime, useBacktest17 } from "@/hooks/useAnalysisStats";
+
+// alert_level → 1~4 매핑 (legend·map 색칠 통일)
+const LEVEL_TO_RISK: Record<string, 1 | 2 | 3 | 4> = {
+  GREEN: 1,
+  YELLOW: 2,
+  ORANGE: 3,
+  RED: 4,
+};
+
+function buildDistrictsFromAlerts(alerts: RegionAlert[]): Record<RegionCode, DistrictData> {
+  // 기본값: mockDistricts 구조를 시작점으로 (모든 17지역 키 보장)
+  const out: Record<RegionCode, DistrictData> = { ...mockDistricts };
+  for (const a of alerts) {
+    const code = regionCodeFromName(a.region);
+    if (!code) continue;
+    const risk = LEVEL_TO_RISK[a.alert_level] ?? 1;
+    // composite (0~100) 를 cases 칸에 정수로 표시 — 실 confirmed_cases 미연결 (Phase 3)
+    out[code] = {
+      risk,
+      cases: Math.round(a.composite * 10),
+      change: Math.round((a.l1 + a.l2 + a.l3) / 3 - 30),
+    };
+  }
+  return out;
+}
 
 type DashTab = "surveillance" | "anomaly";
 
@@ -45,15 +74,28 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<DashTab>("surveillance");
 
   const t = DICT[lang];
-  const atRiskCount = Object.values(mockDistricts).filter((d) => d.risk >= 3).length;
   const regionAlertsQuery = useRegionAlerts(28);
-  // AlertBanner / KpiCard 는 기존 mockAlerts 유지 (AlertRecord 타입)
-  const activeAlerts = mockAlerts;
-  // AlertTable 만 실데이터 (RegionAlert 타입) 분리
+  const realAlerts = regionAlertsQuery.data?.alerts ?? [];
+  const districts = realAlerts.length > 0 ? buildDistrictsFromAlerts(realAlerts) : mockDistricts;
+  const atRiskCount = Object.values(districts).filter((d) => d.risk >= 3).length;
+
+  // AlertBanner / KpiCard / AlertTable 모두 실 regionAlerts 기반 (mockAlerts 의존 제거)
+  // GREEN 만 있으면 activeAlerts = [] → AlertBanner 자동 숨김
+  const activeAlerts: AlertRecordLike[] = realAlerts
+    .filter((a) => a.alert_level !== "GREEN")
+    .map((a, i) => ({
+      id: `RT-${i}`,
+      region: a.region,
+      regionCode: (regionCodeFromName(a.region) ?? "SL") as RegionCode,
+      level: LEVEL_TO_RISK[a.alert_level] ?? 1,
+      time: a.latest_time?.slice(0, 16).replace("T", " ") || "",
+      summary: `composite ${a.composite.toFixed(1)} · L1 ${a.l1.toFixed(1)} / L2 ${a.l2.toFixed(1)} / L3 ${a.l3.toFixed(1)} (${a.layers_above_30}계층 임계 초과)`,
+    }));
+  const allGreen = realAlerts.length > 0 && activeAlerts.length === 0;
+
+  // AlertTable 은 모든 17지역 보여주기 위해 별도로 real 데이터 사용
   const tableAlerts: typeof mockAlerts | NonNullable<typeof regionAlertsQuery.data>["alerts"] =
-    regionAlertsQuery.data?.alerts && regionAlertsQuery.data.alerts.length > 0
-      ? regionAlertsQuery.data.alerts
-      : mockAlerts;
+    realAlerts.length > 0 ? realAlerts : mockAlerts;
 
   const layerColor = {
     pharmacy: "var(--layer-pharmacy)",
@@ -61,13 +103,16 @@ export default function DashboardPage() {
     search: "var(--layer-search)",
   };
 
-  const selectedInfo = mockDistricts[selected];
+  const selectedInfo = districts[selected];
 
   // ── Naver 실데이터 (L1 OTC / L3 검색어) ──────────────────────────
   const otcQuery = useOtcTrend(12);
   const searchQuery = useSearchTrend(12);
   // ── L2 KOWAS 하수 실데이터 (TimescaleDB 952건 → /signals/timeseries) ─
   const sewageQuery = useWastewaterSeries("서울특별시", 365);
+  // ── 분석 산출물 (lead time / backtest 17지역) ───────────────────
+  const leadTimeQuery = useLeadTime();
+  const backtestQuery = useBacktest17();
 
   const toSparkValues = (values: number[], scale = 100) =>
     values.map((v) => v * scale);
@@ -99,6 +144,14 @@ export default function DashboardPage() {
   const sewageLatest = hasSewage ? sewageValues[sewageValues.length - 1] : mockSeries.sewage[mockSeries.sewage.length - 1];
 
   const dataSourceLabel = hasOtc || hasSearch || hasSewage ? "실시간 · Naver + KOWAS 연결" : "시뮬레이션 데이터";
+
+  // ── KPI 실값 (lead_time_summary / backtest_17regions) ─────────────
+  const leadWeeksComposite = leadTimeQuery.data?.signal_lead_weeks.composite;
+  const leadDaysDisplay = leadWeeksComposite !== undefined ? (leadWeeksComposite * 7).toFixed(1) : null;
+  const ccfComposite = leadTimeQuery.data?.ccf_max.composite;
+  const grangerP = leadTimeQuery.data?.granger_p;
+  const backtestRecall = backtestQuery.data?.summary.mean_recall;
+  const backtestF1 = backtestQuery.data?.summary.mean_f1;
 
   return (
     <div
@@ -172,8 +225,6 @@ export default function DashboardPage() {
           {[
             { label: t.nav_dashboard, tab: "surveillance" as DashTab },
             { label: lang === "ko" ? "🧬 팬데믹 조기탐지" : "🧬 Pandemic Detection", tab: "anomaly" as DashTab },
-            { label: t.nav_reports, tab: null },
-            { label: t.nav_alerts, tab: null },
           ].map(({ label, tab }) => {
             const isActive = tab ? activeTab === tab : false;
             return (
@@ -226,6 +277,23 @@ export default function DashboardPage() {
             />
             <span>{dataSourceLabel} · {hasOtc || hasSearch ? "실시간" : t.header_sync}</span>
           </div>
+          <a
+            href="/slides/index.html"
+            target="_blank"
+            rel="noopener"
+            aria-label={lang === "en" ? "Open midterm presentation slides" : "중간발표 슬라이드 열기"}
+            style={{
+              ...iconBtnDark,
+              padding: "0 10px",
+              textDecoration: "none",
+              fontSize: 11,
+              fontWeight: 600,
+              gap: 4,
+            }}
+          >
+            <span aria-hidden>📊</span>
+            <span>{lang === "en" ? "Slides" : "발표"}</span>
+          </a>
           <button
             type="button"
             aria-label={lang === "en" ? "Toggle language" : "언어 전환"}
@@ -233,30 +301,6 @@ export default function DashboardPage() {
             style={iconBtnDark}
           >
             <span style={{ fontSize: 11, fontWeight: 700 }}>{lang.toUpperCase()}</span>
-          </button>
-          <button type="button" style={iconBtnDark}>
-            <I.Bell size={16} stroke="var(--gray-0)" />
-            <span
-              style={{
-                position: "absolute",
-                top: 8,
-                right: 8,
-                minWidth: 14,
-                height: 14,
-                background: "var(--risk-alert)",
-                color: "#fff",
-                fontSize: 9,
-                fontWeight: 700,
-                display: "grid",
-                placeItems: "center",
-                padding: "0 3px",
-              }}
-            >
-              {activeAlerts.length}
-            </span>
-          </button>
-          <button type="button" style={iconBtnDark}>
-            <I.Settings size={16} stroke="var(--gray-0)" />
           </button>
           <div
             style={{
@@ -304,30 +348,22 @@ export default function DashboardPage() {
           gap: 4,
         }}
       >
-        {[
-          { Icon: I.Home, active: true },
-          { Icon: I.Map, active: false },
-          { Icon: I.Report, active: false },
-          { Icon: I.Shield, active: false },
-          { Icon: I.Filter, active: false },
-        ].map(({ Icon, active }, i) => (
-          <button
-            key={i}
-            type="button"
-            style={{
-              width: 36,
-              height: 36,
-              background: active ? "var(--primary-70)" : "transparent",
-              color: active ? "var(--gray-0)" : "var(--text-secondary)",
-              border: "none",
-              display: "grid",
-              placeItems: "center",
-              cursor: "pointer",
-            }}
-          >
-            <Icon size={18} stroke="currentColor" />
-          </button>
-        ))}
+        <button
+          type="button"
+          aria-current="page"
+          style={{
+            width: 36,
+            height: 36,
+            background: "var(--primary-70)",
+            color: "var(--gray-0)",
+            border: "none",
+            display: "grid",
+            placeItems: "center",
+            cursor: "default",
+          }}
+        >
+          <I.Home size={18} stroke="currentColor" />
+        </button>
       </aside>
 
       {/* ── Sidebar ──────────────────────────────────────── */}
@@ -347,11 +383,13 @@ export default function DashboardPage() {
             {lang === "en" ? "Filter" : "필터"}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <FieldRow label={lang === "en" ? "Time window" : "기간"}>
-              <select style={selectStyle} defaultValue="60d">
+            <FieldRow label={lang === "en" ? "Time window" : "기간 (Phase 2)"}>
+              <select
+                style={{ ...selectStyle, opacity: 0.5, cursor: "not-allowed" }}
+                disabled
+                defaultValue="60d"
+              >
                 <option value="60d">{lang === "en" ? "Last 60 days" : "최근 60일"}</option>
-                <option value="14d">{lang === "en" ? "Last 14 days" : "최근 14일"}</option>
-                <option value="7d">{lang === "en" ? "Last 7 days" : "최근 7일"}</option>
               </select>
             </FieldRow>
             <FieldRow label={lang === "en" ? "Region" : "권역"}>
@@ -367,20 +405,24 @@ export default function DashboardPage() {
                 ))}
               </select>
             </FieldRow>
-            <FieldRow label={lang === "en" ? "Disease" : "질병"}>
-              <select style={selectStyle} defaultValue="resp">
-                <option value="resp">
-                  {lang === "en" ? "Respiratory syndrome" : "호흡기 증후군"}
+            <FieldRow label={lang === "en" ? "Disease (Phase 2)" : "질병 (Phase 2)"}>
+              <select
+                style={{ ...selectStyle, opacity: 0.5, cursor: "not-allowed" }}
+                disabled
+                defaultValue="flu"
+              >
+                <option value="flu">
+                  {lang === "en" ? "Influenza" : "인플루엔자"}
                 </option>
-                <option value="gi">{lang === "en" ? "GI syndrome" : "소화기 증후군"}</option>
               </select>
             </FieldRow>
           </div>
         </div>
 
         <div>
-          <div className="t-label-01" style={sidebarLabel}>
-            {lang === "en" ? "Signal layers" : "신호 레이어"}
+          <div className="t-label-01" style={{ ...sidebarLabel, display: "flex", alignItems: "center" }}>
+            <span>{lang === "en" ? "Active signal layers" : "활성 신호 레이어"}</span>
+            <InfoTooltip term="three_layer" />
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {[
@@ -388,67 +430,54 @@ export default function DashboardPage() {
               { key: "sewage", label: t.layer_sewage, sub: t.layer_sewage_sub, c: layerColor.sewage },
               { key: "search", label: t.layer_search, sub: t.layer_search_sub, c: layerColor.search },
             ].map((l) => (
-              <label
+              <div
                 key={l.key}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: 10,
                   padding: 8,
-                  cursor: "pointer",
                   background: "var(--bg-sub)",
                 }}
               >
-                <input type="checkbox" defaultChecked style={{ accentColor: l.c }} />
                 <span style={{ width: 3, height: 18, background: l.c }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 12, fontWeight: 500 }}>{l.label}</div>
                   <div style={{ fontSize: 10, color: "var(--text-tertiary)" }}>{l.sub}</div>
                 </div>
-              </label>
+                <span
+                  style={{
+                    fontSize: 9,
+                    fontWeight: 600,
+                    color: "var(--risk-safe)",
+                    letterSpacing: 0.4,
+                  }}
+                >
+                  ON
+                </span>
+              </div>
             ))}
           </div>
         </div>
 
         <div>
-          <div className="t-label-01" style={sidebarLabel}>
-            {lang === "en" ? "Threshold" : "임계값"}
+          <div className="t-label-01" style={{ ...sidebarLabel, display: "flex", alignItems: "center" }}>
+            <span>{lang === "en" ? "Alert thresholds (fixed)" : "경보 임계값 (고정)"}</span>
+            <InfoTooltip term="composite" />
           </div>
-          <div
-            style={{
-              fontSize: 11,
-              color: "var(--text-secondary)",
-              marginBottom: 6,
-              display: "flex",
-              justifyContent: "space-between",
-            }}
-          >
-            <span>50%</span>
-            <span style={{ fontWeight: 600, color: "var(--text)" }}>85%</span>
-            <span>95%</span>
-          </div>
-          <div style={{ position: "relative", height: 4, background: "var(--border)" }}>
-            <div
-              style={{
-                position: "absolute",
-                left: 0,
-                top: 0,
-                bottom: 0,
-                width: "78%",
-                background: "var(--primary-70)",
-              }}
-            />
-            <div
-              style={{
-                position: "absolute",
-                left: "78%",
-                top: -4,
-                width: 12,
-                height: 12,
-                background: "var(--primary-70)",
-                borderRadius: 1,
-              }}
-            />
+          <div style={{ fontSize: 11, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span>YELLOW</span>
+              <span style={{ fontWeight: 600, color: "var(--text)" }}>composite ≥ 30</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span>ORANGE</span>
+              <span style={{ fontWeight: 600, color: "var(--text)" }}>≥ 55</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span>RED</span>
+              <span style={{ fontWeight: 600, color: "var(--text)" }}>≥ 75</span>
+            </div>
           </div>
           <div
             style={{
@@ -540,20 +569,60 @@ export default function DashboardPage() {
               </div>
             </div>
             <div style={{ display: "flex", gap: 8 }}>
-              <button type="button" style={btnGhost}>
-                <I.Filter size={14} /> {lang === "en" ? "Compare" : "비교"}
-              </button>
-              <button type="button" style={btnGhost}>
-                <I.Print size={14} /> PDF
-              </button>
-              <button type="button" style={btnPrimary}>
-                <I.Download size={14} /> {lang === "en" ? "Export" : "내보내기"}
+              <button
+                type="button"
+                onClick={async () => {
+                  const url = `/api/v1/alerts/report-pdf?region=${encodeURIComponent(regionName(selected, "ko"))}`;
+                  const res = await fetch(url, { cache: "no-store" });
+                  if (!res.ok) {
+                    alert(lang === "ko" ? "PDF 생성 실패" : "PDF failed");
+                    return;
+                  }
+                  const blob = await res.blob();
+                  const a = document.createElement("a");
+                  const obj = URL.createObjectURL(blob);
+                  a.href = obj;
+                  a.download = `UIS_alert_${regionName(selected, "ko")}_${new Date().toISOString().slice(0,10)}.pdf`;
+                  a.click();
+                  URL.revokeObjectURL(obj);
+                }}
+                title={lang === "en" ? "Download PDF report" : "PDF 리포트 다운로드"}
+                style={btnPrimary}
+              >
+                <I.Print size={14} /> {lang === "en" ? "Download PDF" : "PDF 리포트"}
               </button>
             </div>
           </div>
         </div>
 
-        <AlertBanner alerts={activeAlerts} t={t} lang={lang} confidence={0.93} />
+        {allGreen ? (
+          <div
+            role="status"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: "10px 16px",
+              background: "var(--risk-safe)",
+              color: "#fff",
+            }}
+          >
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#fff", flexShrink: 0 }} />
+            <span style={{ fontWeight: 700, fontSize: 12 }}>
+              {lang === "ko" ? "전국 안전 (GREEN)" : "Nationwide safe (GREEN)"}
+            </span>
+            <span style={{ fontSize: 12, opacity: 0.9 }}>
+              {lang === "ko"
+                ? "17개 시·도 모두 종합 위험도 30 미만 — 활성 경보 0건"
+                : "All 17 regions below composite=30 — 0 active alerts"}
+            </span>
+            <span style={{ marginLeft: "auto", fontSize: 11, opacity: 0.85 }}>
+              {lang === "ko" ? "최신 갱신" : "Updated"} {realAlerts[0]?.latest_time?.slice(0, 10) || "—"}
+            </span>
+          </div>
+        ) : (
+          <AlertBanner alerts={activeAlerts} t={t} lang={lang} confidence={0.93} />
+        )}
 
         <div
           style={{
@@ -563,32 +632,44 @@ export default function DashboardPage() {
           }}
         >
           <KpiCard
-            label={t.kpi_alerts}
+            label={lang === "ko" ? "활성 경보" : "Active alerts"}
+            labelSuffix={<InfoTooltip term="alert_level" />}
             value={activeAlerts.length}
-            delta={`+${activeAlerts.filter((a) => a.level === 4).length} L4`}
-            tone="alert"
+            delta={
+              activeAlerts.length === 0
+                ? (lang === "ko" ? "전국 안전 (GREEN)" : "All GREEN")
+                : `${activeAlerts.filter((a) => a.level >= 3).length} ORANGE+`
+            }
+            tone={activeAlerts.length === 0 ? "safe" : "alert"}
           />
           <KpiCard
-            label={t.kpi_at_risk}
+            label={lang === "ko" ? "위험 지역" : "At-risk regions"}
+            labelSuffix={<InfoTooltip term="composite" />}
             value={atRiskCount}
             total={17}
-            delta={lang === "en" ? "of 17" : "/17"}
-            tone={atRiskCount > 3 ? "warning" : "caution"}
+            delta={lang === "en" ? "of 17 (composite≥55)" : "composite≥55"}
+            tone={atRiskCount > 3 ? "warning" : atRiskCount > 0 ? "caution" : "safe"}
           />
           <KpiCard
-            label={t.kpi_lead}
-            value="14.2"
+            label={lang === "ko" ? "선행 시간" : "Lead time"}
+            labelSuffix={<InfoTooltip term="leadtime" />}
+            value={leadDaysDisplay ?? "—"}
             unit={lang === "en" ? "days" : "일"}
-            delta={lang === "en" ? "vs clinical" : "임상 대비"}
+            delta={leadWeeksComposite !== undefined
+              ? `composite ${leadWeeksComposite}주 (KCDC peak 대비)`
+              : (lang === "en" ? "loading…" : "로딩 중")}
             tone="safe"
             sparkData={otcValues.slice(-20)}
             sparkColor="var(--layer-pharmacy)"
           />
           <KpiCard
-            label={t.kpi_confidence}
-            value="0.87"
-            delta="Granger p<0.01"
-            tone="safe"
+            label={lang === "en" ? "Backtest F1" : "백테스트 F1"}
+            labelSuffix={<InfoTooltip term="f1" />}
+            value={backtestF1 !== undefined ? backtestF1.toFixed(3) : "—"}
+            delta={backtestRecall !== undefined
+              ? `Recall ${backtestRecall.toFixed(3)} · 17지역`
+              : (lang === "en" ? "loading…" : "로딩 중")}
+            tone={backtestF1 !== undefined && backtestF1 >= 0.65 ? "safe" : "caution"}
             sparkData={sewageValues.slice(-20)}
             sparkColor="var(--layer-sewage)"
           />
@@ -609,10 +690,20 @@ export default function DashboardPage() {
                 <button type="button" style={tabBtn(true)}>
                   L4-L1
                 </button>
-                <button type="button" style={tabBtn(false)}>
+                <button
+                  type="button"
+                  disabled
+                  title={lang === "en" ? "Phase 2" : "Phase 2 예정"}
+                  style={{ ...tabBtn(false), opacity: 0.4, cursor: "not-allowed" }}
+                >
                   {lang === "en" ? "Cases" : "건수"}
                 </button>
-                <button type="button" style={tabBtn(false)}>
+                <button
+                  type="button"
+                  disabled
+                  title={lang === "en" ? "Phase 2" : "Phase 2 예정"}
+                  style={{ ...tabBtn(false), opacity: 0.4, cursor: "not-allowed" }}
+                >
                   Δ 7d
                 </button>
               </div>
@@ -627,7 +718,7 @@ export default function DashboardPage() {
               }}
             >
               <KoreaMap
-                data={mockDistricts}
+                data={districts}
                 lang={lang}
                 selected={selected}
                 onSelect={setSelected}
@@ -647,7 +738,7 @@ export default function DashboardPage() {
                 </div>
                 {([4, 3, 2, 1] as const).map((level) => {
                   const meta = RISK_META[level];
-                  const count = Object.values(mockDistricts).filter(
+                  const count = Object.values(districts).filter(
                     (x) => x.risk === level,
                   ).length;
                   return (
@@ -752,6 +843,14 @@ export default function DashboardPage() {
               change={otcChange}
               color="var(--layer-pharmacy)"
               icon={<I.Pharmacy size={14} />}
+              caveatLabel={lang === "ko" ? "전국 단일값" : "Nationwide only"}
+              caveatTooltip={{
+                title: lang === "ko" ? "L1 OTC — 전국 단일값" : "L1 OTC — nationwide only",
+                body:
+                  lang === "ko"
+                    ? "네이버 쇼핑인사이트 API 정책상 전국 통합 지표만 제공. 17지역에 동일값으로 표시됩니다. 진짜 시·도 차등 신호는 HIRA OpenAPI(시·군·구 의약품 청구) 연결 후 (Phase 2, 6월)."
+                    : "Naver shopping insight API only exposes a single nationwide value. Real per-region L1 signal will land after HIRA OpenAPI integration in Phase 2.",
+              }}
             />
             <LayerCard
               title={t.layer_sewage}
@@ -770,6 +869,14 @@ export default function DashboardPage() {
               change={searchChange}
               color="var(--layer-search)"
               icon={<I.Search size={14} />}
+              caveatLabel={lang === "ko" ? "전국 단일값" : "Nationwide only"}
+              caveatTooltip={{
+                title: lang === "ko" ? "L3 검색 — 전국 단일값" : "L3 search — nationwide only",
+                body:
+                  lang === "ko"
+                    ? "네이버 데이터랩 검색 트렌드 API도 전국 통합 지표만 제공. 17지역에 동일값. 시·도/시·군·구 차등은 통신3사·카드 데이터 연계로 Phase 3 예정."
+                    : "Naver datalab search trends API exposes nationwide value only.",
+              }}
             />
           </div>
         </div>
@@ -779,15 +886,36 @@ export default function DashboardPage() {
           sub={t.trend_sub}
           actions={
             <div style={{ display: "flex", gap: 4 }}>
-              {["7d", "30d", "60d", lang === "en" ? "All" : "전체"].map((lbl, i) => (
-                <button key={lbl} type="button" style={tabBtn(i === 2)}>
-                  {lbl}
-                </button>
-              ))}
+              {["7d", "30d", "60d", lang === "en" ? "All" : "전체"].map((lbl, i) => {
+                const active = i === 2;
+                return (
+                  <button
+                    key={lbl}
+                    type="button"
+                    disabled={!active}
+                    title={active ? "" : (lang === "en" ? "Phase 2" : "Phase 2 예정")}
+                    style={{
+                      ...tabBtn(active),
+                      opacity: active ? 1 : 0.4,
+                      cursor: active ? "default" : "not-allowed",
+                    }}
+                  >
+                    {lbl}
+                  </button>
+                );
+              })}
             </div>
           }
         >
-          <TrendChart series={mockSeries} t={t} height={280} />
+          <TrendChart
+            series={{
+              pharmacy: hasOtc ? otcValues.slice(-60) : mockSeries.pharmacy,
+              sewage: hasSewage ? sewageValues.slice(-60) : mockSeries.sewage,
+              search: hasSearch ? searchValues.slice(-60) : mockSeries.search,
+            }}
+            t={t}
+            height={280}
+          />
           <div
             style={{
               marginTop: 12,
@@ -801,20 +929,33 @@ export default function DashboardPage() {
               flexWrap: "wrap",
             }}
           >
-            <span style={{ fontWeight: 600, color: "var(--text)" }}>{t.granger}</span>
-            <span>
-              OTC → {lang === "en" ? "Clinical" : "임상"}: p = 0.003 (lag 14)
+            <span style={{ fontWeight: 600, color: "var(--text)", display: "inline-flex", alignItems: "center" }}>
+              {t.granger}
+              <InfoTooltip term="granger" />
             </span>
-            <span style={{ color: "var(--border-strong)" }}>|</span>
-            <span>
-              {lang === "en" ? "Sewage" : "하수"} →{" "}
-              {lang === "en" ? "Clinical" : "임상"}: p = 0.007 (lag 21)
-            </span>
-            <span style={{ color: "var(--border-strong)" }}>|</span>
-            <span>
-              {lang === "en" ? "Search" : "검색"} →{" "}
-              {lang === "en" ? "Clinical" : "임상"}: p = 0.012 (lag 7)
-            </span>
+            {grangerP ? (
+              <>
+                <span>
+                  OTC → {lang === "en" ? "Clinical" : "임상"}: p = {grangerP.l1_otc.toFixed(3)} (lead {leadTimeQuery.data?.signal_lead_weeks.l1_otc}주)
+                </span>
+                <span style={{ color: "var(--border-strong)" }}>|</span>
+                <span>
+                  {lang === "en" ? "Sewage" : "하수"} → p = {grangerP.l2_wastewater.toFixed(3)} (lead {leadTimeQuery.data?.signal_lead_weeks.l2_wastewater}주)
+                </span>
+                <span style={{ color: "var(--border-strong)" }}>|</span>
+                <span>
+                  {lang === "en" ? "Search" : "검색"} → p = {grangerP.l3_search.toFixed(3)} (lead {leadTimeQuery.data?.signal_lead_weeks.l3_search}주)
+                </span>
+                {ccfComposite !== undefined && (
+                  <>
+                    <span style={{ color: "var(--border-strong)" }}>|</span>
+                    <span>CCF (composite) = {ccfComposite.toFixed(3)}</span>
+                  </>
+                )}
+              </>
+            ) : (
+              <span>{lang === "en" ? "loading…" : "분석 산출물 로딩 중"}</span>
+            )}
           </div>
         </Panel>
 

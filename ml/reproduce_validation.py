@@ -4,7 +4,7 @@
 숫자를 코드로부터 직접 검증한다.
 
 두 단계로 실행:
-  1) synthetic — generate_synthetic_data(seed=42) 기준 walk-forward CV (재현성 보장)
+  1) synthetic_hardened — 선행 예측 task walk-forward CV (재현성 보장)
   2) real — TimescaleDB의 OTC/Wastewater/Search 시계열을 주차로 정렬하여 동일 평가 시도
      데이터 부족·불일치 시 단계 스킵 + 사유를 결과에 명시.
 
@@ -33,7 +33,6 @@ from ml.xgboost.model import (
     HARDENED_ALERT_COL,
     HARDENED_ALERT_THRESHOLD,
     HARDENED_TARGET_COL,
-    TARGET_COL,
     generate_synthetic_data,
     train,
 )
@@ -42,6 +41,44 @@ logger = logging.getLogger(__name__)
 
 OUTPUT_DIR = Path(__file__).parent / "outputs"
 OUTPUT_PATH = OUTPUT_DIR / "validation.json"
+BACKTEST_17_PATH = Path(__file__).parent.parent / "analysis" / "outputs" / "backtest_17regions.json"
+LEAD_TIME_PATH = Path(__file__).parent.parent / "analysis" / "outputs" / "lead_time_summary.json"
+
+
+def _load_realistic_stage() -> dict[str, Any]:
+    """analysis/outputs 의 17지역 백테스트 + lead_time 산출물을 realistic stage 로 통합.
+
+    deck 의 F1 0.621 / Recall 0.838 / +5.9주 선행 등 실데이터 측정값이
+    validation.json 한 파일에서 단일 출처로 재현 가능하도록 한다.
+    """
+    if not BACKTEST_17_PATH.exists():
+        return {
+            "status": "missing",
+            "reason": f"{BACKTEST_17_PATH} 가 없음. analysis/backtest_2025_flu_multi_17regions.py 먼저 실행.",
+        }
+
+    backtest = json.loads(BACKTEST_17_PATH.read_text(encoding="utf-8"))
+    summary = backtest.get("summary", {})
+    out: dict[str, Any] = {
+        "status": "ok",
+        "data_source": "17regions_backtest",
+        "task": "alert_classification (composite ≥ alert_threshold)",
+        "n_regions": summary.get("ok_regions"),
+        "cv_mean_f1": summary.get("mean_f1"),
+        "cv_mean_precision": summary.get("mean_precision"),
+        "cv_mean_recall": summary.get("mean_recall"),
+        "cv_mean_far": summary.get("mean_far_with_gate"),
+        "skipped_regions": summary.get("skipped_regions", []),
+        "source_file": str(BACKTEST_17_PATH.relative_to(Path(__file__).parent.parent)),
+    }
+
+    if LEAD_TIME_PATH.exists():
+        lead = json.loads(LEAD_TIME_PATH.read_text(encoding="utf-8"))
+        out["lead_time_weeks"] = lead.get("signal_lead_weeks", {})
+        out["ccf_max"] = lead.get("ccf_max", {})
+        out["granger_p"] = lead.get("granger_p", {})
+        out["analysis_window"] = lead.get("window")
+    return out
 
 
 def _summary_from_train_result(result: dict[str, Any]) -> dict[str, Any]:
@@ -64,25 +101,6 @@ def _summary_from_train_result(result: dict[str, Any]) -> dict[str, Any]:
         "cv_mean_mae": float(np.mean(valid_mae)) if valid_mae else None,
         "fold_scores": cv_scores,
         "final_eval": final_eval,
-    }
-
-
-def _run_synthetic() -> dict[str, Any]:
-    logger.info("[1/3] synthetic 합성 데이터 walk-forward CV (composite task)")
-    df = generate_synthetic_data(n_weeks=104, seed=42)
-    n_alert = int(df[ALERT_COL].sum())
-    logger.info("합성 데이터: %d주 / 경보 양성 %d주 (%.1f%%)",
-                len(df), n_alert, n_alert / len(df) * 100)
-    result = train(df, n_splits=5, gap=4)
-    return {
-        "data_source": "synthetic",
-        "task": "composite_score (가중평균 회귀)",
-        "data_seed": 42,
-        "n_weeks": int(len(df)),
-        "n_alert_positive": n_alert,
-        "alert_threshold": ALERT_THRESHOLD,
-        "feature_cols": FEATURE_COLS,
-        **_summary_from_train_result(result),
     }
 
 
@@ -234,12 +252,6 @@ def main() -> int:
     }
 
     try:
-        result["stages"]["synthetic"] = _run_synthetic()
-    except Exception as exc:
-        logger.exception("synthetic 단계 실패")
-        result["stages"]["synthetic"] = {"status": "error", "error": str(exc)}
-
-    try:
         result["stages"]["synthetic_hardened"] = _run_synthetic_hardened()
     except Exception as exc:
         logger.exception("synthetic_hardened 단계 실패")
@@ -251,6 +263,13 @@ def main() -> int:
         except Exception as exc:
             logger.exception("real 단계 실패")
             result["stages"]["real"] = {"status": "error", "error": str(exc)}
+
+    # realistic stage = 17지역 백테스트 단일 출처 통합 (deck F1 0.621 출처)
+    try:
+        result["stages"]["realistic"] = _load_realistic_stage()
+    except Exception as exc:
+        logger.exception("realistic 단계 실패")
+        result["stages"]["realistic"] = {"status": "error", "error": str(exc)}
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -265,16 +284,29 @@ def main() -> int:
                 f"  [{label:<20}] F1={s['cv_mean_f1']:.3f}  "
                 f"P={s['cv_mean_precision']:.3f}  R={s['cv_mean_recall']:.3f}  "
                 f"AUC={s['cv_mean_auc_roc']:.3f}  MAE={s['cv_mean_mae']:.2f}  "
-                f"(n_weeks={s.get('n_weeks', '?')}, valid_folds={s.get('n_folds_valid', '?')}/{s.get('n_folds_total', '?')})"
+                f"(n_weeks={s.get('n_weeks', '?')}, "
+                f"valid_folds={s.get('n_folds_valid', '?')}/{s.get('n_folds_total', '?')})"
             )
 
-    _print("synthetic", result["stages"].get("synthetic", {}))
     _print("synthetic_hardened", result["stages"].get("synthetic_hardened", {}))
     real = result["stages"].get("real", {})
     if real.get("status") == "ok":
         _print(f"real ({real.get('region', '?')})", real)
     else:
         print(f"  [real] {real.get('status', 'N/A')}: {real.get('reason', '')}")
+
+    realistic = result["stages"].get("realistic", {})
+    if realistic.get("status") == "ok":
+        comp_lead = (realistic.get("lead_time_weeks") or {}).get("composite")
+        print(
+            f"  [{'realistic_17regions':<20}] F1={realistic['cv_mean_f1']:.3f}  "
+            f"P={realistic['cv_mean_precision']:.3f}  R={realistic['cv_mean_recall']:.3f}  "
+            f"FAR={realistic['cv_mean_far']:.3f}  "
+            f"(n_regions={realistic.get('n_regions', '?')}, "
+            f"lead_composite={comp_lead}주)"
+        )
+    else:
+        print(f"  [realistic] {realistic.get('status', 'N/A')}: {realistic.get('reason', '')}")
 
     return 0
 

@@ -23,11 +23,11 @@ import warnings
 from datetime import datetime, timezone
 from pathlib import Path
 
+# pytorch_forecasting 1.7+은 `lightning.pytorch` 를 사용하므로 trainer/콜백도 동일 패키지에서 import
+import lightning.pytorch as pl
 import numpy as np
 import pandas as pd
 import torch
-# pytorch_forecasting 1.7+은 `lightning.pytorch` 를 사용하므로 trainer/콜백도 동일 패키지에서 import
-import lightning.pytorch as pl
 from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
 from lightning.pytorch.loggers import CSVLogger
 from pytorch_forecasting import TemporalFusionTransformer, TimeSeriesDataSet
@@ -94,26 +94,49 @@ def _build_dataset(df: pd.DataFrame, training: bool) -> TimeSeriesDataSet:
 
 
 def _attention_summary(model: TemporalFusionTransformer, dataset: TimeSeriesDataSet) -> dict | None:
-    """모델 attention의 평균 분포를 요약 (encoder lengths × variable importance)."""
+    """TFT의 encoder attention + variable importance 요약.
+
+    pytorch-forecasting 1.x: raw output은 dict-like 구조로 다음 키 포함
+      - encoder_attention: (batch, encoder_len, heads, encoder_len) — 시점 가중치
+      - encoder_variables / decoder_variables / static_variables — 변수 중요도
+    """
     try:
         loader = dataset.to_dataloader(train=False, batch_size=4, num_workers=0)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             raw = model.predict(loader, mode="raw", return_x=True, return_index=True)
-        # raw.output에는 prediction, attention, ... 가 들어있음 (구조는 pytorch-forecasting 버전 의존)
-        out = raw.output if hasattr(raw, "output") else raw
-        attn = getattr(out, "attention", None)
-        if attn is None:
-            return None
-        # attn shape: (n_samples, encoder_length, n_attention_heads, ...) → 평균
-        attn_t = torch.as_tensor(attn) if not isinstance(attn, torch.Tensor) else attn
+
+        out = raw.output
+        encoder_attention = out["encoder_attention"]
+        encoder_variables = out["encoder_variables"]
+
+        attn_t = (
+            encoder_attention.float()
+            if isinstance(encoder_attention, torch.Tensor)
+            else torch.as_tensor(encoder_attention).float()
+        )
+        var_t = (
+            encoder_variables.float()
+            if isinstance(encoder_variables, torch.Tensor)
+            else torch.as_tensor(encoder_variables).float()
+        )
+
+        # encoder time step별 평균 attention (전체 batch + heads + target step 평균)
+        # shape (B, T_enc, heads, T_enc) → (T_enc,) 마지막 query축에 대한 평균
+        per_step = attn_t.mean(dim=(0, 2, 3)).tolist() if attn_t.ndim == 4 else attn_t.mean().tolist()
+
+        # variable importance: (B, T_enc, n_vars) → (n_vars,)
+        per_variable = var_t.mean(dim=(0, 1)).tolist() if var_t.ndim >= 3 else var_t.mean().tolist()
+
         return {
-            "shape": list(attn_t.shape),
-            "mean_per_encoder_step": attn_t.float().mean(dim=tuple(range(attn_t.ndim))[:-1]).tolist()
-                if attn_t.ndim >= 2 else attn_t.float().mean().tolist(),
+            "encoder_attention_shape": list(attn_t.shape),
+            "encoder_variable_importance_shape": list(var_t.shape),
+            "mean_attention_per_encoder_step": per_step,
+            "mean_encoder_variable_importance": per_variable,
+            "encoder_variable_names": list(model.hparams.get("x_reals", [])) if hasattr(model, "hparams") else [],
         }
     except Exception as exc:
-        logger.warning("Attention 추출 실패 (모델 구조 차이): %s", exc)
+        logger.warning("Attention 추출 실패: %s", exc)
         return None
 
 
