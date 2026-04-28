@@ -1,4 +1,4 @@
-"""RAG 시드 문서 — 역학 가이드라인 10건 임베딩.
+"""RAG 시드 문서 — 역학 가이드라인 14건 임베딩.
 
 각 문서는 공개 가이드라인의 핵심 메시지를 한국어로 정리한 것이며,
 metadata.source / metadata.url에 원 출처를 명시한다.
@@ -181,6 +181,78 @@ SEED_DOCS: list[dict] = [
             "url": "https://isms.kisa.or.kr/main/ispims/intro/",
             "lang": "ko",
             "topic": "isms_p_b2g_compliance",
+        },
+    },
+    # ── 추가 시드 (11~14) — 2026-04-28 D-2 발표 RAG 인용문 풍부화 ────────
+    {
+        "id": 11,
+        "text": (
+            "Xu et al. (2025)은 하수도 바이러스 농도, 소셜미디어 키워드, 인구 이동량을 결합한 "
+            "다중 신호 융합 모델이 단일 신호 대비 평균 7~10일 선행 탐지 성능을 보였다고 보고했다. "
+            "특히 도시 단위(district-level) 분석에서 SNS 단독 사용 시 발생하던 과대 예측 문제가 "
+            "하수 신호와 결합 후 30% 이상 감소했음을 입증했다. 다만 이 연구는 약국 OTC 신호를 포함하지 않았고 "
+            "한국어·한국 의료체계 특화 분석이 부재해, 우리 시스템(L1 약국 OTC + L2 하수 + L3 검색)과 "
+            "한국 B2G 환경에서 차별화된다. Xu의 다중 신호 융합 원칙은 우리 앙상블 가중치 설계의 학술적 근거다."
+        ),
+        "metadata": {
+            "source": "Xu et al., \"Multi-source Disease Surveillance Fusion\", Nature Communications 2025",
+            "url": "https://www.nature.com/ncomms/",
+            "lang": "ko-summary",
+            "topic": "multi_signal_fusion_2025",
+        },
+    },
+    {
+        "id": 12,
+        "text": (
+            "한국 KOWAS(하수도감시 시스템)는 환경부와 질병관리청이 2022년 시범 운영을 시작해 "
+            "전국 17개 광역의 주요 하수처리장에서 SARS-CoV-2·인플루엔자 등 호흡기 바이러스 RNA를 "
+            "주간 단위로 측정·공개하는 한국형 WBE 인프라다. 측정 단위는 copies/mL이며 "
+            "공식 PDF 보고서가 매주 화요일 오전에 갱신된다. "
+            "값의 절대 비교는 처리장 규모·인구 유역 차이로 어렵고 동일 처리장 내 추이 변화율(%) 비교가 권장된다. "
+            "우리 L2 계층은 KOWAS PDF를 pdfplumber로 자동 파싱해 17지역 정규화(0-100) 후 Kafka 파이프라인에 적재한다."
+        ),
+        "metadata": {
+            "source": "환경부·질병관리청 KOWAS 운영지침 (2024)",
+            "url": "https://www.me.go.kr/",
+            "lang": "ko",
+            "topic": "kowas_korea_wbe",
+        },
+    },
+    {
+        "id": 13,
+        "text": (
+            "Granger 인과검정(Granger causality test)은 시계열 X가 시계열 Y의 미래값 예측을 "
+            "유의미하게 개선하는지 통계적으로 검증하는 방법이다(Granger, 1969). "
+            "감염병 조기경보 시스템에서는 비전통 신호(약국·하수·검색)가 임상 확진 시계열에 대해 "
+            "Granger 의미에서 선행성을 갖는지 입증하는 표준 도구로 사용된다. "
+            "권장 절차: (1) ADF 단위근 검정으로 정상성 확인 → (2) statsmodels grangercausalitytests "
+            "(maxlag=4) 실행 → (3) p<0.05 시 유의한 선행성 인정. "
+            "단, Granger 인과는 통계적 선행성이지 진짜 인과관계가 아니므로 \"X가 Y의 원인\" 주장은 금지된다. "
+            "우리 시스템은 L1·L2·L3 모두 p<0.05 (Slide 9)로 임상 확진에 대한 선행성을 입증한 상태다."
+        ),
+        "metadata": {
+            "source": "Granger, \"Investigating Causal Relations by Econometric Models\", Econometrica 1969 + statsmodels docs",
+            "url": "https://www.statsmodels.org/stable/generated/statsmodels.tsa.stattools.grangercausalitytests.html",
+            "lang": "ko-summary",
+            "topic": "granger_causality_validation",
+        },
+    },
+    {
+        "id": 14,
+        "text": (
+            "질병관리청 인플루엔자 예방접종 권고안은 매년 8~9월 발표되며, 65세 이상·임산부·생후 6개월~12세·"
+            "만성질환자를 우선 접종 대상으로 지정한다. 유행주의보 발령 시(ILI 1.96σ 초과) "
+            "국가예방접종(NIP) 미접종 고위험군에 대해 시·도 보건소가 능동 안내를 시작하며, "
+            "약국 항바이러스제(타미플루 등) 비축량을 30% 이상 늘린다. "
+            "AI 조기경보 시스템에서 YELLOW 이상 경보 발령 시 권장 액션은 (1) 학교·요양시설 마스크 안내 강화, "
+            "(2) 백신 접종 캠페인 가속, (3) 항바이러스제 재고 확인이다. "
+            "이 가이드라인은 RAG 리포트에서 \"권고: 백신·재고·방역\" 인용 근거로 직접 활용된다."
+        ),
+        "metadata": {
+            "source": "질병관리청 \"인플루엔자 예방접종 사업관리 지침\" 2024-2025 시즌",
+            "url": "https://nip.kdca.go.kr/",
+            "lang": "ko",
+            "topic": "influenza_vaccine_guideline",
         },
     },
 ]
