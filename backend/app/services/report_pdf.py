@@ -43,23 +43,29 @@ from sqlalchemy.ext.asyncio import AsyncSession
 logger = logging.getLogger(__name__)
 
 # ── 폰트 등록 ─────────────────────────────────────────────────────
+# CI / 폰트 미설치 환경(우분투 기본)에서도 import 가능하도록 모든 단계 fallback.
 _NANUM_REG = "/usr/share/fonts/truetype/nanum/NanumBarunGothic.ttf"
 _NANUM_BOLD = "/usr/share/fonts/truetype/nanum/NanumBarunGothicBold.ttf"
 if not Path(_NANUM_BOLD).exists():
     _NANUM_BOLD = "/usr/share/fonts/truetype/nanum/NanumSquareB.ttf"
 
-try:
-    pdfmetrics.registerFont(TTFont("NanumKR", _NANUM_REG))
-    pdfmetrics.registerFont(TTFont("NanumKR-Bold", _NANUM_BOLD))
-    _FONT = "NanumKR"
-    _FONT_B = "NanumKR-Bold"
-except Exception as exc:
-    logger.warning("나눔폰트 등록 실패: %s", exc)
+if Path(_NANUM_REG).exists():
+    try:
+        pdfmetrics.registerFont(TTFont("NanumKR", _NANUM_REG))
+        pdfmetrics.registerFont(TTFont("NanumKR-Bold", _NANUM_BOLD))
+        _FONT = "NanumKR"
+        _FONT_B = "NanumKR-Bold"
+    except Exception as exc:
+        logger.warning("나눔폰트 등록 실패: %s — Helvetica 폴백", exc)
+        _FONT = _FONT_B = "Helvetica"
+else:
+    logger.warning("나눔폰트 미설치 (%s) — Helvetica 폴백", _NANUM_REG)
     _FONT = _FONT_B = "Helvetica"
 
-# matplotlib 한글
-font_manager.fontManager.addfont(_NANUM_REG)
-plt.rcParams["font.family"] = "NanumBarunGothic"
+# matplotlib 한글 — 폰트 있을 때만 적용
+if Path(_NANUM_REG).exists():
+    font_manager.fontManager.addfont(_NANUM_REG)
+    plt.rcParams["font.family"] = "NanumBarunGothic"
 plt.rcParams["axes.unicode_minus"] = False
 
 # 색상 팔레트 (대시보드와 통일)
