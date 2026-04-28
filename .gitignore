@@ -106,3 +106,33 @@ frontend/out/
 # 시크릿
 .env.local
 .env.production
+
+# Claude Code 로컬 설정 (개인 설정 — 팀 공유 금지)
+.claude/settings.local.json
+
+# 폰트 바이너리 (CDN 사용 권장)
+*.ttf
+*.otf
+*.woff
+*.woff2
+
+# TS 빌드 캐시
+**/tsconfig.tsbuildinfo
+
+# PDF / 발표 자료 (Google Drive 별도 보관)
+*.pdf
+docs/slides/
+docs/weekly-reports/
+# Next.js 정적 미러 (sync-slides.sh 로 로컬·서버에서 재생성)
+frontend/public/slides/
+
+# 회의자료 대용량 파일
+캡스톤_회의자료.pdf
+회의자료_캡스톤디자인.md
+lightning_logs/
+
+# TFT 학습 산출물
+ml/checkpoints/tft_synth/
+
+# 개인 진행사항 (GitHub public repo 노출 방지)
+admin/

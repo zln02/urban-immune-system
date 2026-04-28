@@ -1,0 +1,197 @@
+{
+  "generated_at": "2026-04-26T09:34:55.893803+00:00",
+  "config": {
+    "n_weeks": 104,
+    "n_regions": 5,
+    "max_epochs": 30,
+    "batch_size": 32,
+    "max_encoder_length": 24,
+    "max_prediction_length": 3,
+    "feature_cols": [
+      "l1_otc",
+      "l2_wastewater",
+      "l3_search",
+      "temperature",
+      "humidity"
+    ],
+    "target_col": "confirmed_future"
+  },
+  "model_params": 79107,
+  "best_checkpoint": "/home/wlsdud5035/urban-immune-system/ml/checkpoints/tft_synth/tft_best-v2.ckpt",
+  "best_val_loss": 1.882218599319458,
+  "loss_curve_tail": [
+    {
+      "epoch": 5,
+      "step": 89,
+      "train_loss": null,
+      "val_loss": null
+    },
+    {
+      "epoch": 6,
+      "step": 99,
+      "train_loss": 3.837461948394776,
+      "val_loss": null
+    },
+    {
+      "epoch": 6,
+      "step": 104,
+      "train_loss": null,
+      "val_loss": 2.2852141857147217
+    },
+    {
+      "epoch": 6,
+      "step": 104,
+      "train_loss": null,
+      "val_loss": null
+    },
+    {
+      "epoch": 7,
+      "step": 119,
+      "train_loss": null,
+      "val_loss": 3.2921149730682373
+    },
+    {
+      "epoch": 7,
+      "step": 119,
+      "train_loss": null,
+      "val_loss": null
+    },
+    {
+      "epoch": 8,
+      "step": 134,
+      "train_loss": null,
+      "val_loss": 2.269757032394409
+    },
+    {
+      "epoch": 8,
+      "step": 134,
+      "train_loss": null,
+      "val_loss": null
+    },
+    {
+      "epoch": 9,
+      "step": 149,
+      "train_loss": 2.4136626720428467,
+      "val_loss": null
+    },
+    {
+      "epoch": 9,
+      "step": 149,
+      "train_loss": null,
+      "val_loss": 2.7243809700012207
+    },
+    {
+      "epoch": 9,
+      "step": 149,
+      "train_loss": null,
+      "val_loss": null
+    },
+    {
+      "epoch": 10,
+      "step": 164,
+      "train_loss": null,
+      "val_loss": 1.882218599319458
+    },
+    {
+      "epoch": 10,
+      "step": 164,
+      "train_loss": null,
+      "val_loss": null
+    },
+    {
+      "epoch": 11,
+      "step": 179,
+      "train_loss": null,
+      "val_loss": 2.008592128753662
+    },
+    {
+      "epoch": 11,
+      "step": 179,
+      "train_loss": null,
+      "val_loss": null
+    },
+    {
+      "epoch": 12,
+      "step": 194,
+      "train_loss": null,
+      "val_loss": 1.909825563430786
+    },
+    {
+      "epoch": 12,
+      "step": 194,
+      "train_loss": null,
+      "val_loss": null
+    },
+    {
+      "epoch": 13,
+      "step": 199,
+      "train_loss": 2.631417989730835,
+      "val_loss": null
+    },
+    {
+      "epoch": 13,
+      "step": 209,
+      "train_loss": null,
+      "val_loss": 2.409419536590576
+    },
+    {
+      "epoch": 13,
+      "step": 209,
+      "train_loss": null,
+      "val_loss": null
+    }
+  ],
+  "prediction_summary": {
+    "n_samples": 5,
+    "horizon_steps": 3,
+    "mean_pred_per_horizon": [
+      15.571165084838867,
+      11.319406509399414,
+      6.766496181488037
+    ]
+  },
+  "attention_summary": {
+    "encoder_attention_shape": [
+      5,
+      3,
+      2,
+      24
+    ],
+    "encoder_variable_importance_shape": [
+      5,
+      24,
+      1,
+      8
+    ],
+    "mean_attention_per_encoder_step": [
+      0.0416666679084301,
+      0.04163032025098801,
+      0.041587717831134796
+    ],
+    "mean_encoder_variable_importance": [
+      [
+        0.15218883752822876,
+        0.26860493421554565,
+        0.09187308698892593,
+        0.022541455924510956,
+        0.061541471630334854,
+        0.08648339658975601,
+        0.22394393384456635,
+        0.0928228348493576
+      ]
+    ],
+    "encoder_variable_names": [
+      "encoder_length",
+      "confirmed_future_center",
+      "confirmed_future_scale",
+      "time_idx",
+      "relative_time_idx",
+      "l1_otc",
+      "l2_wastewater",
+      "l3_search",
+      "temperature",
+      "humidity",
+      "confirmed_future"
+    ]
+  }
+}

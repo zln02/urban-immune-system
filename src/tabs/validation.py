@@ -29,26 +29,31 @@ def render_validation_tab() -> None:
             st.info("📁 `assets/slide9_deng_comparison.png`")
 
     st.markdown("<br>", unsafe_allow_html=True)
+    # 17개 시·도 walk-forward 백테스트 (2025-2026 인플루엔자 시즌)
+    # 출처: analysis/outputs/backtest_17regions.json
     result_data = {
-        "모델": [
-            "약국 단독",
-            "하수 단독",
-            "검색 단독",
-            "3-Layer 통합",
-            "Deng 2-Layer (선행연구)",
-            "Urban Immune System (Ours)",
+        "지표": [
+            "Precision",
+            "Recall",
+            "F1-Score",
+            "False Alarm Rate",
+            "Lead Time (주)",
         ],
-        "Precision": ["0.00", "1.00", "0.67", "1.00", "1.00", "1.00"],
-        "Recall": ["0.00", "0.44", "0.22", "0.56", "0.56", "0.56"],
-        "F1-Score": ["0.00", "0.62", "0.33", "0.71", "0.71", "0.71"],
-        "오경보": ["0건", "0건", "2건", "0건", "0건", "0건"],
+        "3-Layer 통합 (17개 시·도 평균)": [
+            "0.96",
+            "0.77",
+            "0.84",
+            "0.16",
+            "5.9",
+        ],
     }
     st.dataframe(pd.DataFrame(result_data), width="stretch", hide_index=True)
     st.markdown(
         """
         <div class="highlight-row">
-            <strong>핵심 결론:</strong> 3-Layer = Deng 2-Layer 동일 F1 (0.71) + 오경보 0건.
-            약국 Layer가 노이즈 없는 안전망 역할 → 시즌·지역 변화에 대한 견고성 확보
+            <strong>핵심 결론:</strong> 17개 시·도 walk-forward 백테스트(n=1,020)에서
+            F1=0.84 / Precision=0.96 / FAR=0.16 / 평균 lead time 5.9주.
+            출처: <code>analysis/outputs/backtest_17regions.json</code>
         </div>
         """,
         unsafe_allow_html=True,

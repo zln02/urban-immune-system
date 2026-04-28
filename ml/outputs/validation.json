@@ -1,0 +1,113 @@
+{
+  "generated_at": "2026-04-27T08:48:03.726167+00:00",
+  "git_branch": "feat/dashboard-pdf-report",
+  "git_commit": "7284213",
+  "stages": {
+    "synthetic_hardened": {
+      "data_source": "synthetic_hardened",
+      "task": "confirmed_future (t+2주 후 확진자 ≥ 70 예측)",
+      "data_seed": 42,
+      "lead_weeks": 2,
+      "n_weeks": 104,
+      "n_alert_positive": 15,
+      "alert_threshold": 70.0,
+      "feature_cols": [
+        "l1_otc",
+        "l2_wastewater",
+        "l3_search",
+        "temperature",
+        "humidity"
+      ],
+      "n_folds_total": 5,
+      "n_folds_valid": 1,
+      "cv_mean_f1": 0.6666666666666666,
+      "cv_mean_precision": 1.0,
+      "cv_mean_recall": 0.5,
+      "cv_mean_auc_roc": 0.9305555555555556,
+      "cv_mean_mae": 8.340271974818137,
+      "fold_scores": [
+        {
+          "fold": 1,
+          "mae": 19.989346084298766,
+          "f1": NaN,
+          "precision": NaN,
+          "recall": NaN,
+          "auc_roc": NaN
+        },
+        {
+          "fold": 2,
+          "mae": 8.62886693880953,
+          "f1": NaN,
+          "precision": NaN,
+          "recall": NaN,
+          "auc_roc": NaN
+        },
+        {
+          "fold": 3,
+          "mae": 4.541555418176213,
+          "f1": NaN,
+          "precision": NaN,
+          "recall": NaN,
+          "auc_roc": NaN
+        },
+        {
+          "fold": 4,
+          "mae": 4.5413620657415885,
+          "f1": 0.6666666666666666,
+          "precision": 1.0,
+          "recall": 0.5,
+          "auc_roc": 0.9305555555555556
+        },
+        {
+          "fold": 5,
+          "mae": 4.000229367064581,
+          "f1": NaN,
+          "precision": NaN,
+          "recall": NaN,
+          "auc_roc": NaN
+        }
+      ],
+      "final_eval": {
+        "mae": 0.8180423568018357,
+        "target_col": "confirmed_future",
+        "alert_col": "alert_future",
+        "alert_threshold": 70.0,
+        "f1": 0.967741935483871,
+        "precision": 0.9375,
+        "recall": 1.0,
+        "auc_roc": 1.0
+      }
+    },
+    "realistic": {
+      "status": "ok",
+      "data_source": "17regions_backtest",
+      "task": "alert_classification (composite ≥ alert_threshold)",
+      "n_regions": 17,
+      "cv_mean_f1": 0.621,
+      "cv_mean_precision": 0.507,
+      "cv_mean_recall": 0.838,
+      "cv_mean_far": 0.557,
+      "skipped_regions": [],
+      "source_file": "analysis/outputs/backtest_17regions.json",
+      "lead_time_weeks": {
+        "l1_otc": 8.0,
+        "l2_wastewater": 2.0,
+        "l3_search": 3.0,
+        "composite": 3.0
+      },
+      "ccf_max": {
+        "l1_otc": 0.5653,
+        "l2_wastewater": 0.3649,
+        "l3_search": 0.6013,
+        "composite": 0.5875
+      },
+      "granger_p": {
+        "l1_otc": 0.1031,
+        "l2_wastewater": 0.267,
+        "l3_search": 0.0073,
+        "composite": 0.0209
+      },
+      "analysis_window": "2025-09 ~ 2026-03"
+    }
+  }
+}

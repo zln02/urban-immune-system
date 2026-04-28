@@ -2,9 +2,9 @@
 
 ## Purpose
 
-Urban Immune System is a presentation-first prototype that demonstrates how
-multi-layer surveillance signals can be fused into an infectious disease early
-warning workflow.
+Urban Immune System fuses three civilian-leading signals (pharmacy OTC,
+wastewater biomarkers, search trends) into an infectious disease early
+warning workflow targeted at Korean public-health agencies (B2G).
 
 ## Layers
 
@@ -31,14 +31,19 @@ External data sources
  Visualization + AI alert reporting
 ```
 
-## Prototype Components
+## Components
 
-- `prototype/app.py`
-  - UI shell
-  - style system
-  - simulated data generation
-  - interactive Plotly charts
-  - Folium-based Seoul risk map
+- `frontend/src/app/dashboard/` (Phase 2 canonical)
+  - Next.js 15 App Router dashboard
+  - 17-region KoreaMap, real-time KPI cards, Granger/CCF panel
+  - SSE-streamed AI alert report + 4-page PDF download
+- `src/app.py` (Phase 1, Plan B fallback)
+  - Streamlit dashboard kept as deployment fallback
+  - simulated data generation utilities used by tests
+- `backend/app/` — FastAPI :8001
+  - `services/report_pdf.py` ReportLab + matplotlib PDF builder
+  - `api/alerts.py` SSE alerts/stream + report-pdf endpoints
+- `pipeline/collectors/` — APScheduler weekly cron (otc/wastewater/search/weather)
 - `analysis/data/`
   - placeholder for future real datasets
 - `.github/workflows/ci.yml`

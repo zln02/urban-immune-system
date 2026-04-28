@@ -2,7 +2,7 @@
 
 1. 현재 리스크 점수와 신호 요약을 프롬프트로 구성
 2. Qdrant에서 관련 역학 문서 검색 (RAG)
-3. GPT-4o 또는 Claude에 리포트 생성 요청
+3. Claude로 리포트 생성 요청
 """
 from __future__ import annotations
 
@@ -13,8 +13,7 @@ from ml.rag.vectordb import EpidemiologyVectorDB
 
 logger = logging.getLogger(__name__)
 
-LLM_MODEL = os.getenv("LLM_MODEL", "gpt-4o")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+LLM_MODEL = os.getenv("LLM_MODEL", "claude-sonnet-4-6")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 MAX_RAG_DOC_CHARS = 300
 
@@ -65,10 +64,7 @@ async def generate_alert_report(signals: dict, region: str = "서울특별시") 
 
     prompt = _build_prompt(signals, rag_docs, region)
 
-    if LLM_MODEL.startswith("claude"):
-        report_text = await _call_claude(prompt)
-    else:
-        report_text = await _call_openai(prompt)
+    report_text = await _call_claude(prompt)
 
     return {
         "region": region,
@@ -77,25 +73,6 @@ async def generate_alert_report(signals: dict, region: str = "서울특별시") 
         "rag_sources": len(rag_docs),
         "model_used": LLM_MODEL,
     }
-
-
-async def _call_openai(prompt: str) -> str:
-    if not OPENAI_API_KEY:
-        raise RuntimeError("OPENAI_API_KEY is not configured")
-
-    from openai import AsyncOpenAI
-
-    client = AsyncOpenAI(api_key=OPENAI_API_KEY)
-    resp = await client.chat.completions.create(
-        model=LLM_MODEL,
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": prompt},
-        ],
-        max_tokens=1500,
-        temperature=0.3,
-    )
-    return resp.choices[0].message.content or ""
 
 
 async def _call_claude(prompt: str) -> str:
