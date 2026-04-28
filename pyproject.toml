@@ -21,6 +21,7 @@ backend = [
     "python-dotenv>=1.0",
     "reportlab>=4.0",
     "matplotlib>=3.8",
+    "taskiq>=0.11",
 ]
 pipeline = [
     "kafka-python>=2.0.2",
