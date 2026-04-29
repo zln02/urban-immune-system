@@ -10,6 +10,7 @@ import { AlertBanner } from "@/components/alert/alert-banner";
 import { KpiCard } from "@/components/alert/kpi-card";
 import { LayerCard } from "@/components/alert/layer-card";
 import { LayerDetailModal, type LayerSeriesPoint } from "@/components/alert/layer-detail-modal";
+import { alignByWeek, tailWeeks } from "@/lib/time-align";
 import { AIReportCard } from "@/components/alert/ai-report-card";
 import { AlertTable } from "@/components/alert/alert-table";
 import { AnomalyPanel } from "@/components/anomaly/anomaly-panel";
@@ -931,31 +932,59 @@ export default function DashboardPage() {
             </div>
           }
         >
-          <TrendChart
-            series={{
+          {(() => {
+            const anyReal = hasOtc || hasSewage || hasSearch;
+            // 실데이터 없으면 mock 을 보여주되, 합성 날짜(최근 12주, 월요일) 부여 — 차트 X축 의미 유지
+            if (!anyReal) {
+              const today = new Date();
+              today.setDate(today.getDate() - today.getDay() + 1); // 이번 주 월요일
+              const mockDates = mockSeries.pharmacy.map((_, i, arr) => {
+                const d = new Date(today);
+                d.setDate(d.getDate() - (arr.length - 1 - i) * 7);
+                return d.toISOString().slice(0, 10);
+              });
+              return (
+                <TrendChart
+                  series={{
+                    pharmacy: mockSeries.pharmacy,
+                    sewage: mockSeries.sewage,
+                    search: mockSeries.search,
+                  }}
+                  dates={mockDates}
+                  t={t}
+                  height={280}
+                />
+              );
+            }
+
+            // 실데이터: 3개 시리즈를 ISO 주간 공통 축에 align. 빠진 주는 null.
+            // otc/search 는 0~1 정규화 → ×100, sewage 는 이미 0~100.
+            const aligned = alignByWeek({
               pharmacy: hasOtc
-                ? (trendDays === null ? otcValues : otcValues.slice(-trendDays))
-                : mockSeries.pharmacy,
+                ? otcSeries.map((p) => ({ date: p.date, value: p.value * 100 }))
+                : [],
               sewage: hasSewage
-                ? (trendDays === null ? sewageValues : sewageValues.slice(-trendDays))
-                : mockSeries.sewage,
+                ? sewageSeries.map((p) => ({ date: p.time, value: p.value }))
+                : [],
               search: hasSearch
-                ? (trendDays === null ? searchValues : searchValues.slice(-trendDays))
-                : mockSeries.search,
-            }}
-            dates={(() => {
-              // 가장 긴 실제 시리즈의 날짜를 X축 라벨로 사용 (sewage > otc > search 순 가용성)
-              const candidates: string[][] = [];
-              if (hasSewage) candidates.push(sewageSeries.map((p) => p.time));
-              if (hasOtc) candidates.push(otcSeries.map((p) => p.date));
-              if (hasSearch) candidates.push(searchSeries.map((p) => p.date));
-              if (candidates.length === 0) return undefined;
-              const longest = candidates.sort((a, b) => b.length - a.length)[0];
-              return trendDays === null ? longest : longest.slice(-trendDays);
-            })()}
-            t={t}
-            height={280}
-          />
+                ? searchSeries.map((p) => ({ date: p.date, value: p.value * 100 }))
+                : [],
+            });
+            const weeks = trendDays === null ? null : Math.max(1, Math.ceil(trendDays / 7));
+            const win = tailWeeks(aligned, weeks);
+            return (
+              <TrendChart
+                series={{
+                  pharmacy: win.series.pharmacy,
+                  sewage: win.series.sewage,
+                  search: win.series.search,
+                }}
+                dates={win.dates}
+                t={t}
+                height={280}
+              />
+            );
+          })()}
           <div
             style={{
               marginTop: 12,
