@@ -19,6 +19,8 @@ export function AlertBanner({ alerts, t: _t, lang, confidence = 0.87 }: AlertBan
   return (
     <div
       role="alert"
+      aria-live="assertive"
+      aria-atomic="true"
       style={{
         display: "flex",
         alignItems: "center",
@@ -39,7 +41,10 @@ export function AlertBanner({ alerts, t: _t, lang, confidence = 0.87 }: AlertBan
         }}
       />
       <span style={{ fontWeight: 700, fontSize: 12 }}>
-        L{top.level} {lang === "ko" ? "경보" : "ALERT"} · {top.region}
+        <span aria-label={lang === "ko" ? `L${top.level} ${meta.token.toUpperCase()} 경보` : `L${top.level} ${meta.token.toUpperCase()} ALERT`} style={{ display: "inline" }}>
+          ⚠
+        </span>
+        {" "}L{top.level} {lang === "ko" ? "경보" : "ALERT"} · {top.region}
       </span>
       <span style={{ fontSize: 12, opacity: 0.9 }}>{top.summary}</span>
       <span

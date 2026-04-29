@@ -155,34 +155,21 @@ export default function DashboardPage() {
 
   return (
     <div
+      className="w-full min-h-screen grid grid-cols-1 md:grid-cols-[var(--rail-w)_var(--sidebar-w)_1fr] grid-rows-[var(--header-h)_1fr] bg-[var(--bg-sub)] text-[var(--text)]"
       style={{
-        width: "100%",
-        minHeight: "100vh",
-        display: "grid",
-        gridTemplateColumns: "var(--rail-w) var(--sidebar-w) 1fr",
-        gridTemplateRows: "var(--header-h) 1fr",
-        background: "var(--bg-sub)",
-        color: "var(--text)",
         fontFamily: "var(--font-sans)",
       }}
     >
       {/* ── Top bar ────────────────────────────────────────── */}
       <header
-        style={{
-          gridColumn: "1 / -1",
-          display: "grid",
-          gridTemplateColumns: "var(--rail-w) var(--sidebar-w) 1fr auto",
-          background: "var(--primary-70)",
-          color: "var(--gray-0)",
-          borderBottom: "1px solid var(--primary-90)",
-        }}
+        className="grid grid-cols-[1fr_auto] md:grid-cols-[var(--rail-w)_var(--sidebar-w)_1fr_auto] col-span-full bg-[var(--primary-70)] text-white border-b border-[var(--primary-90)]"
       >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div className="hidden md:flex" style={{ alignItems: "center", justifyContent: "center" }}>
           <I.Grid size={20} stroke="var(--gray-0)" />
         </div>
         <div
+          className="hidden md:flex"
           style={{
-            display: "flex",
             alignItems: "center",
             gap: 10,
             padding: "0 16px",
@@ -261,9 +248,10 @@ export default function DashboardPage() {
               display: "flex",
               alignItems: "center",
               gap: 6,
-              fontSize: 11,
-              opacity: 0.85,
+              fontSize: 12,
+              opacity: 1,
               marginRight: 12,
+              letterSpacing: "0.02em",
             }}
           >
             <span
@@ -338,10 +326,10 @@ export default function DashboardPage() {
 
       {/* ── Rail ─────────────────────────────────────────── */}
       <aside
+        className="hidden md:flex"
         style={{
           background: "var(--surface)",
           borderRight: "1px solid var(--border)",
-          display: "flex",
           flexDirection: "column",
           alignItems: "center",
           padding: "12px 0",
@@ -368,11 +356,11 @@ export default function DashboardPage() {
 
       {/* ── Sidebar ──────────────────────────────────────── */}
       <aside
+        className="hidden md:flex"
         style={{
           background: "var(--surface)",
           borderRight: "1px solid var(--border)",
           padding: "var(--sp-4)",
-          display: "flex",
           flexDirection: "column",
           gap: "var(--sp-5)",
           overflow: "hidden",
@@ -625,9 +613,8 @@ export default function DashboardPage() {
         )}
 
         <div
+          className="grid grid-cols-2 md:grid-cols-4"
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
             gap: "var(--sp-4)",
           }}
         >
@@ -676,9 +663,8 @@ export default function DashboardPage() {
         </div>
 
         <div
+          className="grid grid-cols-1 lg:grid-cols-[1.45fr_1fr]"
           style={{
-            display: "grid",
-            gridTemplateColumns: "1.45fr 1fr",
             gap: "var(--sp-4)",
           }}
         >
@@ -960,9 +946,8 @@ export default function DashboardPage() {
         </Panel>
 
         <div
+          className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr]"
           style={{
-            display: "grid",
-            gridTemplateColumns: "1.3fr 1fr",
             gap: "var(--sp-4)",
           }}
         >

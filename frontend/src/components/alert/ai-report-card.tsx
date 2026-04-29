@@ -9,6 +9,7 @@ interface AIReportCardProps {
   t: Translations;
   lang: Lang;
   region?: string;
+  onRetry?: () => void;
 }
 
 // **bold** 인라인 처리
@@ -127,7 +128,7 @@ function renderMarkdown(md: string): ReactNode[] {
   return out;
 }
 
-export function AIReportCard({ t, lang, region = "전북특별자치도" }: AIReportCardProps) {
+export function AIReportCard({ t, lang, region = "전북특별자치도", onRetry }: AIReportCardProps) {
   const { text, citations, streaming, done, error, start, reset } = useAlertStream(region);
   const [pdfDownloading, setPdfDownloading] = useState(false);
 
@@ -272,6 +273,9 @@ export function AIReportCard({ t, lang, region = "전북특별자치도" }: AIRe
 
       {/* Body */}
       <div
+        role="region"
+        aria-live="polite"
+        aria-busy={streaming}
         style={{
           flex: 1,
           padding: 16,
@@ -309,6 +313,7 @@ export function AIReportCard({ t, lang, region = "전북특별자치도" }: AIRe
 
         {error && (
           <div
+            role="alert"
             style={{
               padding: 12,
               background: "#fef2f2",
@@ -318,6 +323,25 @@ export function AIReportCard({ t, lang, region = "전북특별자치도" }: AIRe
             }}
           >
             ⊗ {error}
+            <button
+              type="button"
+              onClick={onRetry ?? start}
+              style={{
+                marginTop: 8,
+                padding: "6px 12px",
+                background: "var(--primary-70)",
+                color: "#fff",
+                border: 0,
+                borderRadius: 4,
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "block",
+              }}
+              aria-label="AI 리포트 재생성"
+            >
+              다시 시도
+            </button>
           </div>
         )}
 

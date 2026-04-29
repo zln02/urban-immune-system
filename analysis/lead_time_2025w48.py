@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 # ─────────────────────── 경로 설정 ───────────────────────────────────────
 PROJECT_ROOT = Path(__file__).parent.parent
 OUTPUT_DIR = PROJECT_ROOT / "analysis" / "outputs"
-ASSETS_DIR = PROJECT_ROOT / "docs" / "slides" / "midterm-deck" / "assets"
+ASSETS_DIR = PROJECT_ROOT / "docs" / "slides" / "backtest-assets"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 ASSETS_DIR.mkdir(parents=True, exist_ok=True)
 

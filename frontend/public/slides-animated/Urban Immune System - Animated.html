@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Urban Immune System — Animated Midterm</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+  <style>
+    :root {
+      --accent: #22E3FF;
+      --accent-dim: rgba(34,227,255,0.5);
+      --ink: #FFFFFF;
+      --ink-70: rgba(255,255,255,0.7);
+      --ink-45: rgba(255,255,255,0.45);
+      --ink-15: rgba(255,255,255,0.15);
+    }
+    html, body { margin: 0; padding: 0; height: 100%; background: #000; overflow: hidden; font-family: "Helvetica Neue", Helvetica, "Pretendard", Arial, sans-serif; }
+    #root { position: fixed; inset: 0; }
+  </style>
+
+  <script type="application/json" id="speaker-notes">
+  [
+    "안녕하세요. 동신대학교 컴퓨터공학과 캡스톤 디자인 팀의 PM 박진영입니다. 저희 프로젝트 이름은 Urban Immune System, 도시 면역 체계입니다. 올해 3월 LG DX School 공모전에서 대상을 받았고, 이제 그 아이디어를 실제로 만들고 있습니다. 오늘 15분 동안 문제, 아이디어, 현재 완성도, 그리고 솔직한 수치를 보여드리겠습니다.",
+    "기존 감염병 감시는 시민이 병원에 간 뒤에 시작됩니다. 증상, 병원 방문, 진단, 보건소 보고, 질병관리청 집계. 이걸 다 거치면 보통 2주가 걸립니다. 뉴스에 나올 쯤엔 이미 지역 확산은 시작되어 있습니다. 우리는 늘 2주 늦습니다.",
+    "저희는 병원 기록이 아니라, 시민이 평소에 남기는 흔적 세 가지를 읽습니다. 네이버 쇼핑인사이트에서 약국 감기약 구매 130건, 질병관리청 KOWAS에서 하수 바이러스 농도 952건, 네이버 데이터랩에서 검색 130건. 각각 2주, 3주, 1주씩 병원 기록보다 빠릅니다. 가장 빠른 건 하수입니다.",
+    "왜 세 개냐? 2013년 구글이 검색 하나로 독감을 예측하려다 실제의 두 배를 잘못 맞추고 서비스를 접었습니다. 단일 신호는 뉴스나 알고리즘 변화에 흔들립니다. 저희는 셋이 같이 오를 때만 경보를 냅니다. 하나만 튀면 무시합니다.",
+    "구조는 왼쪽에서 오른쪽으로 흐릅니다. 약국·하수·검색이 실시간 데이터 우체통, 카프카로 모이고, 시간 순 데이터베이스에 쌓입니다. AI 두 종류, 시계열 예측과 이상탐지가 돌고, Claude 기반 RAG가 리포트를 만들어 대시보드로 내보냅니다.",
+    "3월 공모전 제안서에는 F1 0.71, 오경보 0건이라고 적었습니다. 이 수치로 대상을 받았습니다. 당당히 말씀드립니다. 다만 이건 단일 임계값 최적화 결과였습니다. 캡스톤에서는 더 엄격하게 다시 재봤습니다.",
+    "Walk-forward로 다시 재봤습니다. F1 0.667, Precision 1.000 — 오경보 0건을 유지했습니다. AUC는 0.931. Recall은 0.5로 낮은데, 이건 정밀도를 우선하는 보수적 정책입니다. 숨기지 않고 말씀드립니다. 정부 납품이 목표라면 수치를 지키는 것보다 누가 돌려도 같은 수치가 나오는 재현 가능성이 본질이기 때문입니다.",
+    "범위도 현실에 맞춰 조정했습니다. 상용 배포, 멀티리전 같은 7개는 이번 학기에선 뺐습니다. 대신 색맹 안전 팔레트, Claude 에이전트 병렬 개발, 재현 노트북, Granger 검정 리포트 등 8개를 추가했습니다. 깎고 더한 뒤가 지금의 모습입니다.",
+    "모듈별 완성도를 솔직하게 보여드립니다. Layer 2 하수는 자동 크롤링 파이프라인이 완성되어 100%, 약국과 검색도 100%. RAG 가이드 임베딩은 90%, 인프라와 CI·테스트 35개는 85%, walk-forward 재현 스크립트는 80%. TFT 시계열 실학습은 55%로 남은 6일 동안 마무리할 계획입니다.",
+    "이 부분은 김나영 학생이 이어서 데모를 보여드립니다. Next.js 대시보드는 전국 17개 시·도 지도, Claude 기반 RAG 리포트, 그리고 팬데믹 조기탐지 탭으로 구성되어 있습니다. 리포트는 WHO 하수감시 가이드, ECDC 다중신호 교차검증 매뉴얼, 질병관리청 ILINet 지침 등 공식 가이드 top-3을 자동 인용합니다. 단순 LLM 출력이 아니라 B2G 신뢰성의 핵심입니다.",
+    "실측 성능입니다. Precision 1.000 — 오경보 0건. AUC-ROC 0.931 — 강한 차별 능력. F1 0.667은 walk-forward 재현 수치로, 공모전 주장 0.71과 정합합니다. Recall 0.500은 오경보를 내지 않기 위한 보수적 선택입니다. 재현 스크립트 ml/reproduce_validation.py로 누가 돌려도 같은 수치가 나옵니다.",
+    "경쟁 맵입니다. BlueDot은 뉴스 기반, CDC NWSS는 하수만, KAIST와 Xu 2025는 두 신호를 섞습니다. 저희는 세 신호를 교차합니다. 다만 데이터 규모와 임상 검증은 저쪽이 앞섭니다. 솔직히 인정하고, 그 부분이 다음 단계의 타깃입니다.",
+    "법 부분은 박정빈 학생이 간단히 설명드립니다. ISMS-P, 정부 납품에 필요한 정보보호 인증은 25% 준비됐고, 개인정보보호법 대응은 가명처리와 시도 단위 집계로 55% 진행됐습니다. 네이버 API 재판매 이슈는 지표 저장 구조로 풀고 있고, 의료기기법은 비해당입니다.",
+    "최종 비전은 2027년입니다. 인플루엔자는 검증 대상이고, 진짜 타깃은 다음 팬데믹입니다. 이상탐지가 레이더처럼 평소와 다른 패턴을 먼저 잡습니다. 타깃 고객은 질병관리청, 서울시 같은 광역 자치단체, 그리고 WHO 협력센터 세 곳입니다.",
+    "로드맵입니다. 지금은 Phase 1, 캡스톤 완주. 올해 하반기 ILINet 실데이터 PoC. 2027년 상반기 ISMS-P와 유료 계약 첫 건. 하반기 광역 두 곳으로 확장. 2028년부터 질병관리청 납품. 6개월 안 목표는 정부과제 2~5천만, PoC 1건, 논문 1편입니다.",
+    "마지막입니다. 다섯 명이 각자 모듈을 맡고 Claude Code 에이전트로 병렬 협업했습니다. 팀원 한 명 한 명 소개드리고, 남은 리스크 세 가지도 정직하게 알려드렸습니다. 이제 Q&A 받겠습니다. 어떤 질문이든 팀원 전원이 답변하겠습니다. 감사합니다."
+  ]
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- React + Babel (pinned) -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <!-- Starter animations + our scene files -->
+  <script type="text/babel" src="animations.jsx"></script>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+  <script type="text/babel" src="scenes/WebGLBackground.jsx"></script>
+  <script type="text/babel" src="scenes/Primitives.jsx"></script>
+  <script type="text/babel" src="scenes/Scenes.jsx"></script>
+
+  <script type="text/babel">
+    const { S01, S02, S03, S04, S05, S06, S07, S08, S09, S10, S11, S12, S13, S14, S15, S16, SCENE_DUR: BASE_DUR } = window.Scenes;
+    const SCENES = [S01,S02,S03,S04,S05,S06,S07,S08,S09,S10,S11,S12,S13,S14,S15,S16];
+
+    // Three moods — each one reshapes palette + shader feel wholesale.
+    const MOODS = {
+      clinical: {
+        label: 'Clinical',
+        accent: '#22E3FF', accentRgb: [0.13, 0.89, 1.0],
+        ink: '#FFFFFF',
+        bg:   [0.02, 0.025, 0.035],
+        pageBg: '#05070B',
+        moodK: 0.0,
+      },
+      neon: {
+        label: 'Neon',
+        accent: '#FF3CA6', accentRgb: [1.0, 0.24, 0.65],
+        ink: '#FFFFFF',
+        bg:   [0.04, 0.02, 0.06],
+        pageBg: '#0A0514',
+        moodK: 0.0,
+      },
+      paper: {
+        label: 'Paper',
+        accent: '#0F3BFF', accentRgb: [0.06, 0.23, 1.0],
+        ink: '#121212',
+        bg:   [0.93, 0.91, 0.87],
+        pageBg: '#EEE9DF',
+        moodK: 1.0,
+      },
+    };
+
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "mood": "clinical",
+      "pace": 4,
+      "atmosphere": 0.35
+    }/*EDITMODE-END*/;
+
+    function hexToRgba(hex, a) {
+      const h = hex.replace('#','');
+      const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16);
+      return `rgba(${r},${g},${b},${a})`;
+    }
+    function inkRgba(inkHex, a) {
+      const isDark = inkHex.toLowerCase() === '#121212';
+      return isDark ? `rgba(18,18,18,${a})` : `rgba(255,255,255,${a})`;
+    }
+
+    function applyTheme(mood) {
+      const m = MOODS[mood] || MOODS.clinical;
+      const root = document.documentElement.style;
+      root.setProperty('--accent', m.accent);
+      root.setProperty('--accent-dim', hexToRgba(m.accent, 0.5));
+      root.setProperty('--ink', m.ink);
+      root.setProperty('--ink-70', inkRgba(m.ink, 0.7));
+      root.setProperty('--ink-45', inkRgba(m.ink, 0.45));
+      root.setProperty('--ink-15', inkRgba(m.ink, 0.12));
+      document.body.style.background = m.pageBg;
+    }
+
+    // Report active scene index to parent for speaker notes
+    function SlideReporter({ sceneDur }) {
+      const { time } = useTime();
+      const idxRef = React.useRef(-1);
+      React.useEffect(() => {
+        const idx = Math.min(SCENES.length - 1, Math.floor(time / sceneDur));
+        if (idx !== idxRef.current) {
+          idxRef.current = idx;
+          try { window.parent.postMessage({ slideIndexChanged: idx }, '*'); } catch {}
+        }
+      }, [time, sceneDur]);
+      return null;
+    }
+
+    function ShaderLayer({ sceneDur, mood, atmosphere }) {
+      const { time } = useTime();
+      const variant = Math.floor(time / sceneDur);
+      const m = MOODS[mood] || MOODS.clinical;
+      return <WebGLBackground variant={variant} width={1920} height={1080}
+        accent={m.accentRgb} bg={m.bg} atmosphere={atmosphere} mood={m.moodK} />;
+    }
+
+    function Deck({ sceneDur, mood, atmosphere }) {
+      const total = SCENES.length * sceneDur;
+      const m = MOODS[mood] || MOODS.clinical;
+      return (
+        <Stage key={sceneDur /* rebuild timeline when pace changes */}
+          width={1920} height={1080} duration={total} background={m.pageBg}
+          loop persistKey="urban-immune-anim">
+          <Sprite start={0} end={total}>
+            <ShaderLayer sceneDur={sceneDur} mood={mood} atmosphere={atmosphere} />
+          </Sprite>
+          {SCENES.map((C, i) => (
+            <Sprite key={i} start={i * sceneDur} end={(i + 1) * sceneDur}>
+              <C />
+            </Sprite>
+          ))}
+          <SlideReporter sceneDur={sceneDur} />
+        </Stage>
+      );
+    }
+
+    function App() {
+      const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+      React.useEffect(() => { applyTheme(t.mood); }, [t.mood]);
+
+      return (
+        <>
+          <Deck sceneDur={t.pace} mood={t.mood} atmosphere={t.atmosphere} />
+          <TweaksPanel title="Tweaks">
+            <TweakSection label="Mood" />
+            <TweakRadio label="Palette" value={t.mood}
+              options={['clinical', 'neon', 'paper']}
+              onChange={(v) => setTweak('mood', v)} />
+
+            <TweakSection label="Pace" />
+            <TweakSlider label="Seconds / scene" value={t.pace}
+              min={4} max={14} step={0.5} unit="s"
+              onChange={(v) => setTweak('pace', v)} />
+
+            <TweakSection label="Atmosphere" />
+            <TweakSlider label="Shader density" value={t.atmosphere}
+              min={0} max={1} step={0.05}
+              onChange={(v) => setTweak('atmosphere', v)} />
+          </TweaksPanel>
+        </>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+
+    // Initial notes ping
+    try { window.parent.postMessage({ slideIndexChanged: 0 }, '*'); } catch {}
+  </script>
+</body>
+</html>

@@ -11,7 +11,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko">
       <body>
-        <Providers>{children}</Providers>
+        <Providers>
+          <a href="#main-content" className="skip-link">메인 콘텐츠로 이동</a>
+          <div id="main-content">{children}</div>
+        </Providers>
       </body>
     </html>
   );
