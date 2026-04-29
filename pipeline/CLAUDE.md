@@ -34,9 +34,29 @@ async def collect_with_fallback(prev_value: float) -> float:
 ```
 
 ## 정규화 규칙
-- 수집 직후 `normalization.min_max_normalize()` 반드시 호출
+- 수집 직후 `normalization.min_max_normalize()` 반드시 호출 (KOWAS L2 / 자체 스케일 신호용)
 - 계층 간 정규화 **독립** 적용 (L1·L2·L3 각각 별도 min/max)
 - `normalization.py` 수정 시 팀 전체 공지 필수 (경보 점수 기준 변경)
+
+### Naver L1·L3 예외 — 슬라이딩 윈도우 min-max 금지
+**[CRITICAL — 2026-04-27 사고 재발 방지]** Naver datalab/shopping ratio 는 이미 자체 정규화(peak=100 기준 0~100 비율)다.
+- **금지**: 수집된 ratio 위에 다시 `min_max_normalize` 적용 — 비수기 마지막 주가 0 으로 박히는 zero-collapse 발생
+- **올바름**: ratio 그대로 0~100 스케일 사용. clamp 만 적용 (`max(0, min(100, raw))`)
+- 사고 케이스: `pipeline/collectors/naver_backfill.backfill_layer` 가 56주 raw 위에 min-max 재정규화 → 04-27 raw=0.98 (낮은 비수기) 가 value=0 으로 박힘 → 17개 시·도 모두 0 → scorer 게이트 B 통과 불가
+- 회귀 방지 테스트: `tests/test_naver_data_quality.py::TestBackfillZeroCollapse`
+
+### Naver source 라벨 통일 정책
+**[CRITICAL]** OTC 는 `source='naver_shopping_insight'` 로 단일화. legacy `naver_shopping` 금지.
+- 두 source 가 한 region 시계열에 섞이면 정규화 스케일이 달라 등락 왜곡 (2026-04-13 92.83 → 04-24 44.52 → 04-27 94.51 사고)
+- 신규 collector(`otc_collector.collect_otc_weekly`) + backfill(`naver_backfill.run_backfill`) 둘 다 동일 source 라벨 → 멱등 DELETE 가 같은 (layer, source) 기준이라 일관 정리
+- 회귀 방지 테스트: `tests/test_naver_data_quality.py::TestSourceUnification`
+
+### Naver 단일값 → 17 region broadcast 의무
+**[CRITICAL]** 네이버 쇼핑인사이트·데이터랩은 region 파라미터 미지원 → 전국 단일값.
+- 수집 후 반드시 `SIDO_ALL` (17개 시·도) 모두에 동일 값 fan-out 적재
+- 단일 region 만 적재하면 `/alerts/regions` 16 region 결손 + dashboard 지도 회색
+- UI 측에선 "전국 단일값" caveat label 노출 + HIRA 연동 후 Phase 2 차등화
+- 회귀 방지 테스트: `tests/test_naver_data_quality.py::TestOtcRegionBroadcast`
 
 ## Kafka Producer 설정 — 변경 금지
 ```python
