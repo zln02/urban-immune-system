@@ -943,6 +943,16 @@ export default function DashboardPage() {
                 ? (trendDays === null ? searchValues : searchValues.slice(-trendDays))
                 : mockSeries.search,
             }}
+            dates={(() => {
+              // 가장 긴 실제 시리즈의 날짜를 X축 라벨로 사용 (sewage > otc > search 순 가용성)
+              const candidates: string[][] = [];
+              if (hasSewage) candidates.push(sewageSeries.map((p) => p.time));
+              if (hasOtc) candidates.push(otcSeries.map((p) => p.date));
+              if (hasSearch) candidates.push(searchSeries.map((p) => p.date));
+              if (candidates.length === 0) return undefined;
+              const longest = candidates.sort((a, b) => b.length - a.length)[0];
+              return trendDays === null ? longest : longest.slice(-trendDays);
+            })()}
             t={t}
             height={280}
           />
