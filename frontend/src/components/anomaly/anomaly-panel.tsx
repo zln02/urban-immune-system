@@ -15,31 +15,65 @@ interface AnomalyRegion {
   status: "anomaly" | "warning" | "normal";
 }
 
+interface AnomalyMeta {
+  generated_at?: string;        // ISO UTC
+  threshold?: number;
+  threshold_percentile?: number;
+  fallback_temperature_count?: number;
+}
+
 /** 이상탐지 점수 — Autoencoder 재구성 오차 기반 (ml/anomaly/autoencoder.py)
  *  /api/v1/predictions/anomaly 에서 60초 폴링.
  *  score 50 = 임계값(threshold), status = API 반환값 그대로 사용.
  */
-function useAnomalyScores(): AnomalyRegion[] {
-  const { data } = useSWR<{ anomaly_scores: Array<{
-    region: string;
-    score: number;
-    reconstruction_error: number;
-    status: "anomaly" | "warning" | "normal";
-    features: { l1: number; l2: number; l3: number; temperature: number };
-    fallback_temperature: boolean;
-  }> }>(
+function useAnomalyScores(): { regions: AnomalyRegion[]; meta: AnomalyMeta } {
+  const { data } = useSWR<{
+    generated_at?: string;
+    threshold?: number;
+    threshold_percentile?: number;
+    anomaly_scores: Array<{
+      region: string;
+      score: number;
+      reconstruction_error: number;
+      status: "anomaly" | "warning" | "normal";
+      features: { l1: number; l2: number; l3: number; temperature: number };
+      fallback_temperature: boolean;
+    }>;
+  }>(
     `${process.env.NEXT_PUBLIC_API_BASE ?? ""}/api/v1/predictions/anomaly`,
     (url: string) => fetch(url).then((r) => r.json()),
     { refreshInterval: 60_000, revalidateOnFocus: false },
   );
-  if (!data?.anomaly_scores) return [];
-  return data.anomaly_scores.map((a) => ({
+  if (!data?.anomaly_scores) return { regions: [], meta: {} };
+  const regions = data.anomaly_scores.map((a) => ({
     code: a.region.slice(0, 2),
     name: a.region,
     score: Math.round(a.score),
     delta: 0,
     status: a.status,
   }));
+  const meta: AnomalyMeta = {
+    generated_at: data.generated_at,
+    threshold: data.threshold,
+    threshold_percentile: data.threshold_percentile,
+    fallback_temperature_count: data.anomaly_scores.filter((a) => a.fallback_temperature).length,
+  };
+  return { regions, meta };
+}
+
+function formatKstTimestamp(iso?: string, lang: Lang = "ko"): string {
+  if (!iso) return lang === "ko" ? "데이터 없음" : "no data";
+  try {
+    const d = new Date(iso);
+    const fmt = new Intl.DateTimeFormat(lang === "ko" ? "ko-KR" : "en-US", {
+      timeZone: "Asia/Seoul",
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", hour12: false,
+    });
+    return fmt.format(d) + " KST";
+  } catch {
+    return iso;
+  }
 }
 
 const STATUS_META = {
@@ -76,14 +110,14 @@ function ScoreBar({ score, status }: { score: number; status: AnomalyRegion["sta
 }
 
 export function AnomalyPanel({ lang }: AnomalyPanelProps) {
-  const regions = useAnomalyScores();
+  const { regions, meta } = useAnomalyScores();
   const [expanded, setExpanded] = useState<string | null>(null);
   const anomalyCount = regions.filter((r) => r.status === "anomaly").length;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--sp-4)" }}>
 
-      {/* 설명 배너 */}
+      {/* 설명 배너 + 업데이트 시각·임계값 메타 */}
       <div
         style={{
           padding: "12px 16px",
@@ -94,13 +128,37 @@ export function AnomalyPanel({ lang }: AnomalyPanelProps) {
           color: "#1e40af",
         }}
       >
-        <strong>
-          {lang === "ko" ? "🧬 신규 감염병 조기탐지 모드" : "🧬 Novel Pathogen Early Detection"}
-        </strong>
-        <br />
-        {lang === "ko"
-          ? "Autoencoder가 학습한 정상 패턴 대비 재구성 오차를 실시간 측정합니다. 질병명을 모르더라도 \"뭔가 평소와 다르다\"는 신호를 포착합니다."
-          : "Measures reconstruction error vs. learned normal patterns in real-time. Detects \"something unusual\" even before a pathogen is identified."}
+        <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+          <strong>
+            {lang === "ko" ? "🧬 신규 감염병 조기탐지 모드" : "🧬 Novel Pathogen Early Detection"}
+          </strong>
+          <span style={{ fontSize: 11, color: "#1e3a8a", fontVariantNumeric: "tabular-nums" }}>
+            {lang === "ko" ? "마지막 업데이트: " : "Last update: "}
+            <strong>{formatKstTimestamp(meta.generated_at, lang)}</strong>
+            {meta.threshold !== undefined && (
+              <>
+                {" · "}
+                {lang === "ko" ? "임계값" : "threshold"}{" "}
+                <strong>{meta.threshold.toFixed(4)}</strong>
+                {meta.threshold_percentile !== undefined && (
+                  <span> ({meta.threshold_percentile}p)</span>
+                )}
+              </>
+            )}
+          </span>
+        </div>
+        <div style={{ marginTop: 4 }}>
+          {lang === "ko"
+            ? "Autoencoder가 학습한 정상 패턴 대비 재구성 오차를 실시간 측정합니다. 질병명을 모르더라도 \"뭔가 평소와 다르다\"는 신호를 포착합니다."
+            : "Measures reconstruction error vs. learned normal patterns in real-time. Detects \"something unusual\" even before a pathogen is identified."}
+        </div>
+        {meta.fallback_temperature_count !== undefined && meta.fallback_temperature_count > 0 && (
+          <div style={{ marginTop: 6, fontSize: 11, color: "#92400e", background: "#fffbeb", padding: "4px 8px", border: "1px solid #fde68a" }}>
+            {lang === "ko"
+              ? `⚠️ 기상 데이터 fallback ${meta.fallback_temperature_count}/${regions.length}개 지역 — KMA API 활성화 시 자동 정상화`
+              : `⚠️ Weather fallback ${meta.fallback_temperature_count}/${regions.length} regions — auto-resolves when KMA API activates`}
+          </div>
+        )}
       </div>
 
       {/* 전국 이상지수 요약 */}
