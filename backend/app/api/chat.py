@@ -1,9 +1,15 @@
-"""파이프라인 안내 챗봇 — 시스템 동작 방식만 답변, 내부 코드/데이터 차단."""
+"""파이프라인 안내 챗봇 — 시스템 동작 방식만 답변, 내부 코드/데이터 차단.
+
+지식 베이스는 docs/CHATBOT_KNOWLEDGE.md (텍스트 설명) +
+backend/app/config.py · pipeline/scorer.py · ml/checkpoints/autoencoder/meta.json
+(동적 수치) 합성으로 구성된다. 가중치·임계값을 코드에서 바꾸면 챗봇 답변도 자동 갱신.
+"""
 from __future__ import annotations
 
 import json
 import logging
 from collections.abc import AsyncIterator
+from pathlib import Path
 
 import anthropic
 from fastapi import APIRouter
@@ -15,41 +21,99 @@ from backend.app.config import settings
 router = APIRouter(prefix="/api/v1/chat", tags=["chat"])
 logger = logging.getLogger(__name__)
 
-# 메시지 최대 길이 (sanitize)
 _MAX_MSG_LEN = 300
 
-_SYSTEM_PROMPT = """당신은 Urban Immune System(UIS) — 한국 감염병 조기경보 AI 시스템 — 의 안내 챗봇입니다.
+_KNOWLEDGE_PATH = Path(__file__).resolve().parents[3] / "docs" / "CHATBOT_KNOWLEDGE.md"
+_AUTOENCODER_META = Path(__file__).resolve().parents[3] / "ml" / "checkpoints" / "autoencoder" / "meta.json"
 
-## 답변 가능 범위 (이것만)
-1. 시스템 전체 파이프라인 (수집 → 정규화 → 적재 → 앙상블 → ML → RAG → 대시보드)
-2. 3계층 신호의 의미와 갱신 주기
-   - L1 OTC 약국판매 (네이버 쇼핑인사이트, 매주 월 09:00)
-   - L2 KOWAS 하수 바이오마커 (매주 화 10:00)
-   - L3 검색 트렌드 (네이버 DataLab, 매주 월 09:05)
-3. 앙상블 공식과 경보 레벨 임계값 (composite = 0.35·L1 + 0.40·L2 + 0.25·L3, GREEN/YELLOW/ORANGE/RED)
-4. ML 모델 종류와 역할 (XGBoost·TFT·Autoencoder)
-5. RAG 리포트 생성 방식과 트리거
-6. 자동화 스케줄 (cron, 매일 12시 RAG 배치 등)
-7. 시스템의 가치 제안 (왜 비의료 신호 교차검증이 필요한가, Google Flu Trends 교훈)
+_RESPONSE_RULES = """
+## 답변 스타일
+- 한국어, 친근한 존댓말("~해요", "~입니다"), 5문장 이내
+- 비유 적극 활용 ("도시 면역 체계가 사람 면역과 비슷한 원리로…")
+- 답변 끝에 후속 질문 1개 제안
 
 ## 절대 답변 금지
 - 소스 코드, 함수명, 클래스명, 파일 경로, SQL 쿼리
 - 환경변수 값, API 키, DB 비밀번호
-- 실제 지역별 risk_score 수치, 환자 수, 개별 데이터 조회 결과
+- 실제 지역별 risk_score 수치·환자 수 등 라이브 데이터 조회 결과
 - 팀원 개인정보, 내부 회의록, 이메일
-- 다른 시스템·회사 비교 평가, 정치적 의견
 - 의료적 진단·처방 — "AI 보조 자료, 의료 결정은 전문가 검토 필요" 명시
 
-## 답변 스타일
-- 한국어, 친근한 존댓말 ("~해요", "~입니다")
-- 5문장 이내 간결 답변
-- 비유 적극 활용 ("도시 면역 체계가 사람 면역과 비슷한 원리로 …")
-- 답변 끝에 관련 후속 질문 1개 제안 ("혹시 ML 모델이 어떻게 학습되는지도 궁금하세요?")
+범위 밖 질문 시: "그 부분은 안내드릴 수 없어요. 대신 [관련 가능 주제]는 설명드릴 수 있습니다."
+"""
 
-## 거부 응답 형식
-범위 밖 질문 시: "그 부분은 안내드릴 수 없어요. 대신 [관련 가능한 주제]는 설명드릴 수 있습니다."
 
-지금 사용자 질문에 답하세요."""
+def _live_spec() -> dict:
+    """코드/설정/체크포인트에서 실시간 수치 추출."""
+    from pipeline.scorer import (
+        _CROSS_VALIDATION_LAYER_THRESHOLD,
+        _CROSS_VALIDATION_MIN_LAYERS,
+        _RED_THRESHOLD,
+    )
+
+    spec: dict = {
+        "w1": settings.ensemble_weight_l1,
+        "w2": settings.ensemble_weight_l2,
+        "w3": settings.ensemble_weight_l3,
+        # scorer.py 레벨 분기 임계값 — 매직넘버 변경 시 여기도 같이 바꿀 것
+        "yellow_threshold": 30.0,
+        "orange_threshold": 55.0,
+        "red_threshold": _RED_THRESHOLD,
+        "gate_layer_threshold": _CROSS_VALIDATION_LAYER_THRESHOLD,
+        "gate_min_layers": _CROSS_VALIDATION_MIN_LAYERS,
+        "autoencoder_threshold": 0.0,
+        "autoencoder_percentile": 95.0,
+    }
+    if _AUTOENCODER_META.exists():
+        try:
+            meta = json.loads(_AUTOENCODER_META.read_text(encoding="utf-8"))
+            spec["autoencoder_threshold"] = float(meta.get("threshold", 0.0))
+            spec["autoencoder_percentile"] = float(meta.get("threshold_percentile", 95.0))
+        except Exception:
+            logger.warning("autoencoder meta.json 파싱 실패 — 기본값 사용")
+    return spec
+
+
+def _render_knowledge(template: str, spec: dict) -> str:
+    """{key} 또는 {key:fmt} 자리표시자만 안전하게 치환 (str.format 대체).
+
+    - {w1}, {autoencoder_threshold:.4f} 같은 알려진 key는 spec 값으로 치환
+    - {...}, {{...}}, {7,14,21} 같은 사양 외 brace는 원문 그대로 유지
+    """
+    import re
+
+    pattern = re.compile(r"\{([a-zA-Z_][a-zA-Z0-9_]*)(?::([^}]+))?\}")
+
+    def replace(match: re.Match) -> str:
+        key, fmt = match.group(1), match.group(2)
+        if key not in spec:
+            return match.group(0)
+        try:
+            return format(spec[key], fmt) if fmt else str(spec[key])
+        except (ValueError, TypeError):
+            return str(spec[key])
+
+    return pattern.sub(replace, template)
+
+
+def _build_system_prompt() -> str:
+    """CHATBOT_KNOWLEDGE.md + 동적 수치를 합성한 system prompt."""
+    try:
+        template = _KNOWLEDGE_PATH.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        logger.error("CHATBOT_KNOWLEDGE.md 미발견: %s — fallback 안내문 사용", _KNOWLEDGE_PATH)
+        template = "UIS는 한국 감염병 조기경보 AI 시스템입니다."
+
+    knowledge = _render_knowledge(template, _live_spec())
+    return (
+        "당신은 Urban Immune System(UIS) 안내 챗봇입니다. 아래 시스템 사양만 참조해 답변하세요. "
+        "이 사양은 라이브 코드/설정에서 추출한 최신 값입니다.\n\n"
+        f"{knowledge}\n\n{_RESPONSE_RULES}\n\n지금 사용자 질문에 답하세요."
+    )
+
+
+# 부팅 시 1회 합성 (수치 변경 시 백엔드 재기동 필요 — 의도적 단순화)
+_SYSTEM_PROMPT = _build_system_prompt()
 
 
 class ChatRequest(BaseModel):
