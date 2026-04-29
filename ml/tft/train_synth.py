@@ -100,6 +100,26 @@ def _attention_summary(model: TemporalFusionTransformer, dataset: TimeSeriesData
       - encoder_attention: (batch, encoder_len, heads, encoder_len) — 시점 가중치
       - encoder_variables / decoder_variables / static_variables — 변수 중요도
     """
+    # encoder variable importance 순서 및 한국어 레이블 매핑
+    _ENCODER_VAR_ORDER = [
+        "encoder_length",
+        "confirmed_future_center",
+        "confirmed_future_scale",
+        "l1_otc",
+        "l2_wastewater",
+        "l3_search",
+        "temperature",
+        "humidity",
+    ]
+    _LABEL_KR = {
+        "l1_otc": "OTC약국판매",
+        "l2_wastewater": "하수기반감시",
+        "l3_search": "검색트렌드",
+        "temperature": "기온",
+        "humidity": "습도",
+    }
+    _FEATURE_VARS = set(_LABEL_KR.keys())
+
     try:
         loader = dataset.to_dataloader(train=False, batch_size=4, num_workers=0)
         with warnings.catch_warnings():
@@ -128,12 +148,40 @@ def _attention_summary(model: TemporalFusionTransformer, dataset: TimeSeriesData
         # variable importance: (B, T_enc, n_vars) → (n_vars,)
         per_variable = var_t.mean(dim=(0, 1)).tolist() if var_t.ndim >= 3 else var_t.mean().tolist()
 
+        # 한국어 1줄 요약: 실제 피처 변수만 필터링 후 top-3
+        importance_values = per_variable[0] if (
+            isinstance(per_variable, list) and per_variable and isinstance(per_variable[0], list)
+        ) else per_variable
+
+        feature_pairs = [
+            (var, importance_values[i])
+            for i, var in enumerate(_ENCODER_VAR_ORDER[:len(importance_values)])
+            if var in _FEATURE_VARS
+        ]
+        feature_pairs.sort(key=lambda x: x[1], reverse=True)
+        top3 = feature_pairs[:3]
+
+        # "검색량(L3) 0.41 · 하수(L2) 0.32 · OTC(L1) 0.27" 형식
+        short_label = {
+            "l3_search": "검색량(L3)",
+            "l2_wastewater": "하수(L2)",
+            "l1_otc": "OTC(L1)",
+            "temperature": "기온(AUX)",
+            "humidity": "습도(AUX)",
+        }
+        summary_parts = [f"{short_label.get(var, var)} {val:.2f}" for var, val in top3]
+        attention_summary_kr = " · ".join(summary_parts)
+        logger.info("Attention 한국어 요약: %s", attention_summary_kr)
+        print(f"\n  [Attention] {attention_summary_kr}")
+
         return {
             "encoder_attention_shape": list(attn_t.shape),
             "encoder_variable_importance_shape": list(var_t.shape),
             "mean_attention_per_encoder_step": per_step,
             "mean_encoder_variable_importance": per_variable,
             "encoder_variable_names": list(model.hparams.get("x_reals", [])) if hasattr(model, "hparams") else [],
+            "attention_top3_kr": [_LABEL_KR.get(var, var) for var, _ in top3],
+            "attention_summary_kr": attention_summary_kr,
         }
     except Exception as exc:
         logger.warning("Attention 추출 실패: %s", exc)

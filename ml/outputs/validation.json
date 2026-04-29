@@ -109,5 +109,35 @@
       },
       "analysis_window": "2025-09 ~ 2026-03"
     }
+  },
+  "summary": {
+    "presentation_date": "2026-04-30",
+    "comparison": {
+      "synthetic": {
+        "f1": 0.9677,
+        "precision": 0.9375,
+        "recall": 1.0
+      },
+      "realistic": {
+        "f1": 0.621,
+        "precision": 0.507,
+        "recall": 0.838
+      }
+    },
+    "ensemble_17regions_avg": {
+      "f1": 0.8414,
+      "precision": 0.9605,
+      "recall": 0.7682,
+      "far": 0.1618,
+      "lead_weeks": 5.9412
+    },
+    "kpi_status": {
+      "f1_pass": true,
+      "precision_pass": true,
+      "recall_pass": false,
+      "far_pass": true,
+      "lead_pass": true
+    },
+    "notes_kr": "F1(0.841)·Precision(0.960)·FAR(0.162)·선행시간(5.9주) 4개 KPI 목표 달성. Recall(0.768)은 목표 0.85 미달 — 게이트 임계값 완화 또는 L2 가중치 상향으로 개선 가능. TFT는 합성 데이터 PoC 완료(79K params), 실데이터 12주 누적 후 프로덕션 전환 예정."
   }
 }

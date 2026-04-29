@@ -13,6 +13,7 @@ import { AIReportCard } from "@/components/alert/ai-report-card";
 import { AlertTable } from "@/components/alert/alert-table";
 import { AnomalyPanel } from "@/components/anomaly/anomaly-panel";
 import { InfoTooltip } from "@/components/ui/info-tooltip";
+import { ChatWidget } from "@/components/chat/chat-widget";
 
 import { KOREA_REGIONS, regionName, regionCodeFromName, type RegionCode } from "@/lib/korea-regions";
 import { RISK_META } from "@/lib/risk";
@@ -72,6 +73,8 @@ export default function DashboardPage() {
   const [lang, setLang] = useState<Lang>("ko");
   const [selected, setSelected] = useState<RegionCode>("JB");
   const [activeTab, setActiveTab] = useState<DashTab>("surveillance");
+  // 신호 시계열 차트 기간 — null = 전체 데이터 범위
+  const [trendDays, setTrendDays] = useState<number | null>(60);
 
   const t = DICT[lang];
   const regionAlertsQuery = useRegionAlerts(28);
@@ -108,8 +111,10 @@ export default function DashboardPage() {
   // ── Naver 실데이터 (L1 OTC / L3 검색어) ──────────────────────────
   const otcQuery = useOtcTrend(12);
   const searchQuery = useSearchTrend(12);
-  // ── L2 KOWAS 하수 실데이터 (TimescaleDB 952건 → /signals/timeseries) ─
-  const sewageQuery = useWastewaterSeries("서울특별시", 365);
+  // ── L2 KOWAS 하수 실데이터 (TimescaleDB → /signals/timeseries) ─
+  // 지도에서 선택한 region (한국어 이름) + 인플루엔자 단일 병원체로 한정.
+  const selectedRegionKo = regionName(selected, "ko");
+  const sewageQuery = useWastewaterSeries(selectedRegionKo, 365);
   // ── 분석 산출물 (lead time / backtest 17지역) ───────────────────
   const leadTimeQuery = useLeadTime();
   const backtestQuery = useBacktest17();
@@ -284,14 +289,21 @@ export default function DashboardPage() {
             aria-label={lang === "en" ? "Open midterm presentation slides" : "중간발표 슬라이드 열기"}
             style={{
               ...iconBtnDark,
-              padding: "0 10px",
+              width: "auto",
+              height: 32,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "0 12px",
+              whiteSpace: "nowrap",
               textDecoration: "none",
-              fontSize: 11,
+              fontSize: 12,
               fontWeight: 600,
-              gap: 4,
+              border: "1px solid var(--gray-700, rgba(255,255,255,0.18))",
+              borderRadius: 6,
             }}
           >
-            <span aria-hidden>📊</span>
+            <span aria-hidden style={{ fontSize: 14 }}>📊</span>
             <span>{lang === "en" ? "Slides" : "발표"}</span>
           </a>
           <button
@@ -886,18 +898,21 @@ export default function DashboardPage() {
           sub={t.trend_sub}
           actions={
             <div style={{ display: "flex", gap: 4 }}>
-              {["7d", "30d", "60d", lang === "en" ? "All" : "전체"].map((lbl, i) => {
-                const active = i === 2;
+              {([
+                { lbl: "7d",  days: 7 },
+                { lbl: "30d", days: 30 },
+                { lbl: "60d", days: 60 },
+                { lbl: lang === "en" ? "All" : "전체", days: null },
+              ] as const).map(({ lbl, days }) => {
+                const active = trendDays === days;
                 return (
                   <button
                     key={lbl}
                     type="button"
-                    disabled={!active}
-                    title={active ? "" : (lang === "en" ? "Phase 2" : "Phase 2 예정")}
+                    onClick={() => setTrendDays(days)}
                     style={{
                       ...tabBtn(active),
-                      opacity: active ? 1 : 0.4,
-                      cursor: active ? "default" : "not-allowed",
+                      cursor: active ? "default" : "pointer",
                     }}
                   >
                     {lbl}
@@ -909,9 +924,15 @@ export default function DashboardPage() {
         >
           <TrendChart
             series={{
-              pharmacy: hasOtc ? otcValues.slice(-60) : mockSeries.pharmacy,
-              sewage: hasSewage ? sewageValues.slice(-60) : mockSeries.sewage,
-              search: hasSearch ? searchValues.slice(-60) : mockSeries.search,
+              pharmacy: hasOtc
+                ? (trendDays === null ? otcValues : otcValues.slice(-trendDays))
+                : mockSeries.pharmacy,
+              sewage: hasSewage
+                ? (trendDays === null ? sewageValues : sewageValues.slice(-trendDays))
+                : mockSeries.sewage,
+              search: hasSearch
+                ? (trendDays === null ? searchValues : searchValues.slice(-trendDays))
+                : mockSeries.search,
             }}
             t={t}
             height={280}
@@ -984,6 +1005,9 @@ export default function DashboardPage() {
         </footer>
         </>)}
       </main>
+
+      {/* ── 챗봇 floating 위젯 (우하단 고정) ─────────────── */}
+      <ChatWidget lang={lang} />
     </div>
   );
 }

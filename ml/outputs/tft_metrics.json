@@ -192,6 +192,9 @@
       "temperature",
       "humidity",
       "confirmed_future"
-    ]
+    ],
+    "attention_summary_kr": "기온(AUX) 0.22 · 검색량(L3) 0.09 · 하수(L2) 0.06",
+    "attention_top3_kr": ["기온", "검색트렌드", "하수기반감시"],
+    "attention_note": "합성 데이터 학습 결과 — 실데이터 학습 후 L3검색·L2하수 비중 증가 예상"
   }
 }

@@ -95,4 +95,4 @@ jobs:
           python-version: "3.11"
           cache: pip
       - run: pip install -e ".[all]"
-      - run: pytest tests --cov=src --cov-report=term-missing
+      - run: pytest tests --cov=src --cov=backend --cov=ml --cov=pipeline --cov-report=term-missing --cov-fail-under=35

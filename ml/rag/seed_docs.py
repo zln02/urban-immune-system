@@ -32,6 +32,8 @@ SEED_DOCS: list[dict] = [
             "url": "https://www.who.int/publications/i/item/WHO-2019-nCoV-SurveillanceGuidance-2022.2",
             "lang": "ko-summary",
             "topic": "wastewater_surveillance",
+            "author": "WHO",
+            "year": 2022,
         },
     },
     {
@@ -48,6 +50,8 @@ SEED_DOCS: list[dict] = [
             "url": "https://www.science.org/doi/10.1126/science.1248506",
             "lang": "ko-summary",
             "topic": "search_trend_failure",
+            "author": "Lazer et al.",
+            "year": 2014,
         },
     },
     {
@@ -64,6 +68,8 @@ SEED_DOCS: list[dict] = [
             "url": "https://www.kdca.go.kr/contents.es?mid=a20301070000",
             "lang": "ko",
             "topic": "ilinet_surveillance",
+            "author": "KDCA",
+            "year": 2024,
         },
     },
     {
@@ -80,6 +86,8 @@ SEED_DOCS: list[dict] = [
             "url": "https://www.ecdc.europa.eu/en/publications-data/operational-tool-epidemic-intelligence",
             "lang": "ko-summary",
             "topic": "multi_signal_cross_validation",
+            "author": "ECDC",
+            "year": 2019,
         },
     },
     {
@@ -96,6 +104,8 @@ SEED_DOCS: list[dict] = [
             "url": "https://dl.acm.org/doi/10.1145/1541880.1541882",
             "lang": "ko-summary",
             "topic": "novelty_detection",
+            "author": "Chandola et al.",
+            "year": 2009,
         },
     },
     # ── 확장 문서 (6~10) ─────────────────────────────────────────────────────
@@ -113,6 +123,8 @@ SEED_DOCS: list[dict] = [
             "url": "https://www.cdc.gov/nwss/index.html",
             "lang": "ko-summary",
             "topic": "wastewater_surveillance_us",
+            "author": "CDC",
+            "year": 2020,
         },
     },
     {
@@ -130,6 +142,8 @@ SEED_DOCS: list[dict] = [
             "url": "https://doi.org/10.1016/j.ijforecast.2021.03.012",
             "lang": "ko-summary",
             "topic": "tft_interpretable_forecasting",
+            "author": "Lim et al.",
+            "year": 2021,
         },
     },
     {
@@ -148,6 +162,8 @@ SEED_DOCS: list[dict] = [
             "url": "https://www.who.int/initiatives/goarn",
             "lang": "ko-summary",
             "topic": "who_goarn_multi_source",
+            "author": "WHO",
+            "year": 2000,
         },
     },
     {
@@ -165,6 +181,8 @@ SEED_DOCS: list[dict] = [
             "url": "https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.TimeSeriesSplit.html",
             "lang": "ko-summary",
             "topic": "walk_forward_cv",
+            "author": "scikit-learn",
+            "year": 2024,
         },
     },
     {
@@ -182,6 +200,8 @@ SEED_DOCS: list[dict] = [
             "url": "https://isms.kisa.or.kr/main/ispims/intro/",
             "lang": "ko",
             "topic": "isms_p_b2g_compliance",
+            "author": "KISA",
+            "year": 2024,
         },
     },
     # ── 추가 시드 (11~14) — 2026-04-28 D-2 발표 RAG 인용문 풍부화 ────────
@@ -200,6 +220,8 @@ SEED_DOCS: list[dict] = [
             "url": "https://www.nature.com/ncomms/",
             "lang": "ko-summary",
             "topic": "multi_signal_fusion_2025",
+            "author": "Xu et al.",
+            "year": 2025,
         },
     },
     {
@@ -217,6 +239,8 @@ SEED_DOCS: list[dict] = [
             "url": "https://www.me.go.kr/",
             "lang": "ko",
             "topic": "kowas_korea_wbe",
+            "author": "환경부·질병관리청",
+            "year": 2024,
         },
     },
     {
@@ -236,6 +260,8 @@ SEED_DOCS: list[dict] = [
             "url": "https://www.statsmodels.org/stable/generated/statsmodels.tsa.stattools.grangercausalitytests.html",
             "lang": "ko-summary",
             "topic": "granger_causality_validation",
+            "author": "Granger",
+            "year": 1969,
         },
     },
     {
@@ -254,6 +280,70 @@ SEED_DOCS: list[dict] = [
             "url": "https://nip.kdca.go.kr/",
             "lang": "ko",
             "topic": "influenza_vaccine_guideline",
+            "author": "KDCA",
+            "year": 2024,
+        },
+    },
+    # ── 신규 시드 (15~17) — 2026-04-29 D-1 발표 KDCA 표준 포맷 보강 ─────
+    {
+        "id": 15,
+        "text": (
+            "UIS 다중 신호 앙상블 경보 운영 원칙: composite_score = 0.30×L1 + 0.40×L2 + 0.30×L3. "
+            "2-레이어 게이트: (1) composite ≥ 30 초과 시 YELLOW 후보 진입, (2) 2개 이상 계층이 30 이상이어야 YELLOW 발령. "
+            "경보 레벨 임계: GREEN < 30, YELLOW 30~54, ORANGE 55~69, RED ≥ 70(※ CLAUDE.md 가중치 기준). "
+            "본 임계값(55/70)은 내부 운영 매뉴얼 기준이며 KDCA ILI 1.96σ 임계와 별도로 운영된다. "
+            "L3 검색트렌드 단독 발령 절대 금지: 인포데믹(정보 과잉) 위험으로 공황 유발 가능. "
+            "앙상블 가중치 재검증 주기: 4주 walk-forward CV (gap=4주) 결과로 분기별 조정. "
+            "변경 시 CLAUDE.md 가중치 섹션 및 backend/app/config.py 동시 업데이트 필수."
+        ),
+        "metadata": {
+            "source": "UIS 내부 운영 매뉴얼 v1.0 (박진영, 2026)",
+            "url": "https://github.com/zln02/urban-immune-system/blob/develop/CLAUDE.md",
+            "lang": "ko",
+            "topic": "ensemble_alert_rules",
+            "author": "박진영",
+            "year": 2026,
+        },
+    },
+    {
+        "id": 16,
+        "text": (
+            "KDCA 감염병 표본감시 운영지침(2024): ILINet은 전국 표본의원 약 200개를 통해 주간 ILI(Influenza-Like Illness) "
+            "비율(환자수/총방문자수×100)을 산출한다. 유행 기준선(epidemic threshold)은 최근 3년 비유행기 평균+1.96×SD로 계산. "
+            "KOWAS(하수도감시 시스템)는 전국 60개 이상 주요 하수처리장에서 SARS-CoV-2·인플루엔자 A·B·노로바이러스 RNA 농도를 "
+            "주간 측정하며, 측정 단위는 copies/mL(log10 환산 보고). "
+            "공식 보고 발표일: ISO 주차 기준 화요일 오전(전주 수집 데이터). "
+            "임상신고(ILINet)와 하수감시(KOWAS) 간 1~2주 선행성 차이가 WBE 조기경보 활용의 핵심 근거다."
+        ),
+        "metadata": {
+            "source": "질병관리청 감염병 표본감시 운영지침 2024 (KDCA, 2024)",
+            "url": "https://www.kdca.go.kr/contents.es?mid=a20301070000",
+            "lang": "ko",
+            "topic": "kdca_surveillance_guidelines",
+            "author": "KDCA",
+            "year": 2024,
+        },
+    },
+    {
+        "id": 17,
+        "text": (
+            "AI 보조 의사결정 시스템 XAI 감사 요건 (ISMS-P 2.9 + EU AI Act Art.13/14 적용): "
+            "alert_reports 테이블에 다음 필드를 의무 기록해야 한다: "
+            "(1) triggered_by — 경보 발령 규칙 또는 피처 식별자(rule/feature 구분); "
+            "(2) feature_values — L1·L2·L3 원시값(raw) 및 정규화값(normalized) JSONB; "
+            "(3) rag_sources — RAG top-k 인용 메타데이터(출처·점수·페이지) JSONB. "
+            "EU AI Act Art.13은 고위험 AI 시스템에 투명성 문서화를 요구하며, Art.14는 인간 감독(human oversight) 게이트를 의무화한다. "
+            "따라서 경보 리포트에는 반드시 '인간 전문가 검토 필요' 면책 문구를 명시해야 하며, "
+            "자동 발령된 경보는 역학조사관이 30분 이내 검토·확인하는 워크플로우를 운영해야 한다. "
+            "ISMS-P 2.9 로그 보존 요건: 감사 로그 최소 6개월 이상 보존."
+        ),
+        "metadata": {
+            "source": "ISMS-P 2.9 + EU AI Act Art.13/14 적용 가이드 (박진영, 2026-04)",
+            "url": "https://isms.kisa.or.kr/main/ispims/intro/",
+            "lang": "ko",
+            "topic": "ai_xai_audit",
+            "author": "박진영",
+            "year": 2026,
         },
     },
 ]

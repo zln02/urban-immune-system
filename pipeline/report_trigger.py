@@ -57,9 +57,30 @@ def _fetch_rag_context(region: str, alert_level: str) -> list[dict]:
 
 _SYSTEM_PROMPT = """당신은 공중보건 전문가입니다.
 3-Layer 감염병 조기경보 시스템(약국 OTC + 하수 바이오마커 + 검색어 트렌드)의
-분석 결과를 바탕으로 간결하고 실용적인 경보 리포트를 작성합니다.
+분석 결과를 바탕으로 KDCA 주간 감염병 보고서 표준 포맷에 맞는 경보 리포트를 작성합니다.
 리포트는 한국어로 작성하며, 일반 시민과 보건 당국 모두가 이해할 수 있어야 합니다.
+반드시 지시한 7개 섹션 구조(## 번호. 제목 형식)를 정확히 따라 markdown으로 출력하세요.
 모든 내용은 역학적 판단 근거이며, 의료적 진단이나 처방을 대체하지 않습니다."""
+
+# alert_level별 권고 조치 기준 (프롬프트 컨텍스트 주입용)
+ACTION_GUIDE: dict[str, str] = {
+    "GREEN": "정기 모니터링. 추가 조치 불필요.",
+    "YELLOW": (
+        "보건당국: 손씻기·기침예절 캠페인 강화, 백신 캠페인 검토.\n"
+        "의료기관: 표본감시 보고 빈도 점검, 발열클리닉 인력 재확인.\n"
+        "시민: 마스크 권고, 다중이용시설 주의."
+    ),
+    "ORANGE": (
+        "보건당국: 요양시설·학교 능동 모니터링, 항바이러스제 비축 점검.\n"
+        "의료기관: 격리병상 가용성 확인, 응급실 트리아지 강화.\n"
+        "시민: 실내 마스크 의무화 검토 권고, 고위험군 외출 자제."
+    ),
+    "RED": (
+        "보건당국: 광역 비상대응 가동, 학교·사업장 부분 휴업 권고 검토.\n"
+        "의료기관: 격리수칙 강화, 항바이러스제·인공호흡기 재고 확인.\n"
+        "시민: 대중교통 마스크 의무, 고위험군 외출 자제, 의심증상 즉시 검사."
+    ),
+}
 
 # 전국 17개 시·도
 ALL_REGIONS = [
@@ -84,7 +105,7 @@ def _build_report_prompt(
     signals: dict[str, Any],
     rag_docs: list[dict] | None = None,
 ) -> str:
-    """L1/L2/L3, composite_score, alert_level + 선택적 RAG 가이드라인 주입.
+    """L1/L2/L3, composite_score, alert_level + RAG 가이드라인 주입 + 9섹션 구조 지시.
 
     Args:
         region: 지역명
@@ -93,31 +114,81 @@ def _build_report_prompt(
     Returns:
         Claude 사용자 프롬프트 문자열
     """
+    l1 = signals.get("l1", "N/A")
+    l2 = signals.get("l2", "N/A")
+    l3 = signals.get("l3", "N/A")
+    composite_val = signals.get("composite", "N/A")
+    alert_level = signals.get("alert_level", "N/A")
+
+    # alert_level → 위험등급 한국어 매핑
+    level_ko_map = {
+        "GREEN": "정상",
+        "YELLOW": "주의",
+        "ORANGE": "경계",
+        "RED": "심각",
+    }
+    level_ko = level_ko_map.get(str(alert_level), str(alert_level))
+
+    # composite 전주 대비 증감 계산
+    prev_composite = signals.get("previous_composite")
+    if prev_composite is not None and isinstance(composite_val, (int, float)):
+        delta = composite_val - prev_composite
+        delta_str = f"+{delta:.1f}%" if delta >= 0 else f"{delta:.1f}%"
+        composite_display = f"{composite_val} (전주 대비 {delta_str})"
+    else:
+        composite_display = str(composite_val)
+
     base = (
         f"지역: {region}\n"
         f"분석 시점: {signals.get('time', 'N/A')}\n\n"
-        "## 현재 신호 요약\n"
-        f"- Layer 1 (OTC 구매 트렌드): {signals.get('l1', 'N/A')} / 100\n"
-        f"- Layer 2 (하수 바이오마커): {signals.get('l2', 'N/A')} / 100\n"
-        f"- Layer 3 (검색어 트렌드): {signals.get('l3', 'N/A')} / 100\n"
-        f"- 종합 위험도 점수: {signals.get('composite', 'N/A')} / 100\n"
-        f"- 경보 레벨: {signals.get('alert_level', 'N/A')}\n"
+        "## 현재 신호 데이터\n"
+        f"- Layer 1 (OTC 구매 트렌드): {l1} / 100\n"
+        f"- Layer 2 (하수 바이오마커): {l2} / 100\n"
+        f"- Layer 3 (검색어 트렌드): {l3} / 100\n"
+        f"- 종합 위험도(composite): {composite_display} / 100\n"
+        f"- 경보 레벨: {alert_level} (위험등급: {level_ko})\n"
     )
 
     if rag_docs:
         guideline_lines = []
         for i, d in enumerate(rag_docs, 1):
-            topic = (d.get("metadata") or {}).get("topic", "guideline")
+            meta = d.get("metadata") or {}
+            topic = meta.get("topic", "guideline")
+            author = meta.get("author", "")
+            year = meta.get("year", "")
+            citation = f"[참고 {i}]"
+            if author and year:
+                citation += f" {author}({year})"
             text_excerpt = " ".join(d.get("text", "").split())[:_RAG_DOC_MAX_CHARS]
-            guideline_lines.append(f"[참고 {i} · {topic}] {text_excerpt}")
+            guideline_lines.append(f"{citation} [{topic}] {text_excerpt}")
         base += "\n## 관련 역학 가이드라인 (RAG 인용)\n" + "\n\n".join(guideline_lines) + "\n"
 
+    # alert_level별 권고 기준 주입
+    action_text = ACTION_GUIDE.get(str(alert_level), "해당 경보 레벨 기준 없음.")
+    base += f"\n[권고 기준]\n{action_text}\n"
+
     base += (
-        "\n위 데이터와 가이드라인을 바탕으로 다음 항목을 포함한 경보 리포트를 작성하세요:\n"
-        "1. 현황 요약 (2~3문장)\n"
-        "2. 각 Layer 신호 해석 — 가이드라인을 인용해 근거 명시\n"
-        "3. 7/14/21일 전망\n"
-        "4. 권고 조치 (시민 대상 / 보건 당국 대상)"
+        "\n위 데이터와 가이드라인을 바탕으로 아래 7개 섹션을 **정확히 이 순서와 형식**으로 markdown 출력하세요.\n"
+        "섹션 헤더는 반드시 `## 번호. 제목` 형식을 사용하세요.\n\n"
+        "## 1. 요약(Executive Summary)\n"
+        f"1문단(3~4문장). 위험등급({level_ko}) 한 단어를 첫 문장에 명시.\n\n"
+        "## 2. 핵심 지표\n"
+        f"composite={composite_val}, alert_level={alert_level} 포함. 표 또는 bullet 형식.\n\n"
+        "## 3. 레이어별 분석\n"
+        f"- L1 OTC약국판매 ({l1}/100): 의미 + 추세\n"
+        f"- L2 하수기반감시 ({l2}/100): 의미 + Granger 선행성 언급\n"
+        f"- L3 검색트렌드 ({l3}/100): 의미 + L3 단독발령 금지 원칙 적용 여부 명시\n\n"
+        "## 4. 7/14/21일 전망\n"
+        "현재 추세 기반 정성 예측. 3항목 bullet.\n\n"
+        "## 5. 권고 조치\n"
+        "위 [권고 기준]을 참고해 지역 상황에 맞게 구체화:\n"
+        "- 보건당국: ...\n"
+        "- 의료기관: ...\n"
+        "- 시민: ...\n\n"
+        "## 6. 참고 문헌\n"
+        "RAG 인용 문서: [번호] 저자(연도). 제목. (출처). 형식. 1~5건.\n\n"
+        "## 7. 면책\n"
+        "AI 보조 자료, 인간 전문가 검토 필요 (ISMS-P 2.9 / EU AI Act Art.13·14)."
     )
     return base
 

@@ -73,7 +73,7 @@ ALL_17_REGIONS = [
 ]
 
 OUTPUT_DIR = PROJECT_ROOT / "analysis" / "outputs"
-ASSETS_DIR = PROJECT_ROOT / "docs" / "slides" / "midterm-deck" / "assets"
+ASSETS_DIR = PROJECT_ROOT / "docs" / "slides" / "backtest-assets"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 ASSETS_DIR.mkdir(parents=True, exist_ok=True)
 

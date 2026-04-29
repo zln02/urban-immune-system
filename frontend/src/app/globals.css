@@ -82,6 +82,9 @@
   0%, 100% { border-color: currentColor; }
   50%       { border-color: transparent; }
 }
+@keyframes uis-spin {
+  to { transform: rotate(360deg); }
+}
 
 /* ── Scrollbar ──────────────────────────────────────── */
 * {

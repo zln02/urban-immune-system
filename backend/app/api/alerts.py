@@ -264,10 +264,20 @@ async def stream_alert_report(
 ) -> StreamingResponse:
     """Claude SSE 스트리밍 경보 리포트 — Qdrant 역학 가이드 RAG 컨텍스트 첨부."""
     risk = await get_latest_risk_score(region, db)
-    signals: dict = risk or {
-        "l1": "N/A", "l2": "N/A", "l3": "N/A",
-        "composite": "N/A", "alert_level": "GREEN", "time": "N/A",
-    }
+    if risk is not None:
+        signals: dict = {
+            "time": str(risk.get("time", "N/A")),
+            "l1": risk.get("l1_score"),
+            "l2": risk.get("l2_score"),
+            "l3": risk.get("l3_score"),
+            "composite": risk.get("composite_score"),
+            "alert_level": risk.get("alert_level", "GREEN"),
+        }
+    else:
+        signals = {
+            "l1": "N/A", "l2": "N/A", "l3": "N/A",
+            "composite": "N/A", "alert_level": "GREEN", "time": "N/A",
+        }
     return StreamingResponse(
         _sse_generator(region, signals),
         media_type="text/event-stream",
