@@ -26,7 +26,8 @@ from datetime import date, datetime, timedelta, timezone
 import httpx
 
 from pipeline.collectors.db_writer import delete_signal_range, insert_signal
-from pipeline.collectors.normalization import min_max_normalize
+
+# Note: min_max_normalize 는 backfill_layer 에서 zero-collapse 로 폐기 — naver ratio 그대로 사용
 
 logger = logging.getLogger(__name__)
 
@@ -106,15 +107,18 @@ async def backfill_layer(
     start_ts = datetime.combine(series[0][0], datetime.min.time(), tzinfo=timezone.utc)
     await delete_signal_range(layer=layer, source=source, start_ts=start_ts)
 
-    raw = [v for _, v in series]
-    norm = min_max_normalize(raw)
+    # naver datalab/shopping ratio 는 이미 자체 정규화 (peak=100, 0~100 범위).
+    # 슬라이딩 윈도우 안에서 다시 min-max 하면 비수기 마지막 주가 0 으로 박히는
+    # zero-collapse 발생. (search_collector.py [DEPRECATED] 주석 + 2026-04-27 사고 참조)
+    # → ratio 그대로 0~100 스케일 사용 — otc_collector.collect_otc_weekly 와 동일 정책.
     inserted = 0
     for region in regions:
-        for (when, raw_v), nv in zip(series, norm):
+        for when, raw_v in series:
             ts = datetime.combine(when, datetime.min.time(), tzinfo=timezone.utc)
+            value = max(0.0, min(100.0, float(raw_v)))
             try:
                 await insert_signal(
-                    region=region, layer=layer, value=nv,
+                    region=region, layer=layer, value=value,
                     raw_value=raw_v, source=source, ts=ts,
                 )
                 inserted += 1
@@ -161,8 +165,11 @@ async def run_backfill(
             try:
                 ser = fetch_shopping_series(client, start, end)
                 logger.info("OTC %d주 수집 → %d 지역 복제 적재", len(ser), len(region_list))
+                # source 통일 — otc_collector.collect_otc_weekly 와 동일한 'naver_shopping_insight'.
+                # 두 source 가 섞이면 한 region 시계열에 다른 정규화 스케일이 끼어들어 등락 왜곡.
+                # 멱등 DELETE 가 (layer, source) 기준이라 backfill·신규 collector 모두 일관 정리됨.
                 counts["otc"] = await backfill_layer(
-                    "otc", ser, "naver_shopping", region_list,
+                    "otc", ser, "naver_shopping_insight", region_list,
                 )
                 logger.info("otc 적재 %d건", counts["otc"])
             except Exception as exc:
