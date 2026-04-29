@@ -533,8 +533,8 @@ async def _build_pdf_story(
 
     # ISO 주차
     week_table = Table(
-        [[Paragraph(f"<b>발행 주차</b>", base), Paragraph(f"<b>{iso_short}</b>", h3),
-          Paragraph(f"<b>한국식</b>", base), Paragraph(iso_long, base)]],
+        [[Paragraph("<b>발행 주차</b>", base), Paragraph(f"<b>{iso_short}</b>", h3),
+          Paragraph("<b>한국식</b>", base), Paragraph(iso_long, base)]],
         colWidths=[28 * mm, 38 * mm, 22 * mm, 82 * mm],
     )
     week_table.setStyle(TableStyle([
@@ -755,7 +755,7 @@ async def _build_pdf_story(
         small))
     story.append(Spacer(1, 4 * mm))
     story.append(Paragraph(
-        f"UIS 캡스톤 프로젝트팀 — 팀원: 박진영(PM/ML) · 이경준(Backend) · 이우형(Data Engineer) · 김나영(Frontend) · 박정빈(DevOps/QA)",
+        "UIS 캡스톤 프로젝트팀 — 팀원: 박진영(PM/ML) · 이경준(Backend) · 이우형(Data Engineer) · 김나영(Frontend) · 박정빈(DevOps/QA)",
         small))
     story.append(Paragraph(f"생성 일시: {now_kst}", small))
 

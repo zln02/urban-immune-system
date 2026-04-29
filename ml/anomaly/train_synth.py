@@ -168,7 +168,6 @@ def main() -> int:
         n_normal_rows = len(X_normal)
     else:
         X_normal = _make_normal_period(n_weeks=104, seed=42)
-        regions_used = []
         data_source = "synthetic"
         n_normal_rows = X_normal.shape[0]
 

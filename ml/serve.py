@@ -159,8 +159,8 @@ def _tft_attention_top3(model) -> list[str]:
 def _make_tft_predictions(model, region: str, horizon_steps: int) -> list[float]:
     """합성 데이터로 horizon_steps 예측값(정규화 스코어 0-100) 반환."""
     import warnings
-    import pandas as pd
-    from ml.tft.train_synth import _make_dataframe, _build_dataset, MAX_PREDICTION
+
+    from ml.tft.train_synth import MAX_PREDICTION, _build_dataset, _make_dataframe
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")

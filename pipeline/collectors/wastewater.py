@@ -14,7 +14,6 @@ Carry-forward (fallback) 로직:
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 from datetime import datetime, timezone
 
@@ -96,9 +95,13 @@ async def _apply_wastewater_fallback(
         original_time = last_row[0]
 
         # meta 정보 구성
+        if hasattr(original_time, "isocalendar"):
+            source_week = original_time.isocalendar()[1]
+        else:
+            source_week = str(original_time)
         fallback_meta = {
             "fallback": True,
-            "source_week": original_time.isocalendar()[1] if hasattr(original_time, 'isocalendar') else str(original_time),
+            "source_week": source_week,
             "applied_at": datetime.now(timezone.utc).isoformat(),
         }
 

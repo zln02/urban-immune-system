@@ -158,12 +158,16 @@ async def _stream_chat(req: ChatRequest) -> AsyncIterator[str]:
             model="claude-haiku-4-5-20251001",
             max_tokens=600,
             system=_SYSTEM_PROMPT,
-            messages=messages,
+            messages=messages,  # type: ignore[arg-type]
         ) as stream_resp:
             async for text in stream_resp.text_stream:
                 yield f"data: {json.dumps({'text': text}, ensure_ascii=False)}\n\n"
     except Exception:
         logger.exception("챗봇 SSE 스트리밍 오류")
-        yield f"data: {json.dumps({'error': '챗봇 일시 오류가 발생했어요. 잠시 후 다시 시도해주세요.'}, ensure_ascii=False)}\n\n"
+        err_payload = json.dumps(
+            {"error": "챗봇 일시 오류가 발생했어요. 잠시 후 다시 시도해주세요."},
+            ensure_ascii=False,
+        )
+        yield f"data: {err_payload}\n\n"
     finally:
         yield "data: [DONE]\n\n"

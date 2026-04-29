@@ -27,8 +27,6 @@ from dataclasses import asdict
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-
 from pipeline.collectors.db_writer import insert_signal
 from pipeline.collectors.kowas_downloader import (
     DEFAULT_OUTPUT_DIR as PDF_DIR,
@@ -37,10 +35,10 @@ from pipeline.collectors.kowas_downloader import (
     download_all,
 )
 from pipeline.collectors.kowas_parser import (
+    SIDO_ORDER,
     Pathogen,
     WeeklyReading,
     parse_report,
-    SIDO_ORDER,
 )
 from pipeline.collectors.wastewater import _apply_wastewater_fallback
 
@@ -143,8 +141,8 @@ async def run(
     logger.info("적재 대상 PDF: %d건", len(pdfs))
 
     # Fallback용 DB 세션 생성
-    from pipeline.collectors.db_writer import _get_pool
     from backend.app.database import async_session as make_session
+    from pipeline.collectors.db_writer import _get_pool
 
     total_inserted = 0
     for pdf, year, week in pdfs:
