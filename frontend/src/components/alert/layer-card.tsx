@@ -12,6 +12,10 @@ interface LayerCardProps {
   /** "전국 단일값" 같은 제약 표기. 회색 chip 으로 렌더 + tooltip */
   caveatLabel?: string;
   caveatTooltip?: { title: string; body: string };
+  /** 클릭 시 상세 모달 열기. 지정되면 hover/cursor 활성화. */
+  onClick?: () => void;
+  /** 상세 모달 열기 버튼의 접근성 라벨 (lang 별) */
+  detailLabel?: string;
 }
 
 function Spark({ data, color }: { data: number[]; color: string }) {
@@ -34,10 +38,37 @@ function Spark({ data, color }: { data: number[]; color: string }) {
   );
 }
 
-export function LayerCard({ title, sub, data, value, change, color, icon, caveatLabel, caveatTooltip }: LayerCardProps) {
+export function LayerCard({
+  title,
+  sub,
+  data,
+  value,
+  change,
+  color,
+  icon,
+  caveatLabel,
+  caveatTooltip,
+  onClick,
+  detailLabel,
+}: LayerCardProps) {
   const isUp = change >= 0;
+  const clickable = typeof onClick === "function";
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!clickable) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onClick?.();
+    }
+  };
+
   return (
     <div
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      aria-label={clickable ? detailLabel ?? `${title} 상세 보기` : undefined}
+      onClick={clickable ? onClick : undefined}
+      onKeyDown={handleKeyDown}
       style={{
         background: "var(--surface)",
         border: "1px solid var(--border)",
@@ -46,6 +77,19 @@ export function LayerCard({ title, sub, data, value, change, color, icon, caveat
         display: "flex",
         flexDirection: "column",
         gap: 8,
+        cursor: clickable ? "pointer" : "default",
+        transition: "transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease",
+        position: "relative",
+      }}
+      onMouseEnter={(e) => {
+        if (!clickable) return;
+        e.currentTarget.style.transform = "translateY(-1px)";
+        e.currentTarget.style.boxShadow = "0 4px 14px rgba(15, 23, 42, 0.08)";
+      }}
+      onMouseLeave={(e) => {
+        if (!clickable) return;
+        e.currentTarget.style.transform = "translateY(0)";
+        e.currentTarget.style.boxShadow = "none";
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -70,7 +114,9 @@ export function LayerCard({ title, sub, data, value, change, color, icon, caveat
               </span>
             )}
             {caveatTooltip && (
-              <InfoTooltip title={caveatTooltip.title} body={caveatTooltip.body} size={12} />
+              <span onClick={(e) => e.stopPropagation()}>
+                <InfoTooltip title={caveatTooltip.title} body={caveatTooltip.body} size={12} />
+              </span>
             )}
           </div>
           <div style={{ fontSize: 10, color: "var(--text-tertiary)" }}>{sub}</div>
@@ -99,6 +145,24 @@ export function LayerCard({ title, sub, data, value, change, color, icon, caveat
         </span>
         <Spark data={data} color={color} />
       </div>
+      {clickable && (
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            right: 10,
+            bottom: 8,
+            fontSize: 10,
+            color: "var(--text-tertiary)",
+            display: "flex",
+            alignItems: "center",
+            gap: 3,
+            pointerEvents: "none",
+          }}
+        >
+          {detailLabel ?? "상세 보기"} →
+        </div>
+      )}
     </div>
   );
 }

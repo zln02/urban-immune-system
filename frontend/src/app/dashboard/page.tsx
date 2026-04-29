@@ -9,6 +9,7 @@ import { TrendChart } from "@/components/charts/trend-chart";
 import { AlertBanner } from "@/components/alert/alert-banner";
 import { KpiCard } from "@/components/alert/kpi-card";
 import { LayerCard } from "@/components/alert/layer-card";
+import { LayerDetailModal, type LayerSeriesPoint } from "@/components/alert/layer-detail-modal";
 import { AIReportCard } from "@/components/alert/ai-report-card";
 import { AlertTable } from "@/components/alert/alert-table";
 import { AnomalyPanel } from "@/components/anomaly/anomaly-panel";
@@ -75,6 +76,8 @@ export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<DashTab>("surveillance");
   // 신호 시계열 차트 기간 — null = 전체 데이터 범위
   const [trendDays, setTrendDays] = useState<number | null>(60);
+  // 레이어 카드 클릭 시 상세 모달
+  const [layerDetail, setLayerDetail] = useState<"otc" | "wastewater" | "search" | null>(null);
 
   const t = DICT[lang];
   const regionAlertsQuery = useRegionAlerts(28);
@@ -855,6 +858,8 @@ export default function DashboardPage() {
               change={otcChange}
               color="var(--layer-pharmacy)"
               icon={<I.Pharmacy size={14} />}
+              onClick={() => setLayerDetail("otc")}
+              detailLabel={lang === "ko" ? "날짜별 상세" : "Daily detail"}
               caveatLabel={lang === "ko" ? "전국 단일값" : "Nationwide only"}
               caveatTooltip={{
                 title: lang === "ko" ? "L1 OTC — 전국 단일값" : "L1 OTC — nationwide only",
@@ -872,6 +877,8 @@ export default function DashboardPage() {
               change={hasSewage ? calcChange(sewageValues) : 22.8}
               color="var(--layer-sewage)"
               icon={<I.Water size={14} />}
+              onClick={() => setLayerDetail("wastewater")}
+              detailLabel={lang === "ko" ? "날짜별 상세" : "Daily detail"}
             />
             <LayerCard
               title={t.layer_search}
@@ -881,6 +888,8 @@ export default function DashboardPage() {
               change={searchChange}
               color="var(--layer-search)"
               icon={<I.Search size={14} />}
+              onClick={() => setLayerDetail("search")}
+              detailLabel={lang === "ko" ? "날짜별 상세" : "Daily detail"}
               caveatLabel={lang === "ko" ? "전국 단일값" : "Nationwide only"}
               caveatTooltip={{
                 title: lang === "ko" ? "L3 검색 — 전국 단일값" : "L3 search — nationwide only",
@@ -1008,6 +1017,105 @@ export default function DashboardPage() {
 
       {/* ── 챗봇 floating 위젯 (우하단 고정) ─────────────── */}
       <ChatWidget lang={lang} />
+
+      {/* ── L1/L2/L3 카드 클릭 시 상세 모달 ───────────────── */}
+      <LayerDetailModal
+        open={layerDetail === "otc"}
+        onClose={() => setLayerDetail(null)}
+        layer="otc"
+        title={t.layer_pharmacy}
+        color="var(--layer-pharmacy)"
+        icon={<I.Pharmacy size={18} />}
+        source={
+          hasOtc
+            ? (lang === "ko"
+                ? "Naver 쇼핑인사이트 — 주간 OTC 구매 트렌드 (전국)"
+                : "Naver Shopping Insight — weekly OTC trend (nationwide)")
+            : lang === "ko"
+              ? "시뮬레이션 데이터 (네이버 API 미연결)"
+              : "Simulated data (Naver API offline)"
+        }
+        unit={lang === "ko" ? "정규화 (0~1)" : "normalized (0–1)"}
+        caveat={{
+          title: lang === "ko" ? "L1 OTC — 전국 단일값" : "L1 OTC — nationwide only",
+          body:
+            lang === "ko"
+              ? "네이버 쇼핑인사이트 API는 전국 통합 지표만 제공. 17개 시·도 차등 신호는 HIRA OpenAPI 연동 후 (Phase 2)."
+              : "Naver shopping insight returns a single nationwide value. Per-region signal lands with HIRA OpenAPI integration.",
+        }}
+        series={
+          hasOtc
+            ? otcSeries.map<LayerSeriesPoint>((p) => ({
+                date: p.date,
+                value: p.value,
+                raw: p.raw,
+              }))
+            : []
+        }
+        lang={lang}
+      />
+      <LayerDetailModal
+        open={layerDetail === "wastewater"}
+        onClose={() => setLayerDetail(null)}
+        layer="wastewater"
+        title={t.layer_sewage}
+        color="var(--layer-sewage)"
+        icon={<I.Water size={18} />}
+        source={
+          hasSewage
+            ? (lang === "ko"
+                ? "질병관리청 KOWAS — 하수 바이오마커 주간 측정"
+                : "KCDC KOWAS — weekly wastewater biomarker")
+            : lang === "ko"
+              ? "시뮬레이션 데이터 (KOWAS 미연결)"
+              : "Simulated data (KOWAS offline)"
+        }
+        unit={lang === "ko" ? "정규화 (0~100)" : "normalized (0–100)"}
+        series={
+          hasSewage
+            ? sewageSeries.map<LayerSeriesPoint>((p) => ({
+                date: p.time,
+                value: p.value,
+              }))
+            : []
+        }
+        lang={lang}
+      />
+      <LayerDetailModal
+        open={layerDetail === "search"}
+        onClose={() => setLayerDetail(null)}
+        layer="search"
+        title={t.layer_search}
+        color="var(--layer-search)"
+        icon={<I.Search size={18} />}
+        source={
+          hasSearch
+            ? (lang === "ko"
+                ? "Naver 데이터랩 — 주간 검색 트렌드 (전국)"
+                : "Naver Datalab — weekly search trends (nationwide)")
+            : lang === "ko"
+              ? "시뮬레이션 데이터 (네이버 API 미연결)"
+              : "Simulated data (Naver API offline)"
+        }
+        unit={lang === "ko" ? "정규화 (0~1)" : "normalized (0–1)"}
+        caveat={{
+          title: lang === "ko" ? "L3 검색 — 전국 단일값" : "L3 search — nationwide only",
+          body:
+            lang === "ko"
+              ? "네이버 데이터랩도 전국 통합값만 제공. 시·도 차등 신호는 통신3사·카드 데이터 연동(Phase 3) 예정."
+              : "Naver datalab returns nationwide aggregate only. Per-region signal lands with telco/card data integration (Phase 3).",
+        }}
+        series={
+          hasSearch
+            ? searchSeries.map<LayerSeriesPoint>((p) => ({
+                date: p.date,
+                value: p.value,
+                raw: p.raw,
+              }))
+            : []
+        }
+        lang={lang}
+      />
     </div>
   );
 }
