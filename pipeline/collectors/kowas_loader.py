@@ -8,6 +8,10 @@
     (alerts.py의 DISTINCT ON (layer) 쿼리 충돌 방지 — 대시보드 별도 표시 용도)
   - time = 보고 주차의 마지막 일요일 (KOWAS 정의: 월~일 7일 누적)
 
+Carry-forward 정책:
+  - 파싱/적재 실패 시 wastewater._apply_wastewater_fallback()으로 이전 주 데이터 재사용
+  - 연속 실패(lookback 안에 데이터 없음) 시 해당 주는 INSERT 스킵 (앙상블이 남은 layer 정규화)
+
 CLI 예시:
   python -m pipeline.collectors.kowas_loader --download-only --limit 10
   python -m pipeline.collectors.kowas_loader --reparse-existing
@@ -23,6 +27,8 @@ from dataclasses import asdict
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
 from pipeline.collectors.db_writer import insert_signal
 from pipeline.collectors.kowas_downloader import (
     DEFAULT_OUTPUT_DIR as PDF_DIR,
@@ -34,7 +40,9 @@ from pipeline.collectors.kowas_parser import (
     Pathogen,
     WeeklyReading,
     parse_report,
+    SIDO_ORDER,
 )
+from pipeline.collectors.wastewater import _apply_wastewater_fallback
 
 logger = logging.getLogger(__name__)
 
@@ -134,6 +142,10 @@ async def run(
         pdfs = pdfs[:weeks_limit]
     logger.info("적재 대상 PDF: %d건", len(pdfs))
 
+    # Fallback용 DB 세션 생성
+    from pipeline.collectors.db_writer import _get_pool
+    from backend.app.database import async_session as make_session
+
     total_inserted = 0
     for pdf, year, week in pdfs:
         try:
@@ -151,7 +163,55 @@ async def run(
             n, _ = await load_pdf(pdf, year, week)
             total_inserted += n
         except Exception as exc:
-            logger.exception("PDF 적재 실패 %s: %s", pdf.name, exc)
+            logger.error("PDF 적재 실패 %s: %s", pdf.name, exc)
+            # Fallback: 이전 주 데이터로 carry-forward
+            week_iso = f"{year}-W{week:02d}"
+
+            # 17개 지역별 fallback 시도
+            async with make_session() as session:
+                for region in SIDO_ORDER:
+                    try:
+                        fallback_row = await _apply_wastewater_fallback(
+                            session, region, week_iso, lookback_weeks=4
+                        )
+                        if fallback_row:
+                            # Fallback row를 직접 DB에 INSERT
+                            # (asyncpg로 직접 INSERT, 7개 컬럼만 사용 — meta 컬럼은 프로덕션 DB에 없음)
+                            pool = await _get_pool()
+                            async with pool.acquire() as conn:
+                                await conn.execute(
+                                    """
+                                    INSERT INTO layer_signals (time, layer, region, value, raw_value, source, pathogen)
+                                    VALUES ($1, $2, $3, $4, $5, $6, $7)
+                                    """,
+                                    fallback_row.get("ts"),
+                                    "wastewater",
+                                    region,
+                                    round(fallback_row["value"], 4),
+                                    fallback_row["raw_value"],
+                                    fallback_row["source"],
+                                    fallback_row["pathogen"],
+                                )
+                            logger.warning(
+                                "KOWAS L2 carry-forward applied: region=%s week=%s source=%s",
+                                region,
+                                week_iso,
+                                fallback_row.get("source"),
+                            )
+                            total_inserted += 1
+                        else:
+                            logger.error(
+                                "Fallback 데이터 없음 (연속 실패): region=%s week=%s — 해당 주 스킵",
+                                region,
+                                week_iso,
+                            )
+                    except Exception as fallback_exc:
+                        logger.error(
+                            "Fallback 적재 실패: region=%s week=%s %s",
+                            region,
+                            week_iso,
+                            fallback_exc,
+                        )
 
     logger.info("총 적재 %d건", total_inserted)
 

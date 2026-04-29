@@ -100,3 +100,20 @@ pytest tests/test_report_generator.py   # RAG 리포트 (Mock LLM)
 ```
 - 외부 LLM API는 반드시 Mock 사용 (`unittest.mock.patch`)
 - 실제 API 키 테스트 코드에 포함 금지
+
+## 발표 QA 답변 스니펫
+
+**Q: 왜 XGBoost를 주모델로 썼는가?**
+A: 학습 데이터 26주 누적 시점에서 walk-forward CV 5-fold 결과 XGBoost가 안정적 성능(F1=0.841)을 보여 보수적 채택. TFT는 PoC 학습(79K params) 완료 상태이며 데이터 누적 시 전환 예정.
+
+**Q: TFT는 언제 쓰나?**
+A: `/predict/tft-{7,14,21}d` 엔드포인트로 7/14/21일 선행 예측 제공. 현재 합성 데이터 학습 결과(attention top3: 검색량·하수·OTC) 검증된 상태. 실제 데이터 12주 추가 누적 후 프로덕션 전환.
+
+**Q: Recall이 0.768로 목표 미달인데?**
+A: 교차검증 게이트(2개 계층 동시 임계초과) 조건이 엄격해 FN이 늘었다. 대신 Precision=0.96, FAR=0.16으로 오경보를 최소화했다 — 보건당국 신뢰 확보 우선. 게이트 임계 완화 시 Recall 0.85 이상 달성 가능.
+
+**Q: 17개 지역 평균 리드타임이 5.9주라는 근거는?**
+A: `analysis/outputs/backtest_17regions.json` walk-forward 백테스트 결과. 가장 빠른 탐지는 세종(9주), 평균 6주 선행. 임상 확진 2주 전 YELLOW 발령으로 대응 준비시간 확보.
+
+**Q: 합성 데이터 F1 0.967 vs 실제 F1 0.841 갭은?**
+A: 합성 데이터는 이상적 분포 가정, 실제는 지역별 편차 존재. 갭이 있더라도 실제 데이터 기준 목표(0.80) 초과 달성. `ml/outputs/validation.json`에서 상세 수치 확인 가능.

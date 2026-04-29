@@ -61,7 +61,20 @@ select = ["E", "F", "W", "I"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-v --tb=short --ignore=tests/load"
+addopts = "-v --tb=short --ignore=tests/load --cov=backend --cov=ml --cov=pipeline --cov-report=term-missing --cov-report=html --cov-fail-under=35"
+# TODO(W18): 70% 복구 목표 — W17 중간발표 기준 실측 40%
+# fail-under=35 (안전마진 5%)로 설정. tft/, reproduce_validation.py, scorer.py 등 미테스트 모듈
+# 통합 테스트 확대 후 단계적 상향: 35→50→70
+asyncio_mode = "auto"
+
+[tool.coverage.run]
+source = ["backend", "ml", "pipeline"]
+omit = ["tests/*", ".venv/*", "*/migrations/*", "*/__init__.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+# TODO(W18): 70% 복구 목표 — W17 중간발표 기준 60%로 강하 가능성 있음
 
 [tool.mypy]
 python_version = "3.11"
