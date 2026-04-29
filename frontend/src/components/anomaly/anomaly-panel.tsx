@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
+import useSWR from "swr";
 import type { Lang } from "@/lib/i18n";
-import { useRegionAlerts } from "@/hooks/useRegionAlerts";
 
 interface AnomalyPanelProps {
   lang: Lang;
@@ -15,19 +15,30 @@ interface AnomalyRegion {
   status: "anomaly" | "warning" | "normal";
 }
 
-/** 이상탐지 점수 — 실데이터 alerts/regions 응답을 proxy 로 사용
- *  (composite 75+ = anomaly, 55+ = warning, 그 외 normal).
- *  진짜 Autoencoder 결과는 ml/outputs/anomaly_metrics.json (학습 결과: Recall 1.000 / 분리도 2.3x)
+/** 이상탐지 점수 — Autoencoder 재구성 오차 기반 (ml/anomaly/autoencoder.py)
+ *  /api/v1/predictions/anomaly 에서 60초 폴링.
+ *  score 50 = 임계값(threshold), status = API 반환값 그대로 사용.
  */
 function useAnomalyScores(): AnomalyRegion[] {
-  const { data } = useRegionAlerts(28);
-  if (!data?.alerts) return [];
-  return data.alerts.slice(0, 8).map((a) => ({
+  const { data } = useSWR<{ anomaly_scores: Array<{
+    region: string;
+    score: number;
+    reconstruction_error: number;
+    status: "anomaly" | "warning" | "normal";
+    features: { l1: number; l2: number; l3: number; temperature: number };
+    fallback_temperature: boolean;
+  }> }>(
+    `${process.env.NEXT_PUBLIC_API_BASE ?? ""}/api/v1/predictions/anomaly`,
+    (url: string) => fetch(url).then((r) => r.json()),
+    { refreshInterval: 60_000, revalidateOnFocus: false },
+  );
+  if (!data?.anomaly_scores) return [];
+  return data.anomaly_scores.map((a) => ({
     code: a.region.slice(0, 2),
     name: a.region,
-    score: Math.round(a.composite),
-    delta: 0, // 실 추세 계산은 후속 PR
-    status: a.composite >= 75 ? "anomaly" : a.composite >= 55 ? "warning" : "normal",
+    score: Math.round(a.score),
+    delta: 0,
+    status: a.status,
   }));
 }
 
