@@ -298,7 +298,7 @@ SEED_DOCS: list[dict] = [
         ),
         "metadata": {
             "source": "UIS 내부 운영 매뉴얼 v1.0 (박진영, 2026)",
-            "url": "",
+            "url": "https://github.com/zln02/urban-immune-system/blob/develop/CLAUDE.md",
             "lang": "ko",
             "topic": "ensemble_alert_rules",
             "author": "박진영",
