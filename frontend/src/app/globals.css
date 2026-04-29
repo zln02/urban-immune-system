@@ -101,35 +101,3 @@ body {
   background: var(--border-strong);
   border-radius: 3px;
 }
-
-/* ── Accessibility (WCAG 2.2 AA) ────────────────────── */
-*:focus-visible {
-  outline: 2px solid var(--primary-30);
-  outline-offset: 2px;
-  border-radius: 2px;
-}
-.skip-link {
-  position: absolute;
-  left: -9999px;
-  top: 0;
-  z-index: 100;
-  background: #ffffff;
-  color: var(--primary-30);
-  padding: 8px 12px;
-  border-radius: 4px;
-  font-weight: 600;
-  text-decoration: none;
-}
-.skip-link:focus {
-  left: 8px;
-  top: 8px;
-  outline: 2px solid var(--primary-30);
-  outline-offset: 2px;
-}
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
