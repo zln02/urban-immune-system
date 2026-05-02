@@ -27,14 +27,13 @@ import json
 import logging
 import os
 import sys
+import warnings
 from datetime import datetime, timezone
 from pathlib import Path
 
 import lightning.pytorch as pl
-import numpy as np
 import pandas as pd
 import torch
-import warnings
 from dotenv import load_dotenv
 from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
 from lightning.pytorch.loggers import CSVLogger
@@ -43,7 +42,10 @@ from pytorch_forecasting.metrics import QuantileLoss
 
 # train_synth 의 공통 상수만 import (MAX_ENCODER/MAX_PREDICTION 은 자체 override)
 from ml.tft.train_synth import (
-    GROUP_COL, LEAD_WEEKS, TARGET_COL, TIME_IDX_COL,
+    GROUP_COL,
+    LEAD_WEEKS,
+    TARGET_COL,
+    TIME_IDX_COL,
 )
 
 # 실데이터 전용 피처 — humidity 제거 (DB에 humidity layer 미적재 → 0 패딩 시 attention 왜곡)
