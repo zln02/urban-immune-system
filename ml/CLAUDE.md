@@ -1,7 +1,7 @@
-# ml/ — C 박진영 전용
+# ml/ — 박진영 (PM·ML Lead)
 
 ## 담당자
-역할 C — 박진영 (ML/AI 엔진)
+박진영 (PM / ML Lead) · 전 모듈 PL 권한
 
 ## 기술 스택
 - PyTorch + PyTorch Forecasting (TFT)
@@ -50,9 +50,10 @@ ANTHROPIC_MODEL=claude-haiku-4-5-20251001  # Haiku 권장
 ```
 
 ## 이상탐지 임계값
-- 재구성 오차 **95th percentile** (훈련 세트 기준)
-- `ml/configs/model_config.yaml`의 `autoencoder.threshold_percentile`에서만 관리
+- 재구성 오차 **99th percentile** (훈련 세트 기준) — `ff17dfa` 핫픽스로 95p→99p 상향, 실데이터 17지역 inference 16/17→1/17 정상화
+- `ml/configs/model_config.yaml` 의 `autoencoder.threshold_percentile` 또는 `ml/anomaly/train_synth.py` config 에서만 관리
 - 하드코딩 금지
+- ⚠️ `ml/outputs/anomaly_metrics.json` 의 `evaluation.precision=0.051` 은 **합성 artificial spike** 평가값(5TP/93FP/6TN). 발표 데모는 `real_data_inference` (실 17지역) 기준 사용.
 
 ## 모델 성능 모니터링 지표
 
