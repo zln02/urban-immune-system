@@ -245,10 +245,10 @@ export function AnomalyPanel({ lang }: AnomalyPanelProps) {
 
         {regions.map((r, idx) => {
           const meta = STATUS_META[r.status];
-          const isOpen = expanded === r.code;
+          const isOpen = expanded === r.name;
           return (
             <div
-              key={r.code}
+              key={r.name}
               style={{
                 borderTop: idx > 0 ? "1px solid var(--border)" : "none",
                 background: isOpen ? meta.bg : "transparent",
@@ -256,7 +256,7 @@ export function AnomalyPanel({ lang }: AnomalyPanelProps) {
             >
               <button
                 type="button"
-                onClick={() => setExpanded(isOpen ? null : r.code)}
+                onClick={() => setExpanded(isOpen ? null : r.name)}
                 style={{
                   width: "100%",
                   display: "flex",
