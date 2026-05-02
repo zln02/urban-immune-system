@@ -5,6 +5,7 @@ import { I } from "@/components/ui/icons";
 import { Panel } from "@/components/ui/panel";
 import { RiskPill } from "@/components/ui/risk-pill";
 import { KoreaMap } from "@/components/map/korea-map";
+import { KoreaMapNaver } from "@/components/map/korea-map-naver";
 import { TrendChart } from "@/components/charts/trend-chart";
 import { AlertBanner } from "@/components/alert/alert-banner";
 import { KpiCard } from "@/components/alert/kpi-card";
@@ -729,13 +730,23 @@ export default function DashboardPage() {
                 alignItems: "stretch",
               }}
             >
-              <KoreaMap
-                data={districts}
-                lang={lang}
-                selected={selected}
-                onSelect={setSelected}
-                size={520}
-              />
+              {(process.env.NEXT_PUBLIC_NAVER_MAPS_KEY_ID || process.env.NEXT_PUBLIC_NAVER_MAPS_CLIENT_ID) ? (
+                <KoreaMapNaver
+                  data={districts}
+                  lang={lang}
+                  selected={selected}
+                  onSelect={setSelected}
+                  height={520}
+                />
+              ) : (
+                <KoreaMap
+                  data={districts}
+                  lang={lang}
+                  selected={selected}
+                  onSelect={setSelected}
+                  size={520}
+                />
+              )}
               <div
                 style={{
                   display: "flex",
