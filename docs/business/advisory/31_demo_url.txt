@@ -1,0 +1,25 @@
+Urban Immune System — 라이브 데모 URL
+
+대시보드:
+  http://34.158.197.122:3000/dashboard
+
+발표 슬라이드 (27장):
+  http://34.158.197.122:3000/slides/index.html
+  → URL 해시 #/1 ~ #/27 로 직접 진입 가능
+  → 키보드: → / ← / Space / F (풀스크린) / N (노트) / ? (단축키)
+
+ML 추론 API (FastAPI):
+  http://34.158.197.122:8001/health
+  http://34.158.197.122:8001/predict/risk?region=서울특별시
+  http://34.158.197.122:8001/predict/tft-7d
+  http://34.158.197.122:8001/predict/tft-14d
+  http://34.158.197.122:8001/predict/tft-21d
+
+검증 리포트 PDF:
+  http://34.158.197.122:3000/docs/2026-04-30_중간발표_검증리포트.pdf
+
+소스 코드:
+  비공개 (자문 회신 후 액세스 제공 검토)
+
+문의:
+  박진영 (PM) wlsdud5035@gmail.com
