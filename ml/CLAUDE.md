@@ -117,3 +117,6 @@ A: `analysis/outputs/backtest_17regions.json` walk-forward 백테스트 결과. 
 
 **Q: 합성 데이터 F1 0.967 vs 실제 F1 0.841 갭은?**
 A: 합성 데이터는 이상적 분포 가정, 실제는 지역별 편차 존재. 갭이 있더라도 실제 데이터 기준 목표(0.80) 초과 달성. `ml/outputs/validation.json`에서 상세 수치 확인 가능.
+
+**Q: F1 단독 표기가 아니라 더 엄격한 지표는?**
+A: F1 외에 클래스 불균형에 강한 **MCC(Matthews Correlation Coefficient)·Balanced Accuracy·AUPRC** 도 병기한다. 17지역 평균 **MCC=0.595, Balanced Acc=0.816, AUPRC=0.973** (baseline 0.81 대비 +0.16). MCC 는 4셀(TP/FP/FN/TN) 모두 반영해 F1 의 TN 무시 한계를 보완하고, AUPRC 는 ROC 와 달리 클래스 불균형에서 정직한 지표(Saito & Rehmsmeier 2015 권장). 산출 함수: `ml/evaluation/metrics.py`, 갱신 위치: `analysis/outputs/backtest_17regions.json` summary.

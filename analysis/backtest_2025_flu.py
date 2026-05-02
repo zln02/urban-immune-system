@@ -352,22 +352,16 @@ def compute_confusion(
         else:
             cm["TN"] += 1
 
-    # 지표
-    tp, fp, fn, tn = cm["TP"], cm["FP"], cm["FN"], cm["TN"]
-    precision        = tp / (tp + fp)  if (tp + fp) > 0 else 0.0
-    recall           = tp / (tp + fn)  if (tp + fn) > 0 else 0.0
-    f1               = (2 * precision * recall / (precision + recall)
-                        if (precision + recall) > 0 else 0.0)
-    false_alarm_rate = fp / (fp + tn) if (fp + tn) > 0 else 0.0
+    # 지표 — ml.evaluation.metrics 의 enrich_metrics 로 MCC·Balanced Acc·AUPRC 추가
+    # weekly_timeline 에서 composite score 와 epidemic_label 추출하여 AUPRC 계산
+    from ml.evaluation.metrics import enrich_metrics
+    y_true = [int(bool(w["epidemic_label"])) for w in weekly_timeline]
+    y_score = [float(w.get("composite", 0.0)) for w in weekly_timeline]
+    metrics = enrich_metrics(cm, y_true=y_true, y_score=y_score)
 
     return {
         "confusion_matrix": cm,
-        "metrics": {
-            "precision":        round(precision, 4),
-            "recall":           round(recall, 4),
-            "f1":               round(f1, 4),
-            "false_alarm_rate": round(false_alarm_rate, 4),
-        },
+        "metrics": metrics,
         "epidemic_start_week": epidemic_start_week,
         "epidemic_weeks":      epidemic_weeks,
     }
