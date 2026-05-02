@@ -16,8 +16,11 @@ app = FastAPI(title="Urban Immune System ML Service", version="0.3.0")
 _xgb_model = None
 _tft_model = None
 
-# TFT 체크포인트 경로
-_TFT_CKPT = Path(__file__).parent / "checkpoints" / "tft_synth" / "tft_best.ckpt"
+# TFT 체크포인트 경로 — real 우선, synth fallback
+_TFT_CKPT_REAL  = Path(__file__).parent / "checkpoints" / "tft_real"  / "tft_best.ckpt"
+_TFT_CKPT_SYNTH = Path(__file__).parent / "checkpoints" / "tft_synth" / "tft_best.ckpt"
+# 하위 호환 (기존 _TFT_CKPT 참조용)
+_TFT_CKPT = _TFT_CKPT_SYNTH
 
 # Attention 변수 레이블 매핑 (TFT encoder variable selection 순서 기준)
 _ATTN_LABELS = {
@@ -108,25 +111,33 @@ async def predict_risk(
 
 
 def _load_tft():
-    """TFT 모델을 지연 로드한다. 체크포인트 없으면 None 반환."""
+    """TFT 모델을 지연 로드한다. real 우선, synth fallback. 둘 다 없으면 None."""
     global _tft_model
     if _tft_model is not None:
         return _tft_model
-    # tft_best.ckpt → 실제 best 체크포인트 (tft_synth/ 내 tft_best.ckpt 또는 버전별)
-    ckpt_path = _TFT_CKPT
-    if not ckpt_path.exists():
-        # 버전별 파일 탐색 (tft_best-v2.ckpt 등)
-        candidates = sorted(ckpt_path.parent.glob("tft_best*.ckpt"))
-        if candidates:
-            # 버전 번호가 가장 높은 파일 선택
-            ckpt_path = candidates[-1]
+
+    # 1순위: tft_real (실데이터 학습 prod 체크포인트)
+    # 2순위: tft_synth (합성 학습 PoC)
+    candidates = []
+    for base in (_TFT_CKPT_REAL, _TFT_CKPT_SYNTH):
+        if base.exists():
+            candidates.append(base)
         else:
-            return None
+            # 버전별 파일 (tft_best-v2.ckpt 등)
+            ver = sorted(base.parent.glob("tft_best*.ckpt"))
+            if ver:
+                candidates.append(ver[-1])
+    if not candidates:
+        logger.warning("TFT 체크포인트 없음 — `python -m ml.tft.train_real` 실행 필요")
+        return None
+    ckpt_path = candidates[0]
+
     try:
         from pytorch_forecasting import TemporalFusionTransformer
         _tft_model = TemporalFusionTransformer.load_from_checkpoint(str(ckpt_path))
         _tft_model.eval()
-        logger.info("TFT 체크포인트 로드 완료: %s", ckpt_path)
+        source = "real" if "tft_real" in str(ckpt_path) else "synth"
+        logger.info("TFT 체크포인트 로드 완료 [%s]: %s", source, ckpt_path)
     except Exception as exc:
         logger.error("TFT 로드 실패: %s", exc)
         _tft_model = None
@@ -136,9 +147,12 @@ def _load_tft():
 def _tft_attention_top3(model) -> list[str]:
     """학습된 encoder variable importance 기준 top-3 한국어 레이블 반환."""
     try:
-        # 저장된 tft_metrics.json에서 attention 읽기 (추론 없이 빠른 응답)
+        # 저장된 tft_*_metrics.json에서 attention 읽기 (real 우선, synth fallback)
         import json
-        metrics_path = Path(__file__).parent / "outputs" / "tft_metrics.json"
+        for name in ("tft_real_metrics.json", "tft_metrics.json"):
+            metrics_path = Path(__file__).parent / "outputs" / name
+            if metrics_path.exists():
+                break
         if metrics_path.exists():
             data = json.loads(metrics_path.read_text(encoding="utf-8"))
             importance = data.get("attention_summary", {}).get("mean_encoder_variable_importance")
