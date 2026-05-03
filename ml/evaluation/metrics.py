@@ -13,11 +13,7 @@ import math
 from typing import Any
 
 import numpy as np
-from sklearn.metrics import (
-    average_precision_score,
-    matthews_corrcoef,
-    balanced_accuracy_score,
-)
+from sklearn.metrics import average_precision_score
 
 
 def mcc_from_confusion(cm: dict[str, int]) -> float:
@@ -144,7 +140,12 @@ def aggregate_regional_metrics(per_region: dict[str, dict[str, float]]) -> dict[
     keys = ["precision", "recall", "f1", "false_alarm_rate", "mcc", "balanced_accuracy", "auprc"]
     out: dict[str, float] = {"n_regions": len(per_region)}
     for k in keys:
-        vals = [m[k] for m in per_region.values() if m.get(k) is not None and not (isinstance(m[k], float) and math.isnan(m[k]))]
+        vals = [
+            m[k]
+            for m in per_region.values()
+            if m.get(k) is not None
+            and not (isinstance(m[k], float) and math.isnan(m[k]))
+        ]
         if vals:
             out[f"mean_{k}"] = round(float(np.mean(vals)), 4)
             out[f"median_{k}"] = round(float(np.median(vals)), 4)
