@@ -578,7 +578,10 @@ export default function DashboardPage() {
                   marginTop: 4,
                 }}
               >
-                {t.header_status} · 2026-04-28 09:28 KST · Δ 7d vs baseline
+                {t.header_status} ·{" "}
+                {realAlerts[0]?.latest_time?.slice(0, 16).replace("T", " ") ||
+                  "—"}{" "}
+                KST · Δ 7d vs baseline
               </div>
             </div>
             <div style={{ display: "flex", gap: 8 }}>
