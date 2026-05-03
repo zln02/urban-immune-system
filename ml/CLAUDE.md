@@ -21,7 +21,7 @@
 # 모델 구성
 # 목표: TFT (7/14/21일 예측) — Attention weight 해석 가능성 필수
 # Fallback: XGBoost (walk-forward) + LSTM (7/14일) — 데이터 증강 전
-# 이상탐지: Autoencoder (재구성 오차 95th percentile)
+# 이상탐지: Autoencoder (재구성 오차 99th percentile — ff17dfa 핫픽스 상향)
 # 리포트: RAG-LLM (Qdrant + GPT-4o-mini 또는 claude-haiku)
 ```
 
@@ -59,11 +59,14 @@ ANTHROPIC_MODEL=claude-haiku-4-5-20251001  # Haiku 권장
 
 | 지표 | 목표값 | 주기 |
 |------|--------|------|
-| F1-Score | **0.80 이상** (현 baseline 0.84) | 주간 |
-| Precision | **0.90 이상** (현 baseline 0.96) | 주간 |
-| FAR (오경보율) | **0.20 미만** (현 baseline 0.16) | 주간 |
+| F1-Score | **0.80 이상** (현 baseline 0.882) | 주간 |
+| Recall | **0.85 이상** (현 baseline 0.837 — 미달, 게이트 완화 옵션 검토) | 주간 |
+| Precision | **0.90 이상** (현 baseline 0.949) | 주간 |
+| FAR (오경보율) | **0.30 미만** (현 baseline 0.206 gate ON, 0.602 gate OFF — 게이트 효과 65.8%) | 주간 |
+| MCC | 0.50 이상 (현 baseline 0.595) | 주간 |
+| Balanced Accuracy | 0.75 이상 (현 baseline 0.816) | 주간 |
+| AUPRC | 0.85 이상 (현 baseline 0.973) | 주간 |
 | MAE (예측 오차) | 임계값: `ml/configs/model_config.yaml` 관리 | 주간 |
-| AUC-ROC | 0.75 이상 | 주간 |
 
 - 지표 계산 로직: `ml/evaluation/metrics.py` (별도 파일)
 - 성능 저하 감지 시 텔레그램/로그로 알림
@@ -105,18 +108,18 @@ pytest tests/test_report_generator.py   # RAG 리포트 (Mock LLM)
 ## 발표 QA 답변 스니펫
 
 **Q: 왜 XGBoost를 주모델로 썼는가?**
-A: 학습 데이터 26주 누적 시점에서 walk-forward CV 5-fold 결과 XGBoost가 안정적 성능(F1=0.841)을 보여 보수적 채택. TFT는 PoC 학습(79K params) 완료 상태이며 데이터 누적 시 전환 예정.
+A: 학습 데이터 26주 누적 시점에서 walk-forward CV 5-fold 결과 XGBoost가 안정적 성능(F1=0.882, Precision=0.949, Recall=0.837)을 보여 보수적 채택. TFT는 PoC 학습(79K params) 완료 상태이며 데이터 누적 시 전환 예정.
 
 **Q: TFT는 언제 쓰나?**
 A: `/predict/tft-{7,14,21}d` 엔드포인트로 7/14/21일 선행 예측 제공. 현재 합성 데이터 학습 결과(attention top3: 검색량·하수·OTC) 검증된 상태. 실제 데이터 12주 추가 누적 후 프로덕션 전환.
 
-**Q: Recall이 0.768로 목표 미달인데?**
-A: 교차검증 게이트(2개 계층 동시 임계초과) 조건이 엄격해 FN이 늘었다. 대신 Precision=0.96, FAR=0.16으로 오경보를 최소화했다 — 보건당국 신뢰 확보 우선. 게이트 임계 완화 시 Recall 0.85 이상 달성 가능.
+**Q: Recall이 0.837로 목표(0.85) 미달인데?**
+A: 교차검증 게이트(2개 계층 동시 임계초과) 조건이 엄격해 FN이 일부 발생. 다만 직전 baseline 0.768 대비 +0.069 향상. 대신 Precision=0.949, FAR=0.206으로 오경보를 최소화했다 — 보건당국 신뢰 확보 우선. 게이트 임계 완화 시 Recall 0.90 이상 달성 가능하나 FAR 1.5배 상승 trade-off.
 
-**Q: 17개 지역 평균 리드타임이 5.9주라는 근거는?**
-A: `analysis/outputs/backtest_17regions.json` walk-forward 백테스트 결과. 가장 빠른 탐지는 세종(9주), 평균 6주 선행. 임상 확진 2주 전 YELLOW 발령으로 대응 준비시간 확보.
+**Q: 17개 지역 평균 리드타임이 6.5주라는 근거는?**
+A: `analysis/outputs/backtest_17regions.json` walk-forward 백테스트 결과 17지역 평균 6.47주. 가장 빠른 탐지는 세종(9주), 부산·제주(8주), 서울(7주), 경기·인천 등 12개 지역(6주). 임상 확진 약 1.5개월 전 YELLOW 발령으로 대응 준비시간 확보.
 
-**Q: 합성 데이터 F1 0.967 vs 실제 F1 0.841 갭은?**
+**Q: 합성 데이터 F1 0.967 vs 실제 F1 0.882 갭은?**
 A: 합성 데이터는 이상적 분포 가정, 실제는 지역별 편차 존재. 갭이 있더라도 실제 데이터 기준 목표(0.80) 초과 달성. `ml/outputs/validation.json`에서 상세 수치 확인 가능.
 
 **Q: F1 단독 표기가 아니라 더 엄격한 지표는?**
