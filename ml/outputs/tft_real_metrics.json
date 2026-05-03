@@ -1,5 +1,6 @@
 {
   "generated_at": "2026-04-29T07:48:21.894922+00:00",
+  "_deprecated": "2026-05-03 D-4 점검: 본 산출물은 (24, 3) 기준 학습 결과이며, 현 train_real.py 는 (12, 2) 로 안정화됨. 발표 슬라이드 인용 금지 — 재학습 후 재생성 필요. 신뢰 가능 수치는 analysis/outputs/backtest_17regions.json (XGBoost 17지역 walk-forward) 만 인용할 것.",
   "config": {
     "data_source": "real_db",
     "pathogen": "influenza",

@@ -40,7 +40,7 @@ function useAnomalyScores(): { regions: AnomalyRegion[]; meta: AnomalyMeta } {
       fallback_temperature: boolean;
     }>;
   }>(
-    `${process.env.NEXT_PUBLIC_API_BASE ?? ""}/api/v1/predictions/anomaly`,
+    `${process.env.NEXT_PUBLIC_API_BASE_URL ?? ""}/api/v1/predictions/anomaly`,
     (url: string) => fetch(url).then((r) => r.json()),
     { refreshInterval: 60_000, revalidateOnFocus: false },
   );

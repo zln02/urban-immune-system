@@ -19,12 +19,14 @@ xgboost:
   cv_gap: 4                   # 주 단위 갭 (미래 누출 방지)
 
 tft:
-  max_encoder_length: 24    # 과거 24주
-  max_prediction_length: 3  # 최대 3주 예측
-  hidden_size: 64
+  # synth (24, 3) / real (12, 2) — train_real.py 가 D-5 안정화 후 12/2 사용
+  # 데이터 26주 한계로 real 은 (12, 2) 로 축소. 데이터 누적 후 (24, 3) 재시도.
+  max_encoder_length: 12    # 과거 12주 (real 학습 기준)
+  max_prediction_length: 2  # 1/2주 후 예측 = 7/14일
+  hidden_size: 32           # 26주 데이터에 맞춰 capacity 축소 (synth 64 → real 32)
   attention_head_size: 4
   dropout: 0.1
-  hidden_continuous_size: 16
+  hidden_continuous_size: 12  # capacity 동조 (synth 16 → real 12)
   learning_rate: 0.0003
   max_epochs: 50
   gradient_clip_val: 0.1

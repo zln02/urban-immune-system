@@ -9,7 +9,7 @@ from src.map.builder import build_map
 
 
 def render_map_tab(region: str) -> None:
-    st.markdown("#### 서울시 구별 감염병 위험도 현황")
+    st.markdown("#### 17개 광역(시·도) 감염병 위험도 현황")
 
     # Try API for current alert
     alert = get_current_alert(region)

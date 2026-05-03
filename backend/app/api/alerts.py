@@ -161,15 +161,17 @@ async def list_region_alerts(
     }
 
     # 2차: layer_signals fallback (risk_scores에 없는 region만)
-    fallback_query = text(f"""
+    fallback_query = text(
+        """
         SELECT region, layer, AVG(value) AS value, MAX(time) AS latest
         FROM layer_signals
         WHERE layer IN ('otc', 'wastewater', 'search')
-          AND time >= NOW() - INTERVAL '{int(days)} days'
+          AND time >= NOW() - make_interval(days => :days)
           AND value > 0
         GROUP BY region, layer
-    """)
-    fallback_result = await db.execute(fallback_query)
+        """
+    )
+    fallback_result = await db.execute(fallback_query, {"days": int(days)})
     pivot: dict[str, dict] = {}
     for r in fallback_result.mappings().all():
         rg = r["region"]
