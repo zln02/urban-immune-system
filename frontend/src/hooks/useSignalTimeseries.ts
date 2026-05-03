@@ -25,6 +25,10 @@ async function fetchTimeseries(
   return res.json();
 }
 
+// 백엔드 /signals/timeseries 의 region 파라미터는 min_length=2.
+// 빈 문자열 또는 1글자 region 으로 호출하면 422 발생 → enabled 가드.
+const isValidRegion = (region: string): boolean => region.trim().length >= 2;
+
 /** Layer 2 KOWAS 하수 시계열 (TimescaleDB 직접 조회) */
 export function useWastewaterSeries(region: string, days = 365) {
   return useQuery<SignalTimeseriesResponse, Error>({
@@ -32,6 +36,7 @@ export function useWastewaterSeries(region: string, days = 365) {
     queryFn: () => fetchTimeseries("wastewater", region, days),
     staleTime: 60 * 60 * 1000,
     retry: 1,
+    enabled: isValidRegion(region),
   });
 }
 
@@ -42,5 +47,6 @@ export function useSignalSeries(layer: "otc" | "wastewater" | "search", region: 
     queryFn: () => fetchTimeseries(layer, region, days),
     staleTime: 60 * 60 * 1000,
     retry: 1,
+    enabled: isValidRegion(region),
   });
 }

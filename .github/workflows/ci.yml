@@ -95,4 +95,5 @@ jobs:
           python-version: "3.11"
           cache: pip
       - run: pip install -e ".[all]"
-      - run: pytest tests --cov=src --cov=backend --cov=ml --cov=pipeline --cov-report=term-missing --cov-fail-under=35
+      # B2G 납품 기준은 70%. 단계 상향: 35 → 40 (D-4) → 50 (5월 말) → 70 (6월 PoC 납품 전).
+      - run: pytest tests --cov=src --cov=backend --cov=ml --cov=pipeline --cov-report=term-missing --cov-fail-under=40

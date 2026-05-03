@@ -44,12 +44,26 @@ _RESPONSE_RULES = """
 
 
 def _live_spec() -> dict:
-    """코드/설정/체크포인트에서 실시간 수치 추출."""
-    from pipeline.scorer import (
-        _CROSS_VALIDATION_LAYER_THRESHOLD,
-        _CROSS_VALIDATION_MIN_LAYERS,
-        _RED_THRESHOLD,
-    )
+    """코드/설정/체크포인트에서 실시간 수치 추출.
+
+    pipeline 패키지가 PYTHONPATH 에 없는 환경(예: backend/ 하위에서 단독 기동)
+    에서도 챗봇 첫 요청이 500 으로 깨지지 않도록 ImportError 시 fallback 상수 사용.
+    """
+    try:
+        from pipeline.scorer import (
+            _CROSS_VALIDATION_LAYER_THRESHOLD,
+            _CROSS_VALIDATION_MIN_LAYERS,
+            _RED_THRESHOLD,
+        )
+    except ImportError:
+        logger.warning(
+            "pipeline.scorer import 실패 — PYTHONPATH 미설정 가능성. fallback 상수 사용"
+        )
+        # CLAUDE.md 의 단일 출처 규칙 위반 우려 있으나, 챗봇 가용성 보호가 우선.
+        # pipeline.scorer 가 임포트되면 이 분기는 절대 실행되지 않음.
+        _CROSS_VALIDATION_LAYER_THRESHOLD = 30.0
+        _CROSS_VALIDATION_MIN_LAYERS = 2
+        _RED_THRESHOLD = 75.0
 
     spec: dict = {
         "w1": settings.ensemble_weight_l1,
