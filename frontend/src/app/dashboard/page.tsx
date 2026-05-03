@@ -880,7 +880,7 @@ export default function DashboardPage() {
             />
             <LayerCard
               title={t.layer_sewage}
-              sub={hasSewage ? "질병관리청 KOWAS 자동 수집 (952건)" : t.layer_sewage_sub}
+              sub={hasSewage ? "KOWAS (환경부·질병관리청) 자동 수집 952건" : t.layer_sewage_sub}
               data={sewageValues.slice(-30)}
               value={sewageLatest}
               change={hasSewage ? calcChange(sewageValues) : 22.8}
@@ -1013,9 +1013,23 @@ export default function DashboardPage() {
             padding: "8px 0",
             borderTop: "1px solid var(--border)",
             marginTop: 8,
+            lineHeight: 1.6,
           }}
         >
-          {t.footer} · WCAG 2.2 AA · ISMS-P
+          <div>{t.footer} · WCAG 2.2 AA · ISMS-P</div>
+          <div style={{ marginTop: 4, fontSize: 10 }}>
+            {lang === "ko" ? (
+              <>
+                데이터 출처: 네이버 쇼핑인사이트·DataLab API · KOWAS (환경부·질병관리청 공동 운영) · 기상청 KMA ·
+                질병관리청 KCDC ILINet 표본감시. 본 시스템은 의료기기법 제2조의 의료기기에 해당하지 않으며 임상 진단·치료 목적이 아닙니다.
+              </>
+            ) : (
+              <>
+                Data sources: Naver Shopping Insight·DataLab API · KOWAS (Ministry of Environment·KDCA joint operation) ·
+                KMA Weather · KDCA ILINet. This system is not a medical device under the Medical Devices Act §2 and is not intended for clinical diagnosis or treatment.
+              </>
+            )}
+          </div>
         </footer>
         </>)}
       </main>
