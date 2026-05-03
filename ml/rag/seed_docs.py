@@ -346,6 +346,65 @@ SEED_DOCS: list[dict] = [
             "year": 2026,
         },
     },
+    {
+        "id": 18,
+        "text": (
+            "Larsen DA, Wigginton KR. \"Tracking COVID-19 with wastewater.\" Nature Biotechnology 38, 1151–1153 (2020) — "
+            "하수 기반 SARS-CoV-2 RNA 모니터링이 임상 신고보다 4~10일 선행한다는 미국 다지역 사례를 정리하며, "
+            "WBE(Wastewater-Based Epidemiology)가 무증상·검사 기피·검사 용량 한계로 인한 임상감시 사각지대를 보완한다고 결론. "
+            "권고: 하수 시료를 7일 이동평균으로 지수화하고, 시·도 간 절대 비교 대신 동일 지역의 상대 변화율을 사용. "
+            "팬데믹 초기 임상 데이터 부재 상황에서 WBE는 비라벨(label-free) 조기경보 신호로 가장 빠른 신호원이며, "
+            "본 시스템 L2 계층 설계 근거에 직접 인용된다."
+        ),
+        "metadata": {
+            "source": "Larsen DA, Wigginton KR. Tracking COVID-19 with wastewater. Nat Biotechnol 38, 1151-1153 (2020)",
+            "url": "https://doi.org/10.1038/s41587-020-0690-1",
+            "lang": "ko-summary",
+            "topic": "wastewater_lead_time",
+            "author": "Larsen DA, Wigginton KR",
+            "year": 2020,
+        },
+    },
+    {
+        "id": 19,
+        "text": (
+            "WHO 국제보건규정(IHR 2005) 부속서 1: 감시·대응 핵심역량(core capacities). "
+            "회원국은 (1) 지역사회·1차의료 단계의 비정상적 사건 24시간 이내 감지, (2) 48시간 이내 평가·보고, "
+            "(3) 사건 등록 후 7일 이내 WHO에 통보할 수 있는 감시 시스템을 구축해야 한다. "
+            "조기경보 신호의 정의: 임상 확진 전 단계의 비특이적 지표(증상 클러스터·OTC 매출·검색·하수·결근 등) 가운데 "
+            "역치 초과 또는 비정상 패턴이 관찰되는 신호. 단일 신호 단독으로는 false positive 위험이 높아 "
+            "두 개 이상 독립 신호의 동시 상승을 권고한다(부속서 2 의사결정 알고리즘). "
+            "본 시스템의 2계층 교차검증 게이트는 IHR 부속서 2 알고리즘과 정합."
+        ),
+        "metadata": {
+            "source": "WHO International Health Regulations (IHR 2005), Annex 1 & Annex 2",
+            "url": "https://www.who.int/publications/i/item/9789241580496",
+            "lang": "ko-summary",
+            "topic": "ihr_early_warning",
+            "author": "WHO",
+            "year": 2005,
+        },
+    },
+    {
+        "id": 20,
+        "text": (
+            "환경부 KOWAS(한국 하수도 감시 시스템) 운영안내서: 전국 17개 광역지자체 64개 하수처리장에서 "
+            "주 1회 인플루엔자·SARS-CoV-2·노로바이러스 RT-PCR 모니터링을 수행해 PDF 보고서로 공개한다. "
+            "한계: (1) 시료 채취 시점 강수·유량 변동에 따른 희석 영향, (2) 시·도 간 처리장 인구 커버리지 격차(서울 95% vs 강원 55%), "
+            "(3) 농도 단위(copies/mL) 절대값은 처리장별 환경 차이로 직접 비교 부적합. "
+            "권고 사용법: 동일 처리장 내 전주 대비 변화율(%) + 4주 이동평균. "
+            "본 시스템은 KOWAS PDF를 자동 크롤링하여 Min-Max 정규화(처리장별 독립) 후 L2 신호로 사용하며, "
+            "위 한계는 발표 슬라이드 '한계(정직)' 섹션에 명시한다."
+        ),
+        "metadata": {
+            "source": "환경부 KOWAS 운영안내서 (2024)",
+            "url": "https://www.me.go.kr/home/web/policy_data/read.do?menuId=10262",
+            "lang": "ko",
+            "topic": "kowas_operation_limits",
+            "author": "환경부",
+            "year": 2024,
+        },
+    },
 ]
 
 
