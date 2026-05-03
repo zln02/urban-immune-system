@@ -21,11 +21,17 @@ class Settings(BaseSettings):
     ensemble_weight_l2: float = 0.40   # 하수도 바이오마커
     ensemble_weight_l3: float = 0.25   # 검색 트렌드
 
+    # ISMS-P 2.5.1·2.6.1·2.9.4 — HTTP 미들웨어
+    # api_keys 는 CSV 또는 list 로 .env 에서 주입 (production 에서 1개 이상 필수)
+    api_keys: list[str] = []
+    rate_limit_per_minute: int = 120
+    rate_limit_burst: int = 30
+
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=False, extra="ignore")
 
-    @field_validator("allowed_origins", mode="before")
+    @field_validator("allowed_origins", "api_keys", mode="before")
     @classmethod
-    def parse_allowed_origins(cls, value: str | list[str]) -> list[str]:
+    def parse_csv(cls, value: str | list[str]) -> list[str]:
         if isinstance(value, str):
             return [item.strip() for item in value.split(",") if item.strip()]
         return value
@@ -37,6 +43,8 @@ class Settings(BaseSettings):
             raise ValueError("database_url must not use placeholder credentials in production")
         if is_production and self.ml_service_url.startswith("http://"):
             raise ValueError("ml_service_url must use https in production")
+        if is_production and not self.api_keys:
+            raise ValueError("api_keys must contain at least one key in production (ISMS-P 2.5.1)")
         return self
 
 
