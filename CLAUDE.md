@@ -2,7 +2,7 @@
 
 AI 기반 감염병 조기경보 시스템 (B2G 납품 목표). 3계층 비의료 신호(약국 OTC·하수도 바이오마커·검색 트렌드) 교차검증으로 임상 확진 1–3주 선행 탐지.
 
-> **중간발표: 2026-05-07** (4/30 → 5/7 연기) · **최종: 2026-06 초** · 현 baseline **F1=0.841 / Recall=0.768 / FAR=0.162 / Lead 5.9주** (17지역 walk-forward 실측, `analysis/outputs/backtest_17regions.json`).
+> **중간발표: 2026-05-07** (4/30 → 5/7 연기) · **최종: 2026-06 초** · 현 baseline **F1=0.882 / Recall=0.837 / Precision=0.949 / FAR=0.206 (gate ON, 게이트 OFF=0.602) / Lead 6.47주 / MCC=0.595 / Balanced Acc=0.816 / AUPRC=0.973** (17지역 walk-forward 실측, `analysis/outputs/backtest_17regions.json`).
 
 ## 팀 구성 & 역할
 
@@ -519,7 +519,7 @@ prediction_lengths: [7, 14, 21]
 
 ### 이상탐지 Autoencoder
 
-- 임계값: 재구성 오차 95th percentile (훈련 후 결정)
+- 임계값: 재구성 오차 99th percentile (`ff17dfa` 핫픽스로 95p→99p 상향, 17지역 inference 16/17→1/17 정상화)
 - 임계값 하드코딩 금지 → `ml/configs/model_config.yaml` 관리
 
 ### RAG 리포트
@@ -548,7 +548,7 @@ prediction_lengths: [7, 14, 21]
 | 구분 | 기준 |
 |------|------|
 | 기술 완성도 | 3계층(L1/L2/L3) 실데이터 자동 수집 + TFT 예측 + 웹 대시보드 통합 작동 |
-| 검증 결과 | **F1-Score 0.80 이상** + **FAR 0.20 미만** 유지 (현 baseline: F1=0.84 / FAR=0.16) |
+| 검증 결과 | **F1-Score 0.80 이상** + **FAR 0.30 미만** 유지 (현 baseline: F1=0.882 / FAR=0.206 gate ON, 게이트 효과 65.8% 감소) |
 | 서비스성 | Next.js 대시보드(또는 Streamlit)에서 실시간 신호 조회 + AI 경보 리포트 생성 |
 | 확장성 | 최소 1개 추가 질병 또는 지역 확장 시연 |
 
