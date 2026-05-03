@@ -11,7 +11,6 @@ interface AnomalyRegion {
   code: string;
   name: string;
   score: number;
-  delta: number;
   status: "anomaly" | "warning" | "normal";
 }
 
@@ -49,7 +48,6 @@ function useAnomalyScores(): { regions: AnomalyRegion[]; meta: AnomalyMeta } {
     code: a.region.slice(0, 2),
     name: a.region,
     score: Math.round(a.score),
-    delta: 0,
     status: a.status,
   }));
   const meta: AnomalyMeta = {
@@ -283,17 +281,6 @@ export function AnomalyPanel({ lang }: AnomalyPanelProps) {
                   }}
                 >
                   {r.score}
-                </span>
-                <span
-                  style={{
-                    width: 52,
-                    textAlign: "right",
-                    fontSize: 11,
-                    color: r.delta > 0 ? "var(--risk-warning)" : "var(--risk-safe)",
-                    fontFamily: "var(--font-mono)",
-                  }}
-                >
-                  {r.delta > 0 ? "▲" : "▼"} {Math.abs(r.delta)}
                 </span>
                 <span
                   style={{
