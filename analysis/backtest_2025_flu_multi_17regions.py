@@ -416,11 +416,15 @@ def build_17regions_json(
             "confirmed_peak_week": res.get("confirmed_peak_week"),
             "confirmed_peak_count": res.get("confirmed_peak_count"),
             "lead_weeks":          res.get("lead_time_weeks"),
-            # 게이트 적용 후
+            # 게이트 적용 후 (확장 메트릭 — 클래스 불균형 정직성)
             "precision":           m["precision"],
             "recall":              m["recall"],
             "f1":                  m["f1"],
             "false_alarm_rate":    m["false_alarm_rate"],
+            "mcc":                 m.get("mcc"),
+            "balanced_accuracy":   m.get("balanced_accuracy"),
+            "auprc":               m.get("auprc"),
+            "auprc_baseline":      m.get("auprc_baseline"),
             "confusion_matrix":    cm,
             # 게이트 미적용 (비교용)
             "far_no_gate":         m0.get("false_alarm_rate"),
@@ -438,6 +442,13 @@ def build_17regions_json(
     mean_f1     = round(float(np.mean([v["f1"]                for v in valid])), 3) if valid else None
     mean_far    = round(float(np.mean([v["false_alarm_rate"]   for v in valid])), 3) if valid else None
     mean_far_no = round(float(np.mean([v["far_no_gate"] for v in valid if v["far_no_gate"] is not None])), 3) if valid else None
+    # 확장 메트릭 — 클래스 불균형 정직성 (발표 답변 강화)
+    _mcc_vals = [v["mcc"] for v in valid if v.get("mcc") is not None]
+    _bal_vals = [v["balanced_accuracy"] for v in valid if v.get("balanced_accuracy") is not None]
+    _auprc_vals = [v["auprc"] for v in valid if v.get("auprc") is not None]
+    mean_mcc       = round(float(np.mean(_mcc_vals)), 3) if _mcc_vals else None
+    mean_bal_acc   = round(float(np.mean(_bal_vals)), 3) if _bal_vals else None
+    mean_auprc     = round(float(np.mean(_auprc_vals)), 3) if _auprc_vals else None
 
     validation_ok = (
         mean_far is not None and mean_far < 0.5
@@ -464,6 +475,9 @@ def build_17regions_json(
             "mean_far_with_gate":  mean_far,
             "mean_far_no_gate":    mean_far_no,
             "far_delta":           round(mean_far - mean_far_no, 3) if (mean_far and mean_far_no) else None,
+            "mean_mcc":            mean_mcc,
+            "mean_balanced_accuracy": mean_bal_acc,
+            "mean_auprc":          mean_auprc,
         },
         "validation": {
             "mean_far_lt_0.5":     mean_far < 0.5 if mean_far is not None else False,
