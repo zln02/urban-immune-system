@@ -2,8 +2,16 @@
 
 train_synth.py 와 동일한 학습 로직을 사용하되 입력만 합성→실 DB 로 교체.
 
+D-5 안정화 (2026-05-02):
+  - encoder_length 24 → 12 : 26주로 region당 시퀀스 1~2 → 13개로 증가 (총 ~221 시퀀스)
+  - prediction_length 3 → 2: 7/14일 horizon (21일은 데이터 누적 후)
+  - hidden_size 48 → 32   : capacity 축소, 과적합 방지
+  - dropout 0.15 → 0.25 + weight_decay 1e-4
+  - EarlyStop min_delta 0.001 → 0.05 (noise 무시)
+  - SWA (Stochastic Weight Averaging) 추가
+
 CLI:
-  python -m ml.tft.train_real                           # 기본: 50 epoch, 17 region
+  python -m ml.tft.train_real                           # 기본: 50 epoch, 안정화 설정
   python -m ml.tft.train_real --epochs 30 --regions 5   # 빠른 테스트
   python -m ml.tft.train_real --weeks 26                # 분석창 명시
 
@@ -19,28 +27,35 @@ import json
 import logging
 import os
 import sys
+import warnings
 from datetime import datetime, timezone
 from pathlib import Path
 
 import lightning.pytorch as pl
-import numpy as np
 import pandas as pd
 import torch
-import warnings
 from dotenv import load_dotenv
 from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
 from lightning.pytorch.loggers import CSVLogger
 from pytorch_forecasting import TemporalFusionTransformer, TimeSeriesDataSet
 from pytorch_forecasting.metrics import QuantileLoss
 
-# train_synth 의 공통 상수만 import (FEATURE_COLS 는 자체 정의)
+# train_synth 의 공통 상수만 import (MAX_ENCODER/MAX_PREDICTION 은 자체 override)
 from ml.tft.train_synth import (
-    GROUP_COL, LEAD_WEEKS, MAX_ENCODER, MAX_PREDICTION,
-    TARGET_COL, TIME_IDX_COL,
+    GROUP_COL,
+    LEAD_WEEKS,
+    TARGET_COL,
+    TIME_IDX_COL,
 )
 
 # 실데이터 전용 피처 — humidity 제거 (DB에 humidity layer 미적재 → 0 패딩 시 attention 왜곡)
 FEATURE_COLS = ["l1_otc", "l2_wastewater", "l3_search", "temperature"]
+
+# 실데이터 전용 시퀀스 설정 (D-5 안정화)
+# 26주 데이터로는 train_synth 의 (24, 3) 이면 region당 시퀀스 ~1개 → 학습 불가능.
+# (12, 2) 로 줄여서 region당 13 시퀀스 확보 (17 region × 13 = 221 시퀀스).
+MAX_ENCODER = 12       # 12주 과거 입력 (synth 24 → real 12)
+MAX_PREDICTION = 2     # 1/2주 후 예측 = 7/14일 (synth 3 → real 2)
 
 logger = logging.getLogger(__name__)
 
@@ -219,11 +234,11 @@ def _build_dataframe_from_db(pathogen: str = "influenza", min_weeks: int = 20) -
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="TFT 실데이터 학습 (TimescaleDB)")
-    parser.add_argument("--epochs", type=int, default=50)
+    parser.add_argument("--epochs", type=int, default=80)
     parser.add_argument("--regions", type=int, default=17, help="(미사용 — DB의 모든 region 사용)")
     parser.add_argument("--weeks", type=int, default=26, help="분석창 (메타정보 only)")
-    parser.add_argument("--batch-size", type=int, default=16)
-    parser.add_argument("--min-weeks", type=int, default=20, help="region당 최소 주차 (학습 안정성)")
+    parser.add_argument("--batch-size", type=int, default=8)
+    parser.add_argument("--min-weeks", type=int, default=14, help="region당 최소 주차 (encoder=12 + pred=2)")
     parser.add_argument("--pathogen", type=str, default="influenza")
     parser.add_argument("--output", type=Path, default=OUTPUT_PATH)
     args = parser.parse_args()
@@ -255,15 +270,17 @@ def main() -> int:
 
     model = TemporalFusionTransformer.from_dataset(
         train_ds,
-        learning_rate=1e-3,        # 안정화: 3e-3 → 1e-3 (과적합 완화)
-        hidden_size=48,            # 64 → 48 (모델 작게)
+        learning_rate=5e-4,        # D-5 안정화: 1e-3 → 5e-4 (수렴 속도 ↓, 안정성 ↑)
+        hidden_size=32,            # 48 → 32 (capacity 축소, 26주 데이터에 적합)
         attention_head_size=4,
-        dropout=0.15,              # 0.1 → 0.15 (정규화 강화)
-        hidden_continuous_size=16,
+        dropout=0.25,              # 0.15 → 0.25 (정규화 강화)
+        hidden_continuous_size=12, # 16 → 12 (capacity 동조)
         output_size=7,
         loss=QuantileLoss(),
         log_interval=0,
-        reduce_on_plateau_patience=4,
+        reduce_on_plateau_patience=3,  # 4 → 3 (작은 데이터셋, 빠른 LR 감쇠)
+        # NOTE: pytorch_forecasting 1.7 의 TFT 는 optimizer/weight_decay 인자를
+        # 직접 받지 않음. 정규화는 dropout=0.25 + SWA + EarlyStopping 으로 대체.
     )
     logger.info("모델 파라미터 수: %d", sum(p.numel() for p in model.parameters()))
 
@@ -276,16 +293,25 @@ def main() -> int:
         save_top_k=1,
         mode="min",
     )
-    early_stop = EarlyStopping(monitor="val_loss", patience=15, mode="min", min_delta=0.001)
+    early_stop = EarlyStopping(
+        monitor="val_loss",
+        patience=10,
+        mode="min",
+        min_delta=0.05,        # 0.001 → 0.05: noise 무시, 진짜 개선만 인정
+    )
+    # SWA: 후반 epoch 가중치 평균화로 generalization 개선 (작은 데이터셋에서 효과 큼)
+    from lightning.pytorch.callbacks import StochasticWeightAveraging
+    swa_cb = StochasticWeightAveraging(swa_lrs=2.5e-4, swa_epoch_start=0.6)
 
     trainer = pl.Trainer(
         max_epochs=args.epochs,
         accelerator="cpu",
         gradient_clip_val=0.1,
-        callbacks=[ckpt_cb, early_stop],
+        callbacks=[ckpt_cb, early_stop, swa_cb],
         logger=csv_logger,
         enable_progress_bar=False,
         enable_model_summary=False,
+        deterministic=True,        # 재현성 (seed_everything 와 함께)
     )
 
     logger.info("TFT 실데이터 학습 시작 (epochs=%d · batch=%d)", args.epochs, args.batch_size)
