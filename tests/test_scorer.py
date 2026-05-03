@@ -16,13 +16,9 @@ sweet spot 못 찾아서 폐기 (analysis/outputs/l2_gate_sweep.json). 게이트
 """
 from __future__ import annotations
 
-import pytest
-
 from pipeline.scorer import (
-    determine_alert_level,
     RiskScoreRow,
-    _CROSS_VALIDATION_MIN_LAYERS,
-    _CROSS_VALIDATION_LAYER_THRESHOLD,
+    determine_alert_level,
 )
 
 
@@ -50,8 +46,7 @@ def test_yellow_two_layers_above_threshold() -> None:
 # ---------------------------------------------------------------------------
 def test_l3_single_high_blocked() -> None:
     """L3(검색) 단독으로 85 라도 L1/L2 가 30 미만이면 GREEN 으로 차단되어야 한다."""
-    composite = 0.35 * 5.0 + 0.40 * 10.0 + 0.25 * 85.0
-    # composite ≈ 1.75 + 4.0 + 21.25 = 27.0 → 원래 GREEN 이지만
+    # composite = 0.35*5 + 0.40*10 + 0.25*85 ≈ 27.0 → 원래 GREEN 이지만
     # 극단 케이스: l3=100 l1=5 l2=5
     composite2 = 0.35 * 5.0 + 0.40 * 5.0 + 0.25 * 100.0
     # composite2 = 1.75 + 2.0 + 25.0 = 28.75 → GREEN

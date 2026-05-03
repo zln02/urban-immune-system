@@ -5,8 +5,9 @@ XGBoost 체크포인트가 없으면 pytest.skip.
 """
 from __future__ import annotations
 
-import pytest
 from pathlib import Path
+
+import pytest
 
 _CHECKPOINT = Path(__file__).parent.parent.parent / "ml" / "checkpoints" / "xgb_best.joblib"
 
@@ -17,6 +18,7 @@ def test_xgb_predict_endpoint_schema():
         pytest.skip("ml/checkpoints/xgb_best.joblib 없음 — 학습 후 재실행")
 
     from starlette.testclient import TestClient
+
     from ml.serve import app as ml_app
 
     with TestClient(ml_app) as c:
@@ -41,9 +43,11 @@ def test_xgb_predict_endpoint_schema():
 def test_xgb_model_no_checkpoint_returns_not_loaded():
     """체크포인트 없을 때 status=model_not_loaded 반환 확인."""
     from unittest.mock import patch
+
     from starlette.testclient import TestClient
-    from ml.serve import app as ml_app
+
     import ml.serve as serve_mod
+    from ml.serve import app as ml_app
 
     # 강제로 모델 미로드 상태로 되돌리기
     original = serve_mod._xgb_model
@@ -62,11 +66,11 @@ def test_xgb_model_no_checkpoint_returns_not_loaded():
 
 def test_xgb_predict_with_synthetic_model():
     """합성 데이터로 학습한 임시 모델로 predict/risk 200 + 유효 score 확인."""
-    from unittest.mock import patch
-    from sklearn.ensemble import GradientBoostingRegressor
     import numpy as np
-    import ml.serve as serve_mod
+    from sklearn.ensemble import GradientBoostingRegressor
     from starlette.testclient import TestClient
+
+    import ml.serve as serve_mod
     from ml.serve import app as ml_app
 
     # 합성 모델 생성 (실제 가중치/하이퍼파라미터 변경 없이 임시 인스턴스)

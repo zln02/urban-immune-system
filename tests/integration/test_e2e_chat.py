@@ -7,11 +7,9 @@ from __future__ import annotations
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 from fastapi.testclient import TestClient
 
 from backend.app.main import app
-
 
 # ── fixture ──────────────────────────────────────────────────────────────────
 
@@ -55,7 +53,7 @@ class TestChatAsk:
                 raw = resp.read().decode("utf-8")
 
             # SSE 첫 chunk 수신 확인
-            lines = [l for l in raw.split("\n") if l.startswith("data: ")]
+            lines = [line for line in raw.split("\n") if line.startswith("data: ")]
             assert len(lines) >= 1
             # 첫 data line이 유효한 JSON인지 확인 (DONE 제외)
             first_data = lines[0][len("data: "):]
@@ -126,7 +124,7 @@ class TestChatAsk:
                 assert resp.status_code == 200
                 raw = resp.read().decode("utf-8")
 
-            error_lines = [l for l in raw.split("\n") if '"error"' in l]
+            error_lines = [line for line in raw.split("\n") if '"error"' in line]
             assert len(error_lines) >= 1
             parsed = json.loads(error_lines[0][len("data: "):])
             assert "error" in parsed

@@ -1,23 +1,20 @@
 # urban-immune-system — 팀 프로젝트
 
-AI 기반 감염병 조기경보 시스템. 3계층 비의료 신호(약국 OTC·하수도 바이오마커·검색 트렌드) 교차검증으로 임상 확진 1–3주 선행 탐지.
+AI 기반 감염병 조기경보 시스템 (B2G 납품 목표). 3계층 비의료 신호(약국 OTC·하수도 바이오마커·검색 트렌드) 교차검증으로 임상 확진 1–3주 선행 탐지.
+
+> **중간발표: 2026-05-07** (4/30 → 5/7 연기) · **최종: 2026-06 초** · 현 baseline **F1=0.841 / Recall=0.768 / FAR=0.162 / Lead 5.9주** (17지역 walk-forward 실측, `analysis/outputs/backtest_17regions.json`).
 
 ## 팀 구성 & 역할
 
 | 이름 | 역할 | 담당 모듈 |
 |------|------|----------|
-| 박진영 (PM) | 역할 B+C — 데이터 파이프라인 + ML/AI 엔진, 총괄 | `pipeline/`, `ml/` |
-| 이경준 | 역할 B — 데이터 파이프라인 (수집·스케줄러) | `pipeline/` |
-| 이우형 | 역할 A — Backend + API (FastAPI·DB) | `backend/`, `infra/` |
-| 김나영 | 역할 D1 — Frontend 개발 (코딩) | `frontend/src/`, `src/` (API 연동) |
-| 박정빈 | 역할 D2 — UX 디자인 + 발표 준비 | `src/styles.py`, `src/map/`, `src/components/`, `frontend/src/app/globals.css`, 발표자료 |
+| 박진영 (PM·PL) | PM / ML Lead — 전체 아키텍처·총괄 | `ml/`, `docs/`, `docs/business/` (전 모듈 풀 권한) |
+| 이경준 | Backend (FastAPI·DB·라우터 17개) | `backend/` |
+| 이우형 | Data Engineer (수집·스케줄러·KOWAS) | `pipeline/` |
+| 김나영 | Frontend (Next.js Phase2·Streamlit Phase1) | `frontend/`, `src/` |
+| 박정빈 | DevOps / QA (CI·k8s·systemd·테스트) | `infra/`, `.github/`, `tests/` |
 
-### 역할 요약 (가이드 문서 기준)
-- **역할 A** ★★★☆☆ — FastAPI 엔드포인트, PostgreSQL 연동, JWT 인증
-- **역할 B** ★★★★★ — 네이버 API 수집, KOWAS PDF 크롤러, APScheduler
-- **역할 C** ★★★★☆ — LSTM/XGBoost 모델, walk-forward 검증, RAG 리포트
-- **역할 D1** ★★★☆☆ — Next.js/Streamlit API 연동, 실데이터 연결, 에러 핸들링
-- **역할 D2** ★★☆☆☆ — Streamlit CSS 테마, Folium 지도 디자인, 발표 슬라이드
+> 박진영은 PL 권한으로 모든 모듈 사전 합의 없이 수정·푸시·머지 가능 (글로벌 CLAUDE.md `team_pl_authority.md` 참조). 단 **main 직푸시 금지** 절대 규칙은 그대로 유지.
 
 ## 절대 규칙
 - **main 브랜치 직접 푸시 금지** — feature/* → develop → main PR 필수
@@ -48,10 +45,13 @@ docker compose up -d
 # Streamlit 대시보드
 streamlit run src/app.py --server.port 8501
 
-# FastAPI 백엔드
-uvicorn backend.app.main:app --reload --port 8000
+# FastAPI 백엔드 (포트 8001 — frontend의 NEXT_PUBLIC_API_BASE_URL 와 일치)
+uvicorn backend.app.main:app --reload --port 8001
 
-# 테스트 (커밋 전 필수)
+# Next.js 대시보드
+cd frontend && npm run dev   # http://localhost:3000
+
+# 테스트 (커밋 전 필수) — 단위 113건 + 통합 19건
 pytest
 
 # 린트
@@ -97,7 +97,7 @@ urban-immune-system/
 ├── infra/
 │   ├── k8s/                # K8s 매니페스트
 │   └── db/init.sql         # TimescaleDB 하이퍼테이블
-├── tests/                  # pytest 22개 테스트
+├── tests/                  # pytest 113개 단위 + 19개 통합 (CI coverage ≥35%)
 ├── pyproject.toml
 ├── docker-compose.yml
 └── .env.example
@@ -534,10 +534,10 @@ prediction_lengths: [7, 14, 21]
 
 | Phase | 상태 | 주요 내용 |
 |-------|------|-----------|
-| 1 | ✅ MVP | Streamlit 대시보드, 시뮬레이션 데이터 |
-| 2 | 🔧 진행중 | FastAPI 백엔드, 실제 API 연동, Kafka 파이프라인, **KOWAS 자동 크롤링** |
-| 3 | 📋 예정 | TFT 추론 완성 (데이터 증강 포함), Kafka Consumer |
-| 4 | 📋 예정 | Next.js 프론트엔드 (지연 시 Streamlit 유지), K8s 프로덕션 배포 |
+| 1 | ✅ 완료 | Streamlit MVP, 3-Layer 파이프라인, 합성 데이터 PoC |
+| 2 | ✅ 완료 | FastAPI(:8001) + 실 API 연동 + Kafka + TimescaleDB + Qdrant + Next.js + SSE/RAG + XGBoost 17지역 walk-forward |
+| 3 | 🔧 진행중 | KOWAS 자동 크롤링, HIRA OpenAPI 연동(L1 지역 분리), TFT-real 데이터 누적 후 prod 전환, RAG 문서 확장 |
+| 4 | 📋 예정 (6월~) | ISMS-P 풀 점검, 조달청 혁신제품 신청, 파일럿 기관 확보 (KDCA·서울시·WHO 협력센터) |
 
 ---
 

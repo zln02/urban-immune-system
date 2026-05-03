@@ -1,76 +1,95 @@
-# frontend/ — D1 김나영 전용
+# frontend/ — 김나영
 
 ## 담당자
-역할 D1 — 김나영 (Frontend 개발 · API 연동)
+김나영 (Frontend) · 박진영 PL 권한으로 직접 수정 가능
 
-## 기술 스택
-- Next.js 14 App Router (`app/` 디렉터리)
-- Deck.gl v9 (3D 히트맵)
-- Recharts (시계열 차트)
-- SWR (데이터 패칭)
-- Tailwind CSS
+## 기술 스택 (실측 2026-05-02)
+- **Next.js 14.2.3** App Router (`src/app/`) — Phase 4 에서 15.2 마이그레이션 검토
+- React 18.3.1 / TypeScript 5.4.5
+- @tanstack/react-query 5.x (서버 데이터 캐시)
+- SWR 2.x (일부 컴포넌트 잔존)
+- Recharts 2.x (시계열)
+- @deck.gl 9.x (히트맵 — 옵셔널)
+- 네이버 Maps Web Dynamic API (옵셔널, key 있을 때만)
+- Tailwind CSS 3.4
 
-## 환경변수 규칙
+## 환경변수 (`.env.local`)
 ```bash
-NEXT_PUBLIC_API_BASE=http://localhost:8000   # 백엔드 FastAPI
-NEXT_PUBLIC_MAPBOX_TOKEN=pk...               # Deck.gl 지도
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8001     # 클라이언트→백엔드 (브라우저 노출)
+UIS_API_INTERNAL_URL=http://127.0.0.1:8001         # SSR/Route Handler 내부 호출 (서버 전용)
+NEXT_PUBLIC_NAVER_MAPS_KEY_ID=...                  # 있으면 네이버 지도, 없으면 SVG fallback
+NEXT_PUBLIC_NAVER_MAPS_CLIENT_ID=...               # 호환용 alias
 ```
-- `NEXT_PUBLIC_` 접두사 없는 키는 클라이언트 번들에 포함되지 않음 — 주의
-- 하드코딩 금지, 반드시 환경변수 참조
+- 백엔드 포트는 **8001** (루트 CLAUDE.md `uvicorn ... --port 8001` 와 일치)
+- `NEXT_PUBLIC_*` 만 클라이언트 번들 포함, 나머지는 서버 전용
 
-## API 연동 대상 엔드포인트
-| 컴포넌트 | 엔드포인트 | 폴링 주기 |
-|---------|-----------|---------|
-| `RiskMap.tsx` | `GET /api/v1/signals/latest` | SWR revalidateOnFocus |
-| `TrendChart.tsx` | `GET /api/v1/signals/timeseries` | 60초 |
-| `AlertReport.tsx` | `GET /api/v1/alerts/current` | 60초 |
-
-## 코드 규칙
-1. **DUMMY_DATA 교체 시**: 타입 정의 먼저 (`types/` 또는 인라인 interface) → 실데이터 연결
-2. **SWR refreshInterval**: 60000ms 고정 (변경 시 백엔드 부하 고려)
-3. **에러 상태 필수**: API 실패 시 로딩 스피너 또는 에러 배너 표시
-4. **타입 힌트**: TSX 컴포넌트 props 전부 interface 정의 필수
-5. **`lib/api.ts`**: API 클라이언트 함수는 이 파일에서만 export — 컴포넌트 내 직접 fetch 금지
-6. **반응형 디자인 필수**: 모바일 대응 (Tailwind `sm:` / `md:` 브레이크포인트 적용)
-7. **실시간 알림 UI**: ORANGE/RED 경보 발령 시 배너 또는 팝업으로 즉시 표시
-
-## 현재 DUMMY_DATA 위치
-- `components/RiskMap.tsx` — DUMMY_DATA 상수 → `/api/v1/signals/latest` 연결 필요
-- `components/TrendChart.tsx` — 이미 API 연동 (안정화 필요)
-- `components/AlertReport.tsx` — 60초 폴링 구현됨
-
-## 폴더 구조
+## 실제 폴더 구조
 ```
 frontend/
-├── src/
-│   └── app/
-│       ├── page.tsx          # 메인 대시보드 (RiskMap+TrendChart+AlertReport)
-│       ├── layout.tsx
-│       ├── globals.css       # ← D2 박정빈 담당
-│       ├── lib/
-│       │   └── api.ts        # API 클라이언트 (D1 담당)
-│       └── components/
-│           ├── RiskMap.tsx   # Deck.gl 3D 히트맵 (D1 담당)
-│           ├── TrendChart.tsx
-│           └── AlertReport.tsx
+├── package.json
+├── next.config.mjs
+└── src/
+    ├── app/
+    │   ├── page.tsx                 # 랜딩
+    │   ├── dashboard/page.tsx       # 17지역 대시보드 (메인)
+    │   ├── api/v1/[...path]/route.ts  # 백엔드 프록시 (UIS_API_INTERNAL_URL 사용)
+    │   ├── layout.tsx
+    │   └── globals.css
+    ├── components/
+    │   ├── map/
+    │   │   ├── korea-map.tsx        # SVG fallback
+    │   │   └── korea-map-naver.tsx  # 네이버 지도 (key 있을 때)
+    │   ├── charts/
+    │   │   └── trend-chart.tsx
+    │   ├── alert/
+    │   │   ├── ai-report-card.tsx   # SSE 스트림 RAG 리포트
+    │   │   ├── alert-banner.tsx
+    │   │   └── kpi-card.tsx
+    │   ├── anomaly/
+    │   ├── chat/                    # /api/v1/chat SSE
+    │   └── ui/                      # panel, risk-pill, icons
+    ├── hooks/
+    │   ├── useSignalTimeseries.ts   # @tanstack/react-query 기반
+    │   └── ...
+    └── lib/
+        └── api.ts                   # API_BASE 단일 출처
 ```
 
-## 주차별 개발 계획 (8주 로드맵)
+## API 연동 패턴
+| 컴포넌트 | 엔드포인트 | 패턴 |
+|---|---|---|
+| `dashboard/page.tsx` | `/api/v1/signals/*` | react-query + 60초 staleTime |
+| `ai-report-card.tsx` | `/api/v1/alerts/stream` | EventSource (SSE) |
+| `chat/*` | `/api/v1/chat/*` | EventSource (SSE) |
+| `trend-chart.tsx` | `/api/v1/signals/timeseries` | `useSignalTimeseries` hook |
 
-| 주차 | 목표 |
-|------|------|
-| 1~2주 | Next.js 14 프로젝트 셋업 + Deck.gl 지도 프로토타입 |
-| 3~4주 | 시계열 차트 구현 + FastAPI 엔드포인트 연동 |
-| 5~6주 | 경보 UI (배너/팝업) + 반응형 디자인 적용 |
-| 7~8주 | UX 테스트 + 프로덕션 배포 |
+> 컴포넌트 내 `fetch` 직접 호출 금지 — `lib/api.ts` 또는 `hooks/use*` 경유.
 
-> **[경고 — 가이드.pdf]** Next.js 전환이 지연될 경우 **Streamlit 유지**로 즉시 전환.
-> Next.js 전환 지연은 8주 전체를 날릴 수 있는 최대 위험 요소.
-> 3주차 종료 시 Next.js 지도 미완성이면 Streamlit fallback으로 결정.
+## 코드 규칙
+1. 새 데이터 fetch → `hooks/use*.ts` 신설 (react-query `useQuery`/`useMutation`)
+2. SSE → 클라이언트 컴포넌트 (`"use client"`) + `EventSource`, cleanup 필수
+3. 환경변수는 반드시 `process.env.NEXT_PUBLIC_*` 또는 서버에서 `process.env.UIS_API_INTERNAL_URL`
+4. props 타입 inline interface, any 금지 (`tsc --noEmit` CI 게이트)
+5. 모바일 대응 Tailwind `sm:`/`md:` 브레이크포인트
+6. RED/ORANGE 경보는 `alert-banner` 또는 `ai-report-card` 즉시 표시
+
+## 빌드 / 테스트
+```bash
+cd frontend
+npm install
+npm run dev          # http://localhost:3000
+npm run type-check   # tsc --noEmit (CI에서 frontend-lint 잡)
+npm run build        # 프로덕션 빌드
+```
+
+## Phase 로드맵
+- Phase 2 ✅ — Next.js 14.2.3 대시보드 + SSE/RAG + 17지역 + react-query 완료
+- Phase 3 🔧 — 네이버 지도 prod 키 안정화, 챗봇 RAG 확장, PWA 모바일 푸시
+- Phase 4 📋 — Next.js 15.2 마이그레이션 (React 19 + Turbopack + async cookies/headers 브레이킹 대응)
 
 ## 권장 스킬
-- `/frontend-design` — 컴포넌트 신규 생성
-- `/arrange` — 레이아웃·간격
-- `/audit` — API 연동 후 접근성·성능 체크
-- `/harden` — 에러 상태·오버플로우 처리
-- `/adapt` — 반응형 디자인 (모바일 브레이크포인트)
+- `/frontend-design` 컴포넌트 신규
+- `/arrange` 레이아웃·간격
+- `/audit` 접근성·성능
+- `/harden` 에러·오버플로우
+- `/adapt` 모바일 브레이크포인트

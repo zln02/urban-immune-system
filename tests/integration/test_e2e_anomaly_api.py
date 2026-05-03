@@ -7,16 +7,13 @@
 """
 from __future__ import annotations
 
-import json
-import types
 from pathlib import Path
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import numpy as np
 import pytest
 import torch
-
 
 # ──────────────────────────────────────────────────────────────────────────────
 # 헬퍼: mock AsyncSession (risk_scores / layer_signals 빈 결과 반환)
@@ -94,7 +91,7 @@ async def test_anomaly_200_returns_17_regions() -> None:
     pred_module._AUTOENCODER_CACHE = _make_fake_cache()
 
     try:
-        from backend.app.api.predictions import get_anomaly_scores, _KR_REGIONS
+        from backend.app.api.predictions import _KR_REGIONS, get_anomaly_scores
 
         result = await get_anomaly_scores(db=_make_empty_session())
 
