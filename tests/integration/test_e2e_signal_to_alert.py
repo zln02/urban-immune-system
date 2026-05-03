@@ -1,7 +1,7 @@
 """통합 테스트: layer_signals INSERT → /api/v1/alerts/current GET 200 검증."""
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -58,9 +58,10 @@ async def test_signal_to_alert_returns_200_with_risk_score():
          patch("backend.app.api.alerts.get_latest_risk_score",
                new_callable=AsyncMock, return_value=None):
 
-        from backend.app.main import app
-        from backend.app.database import get_db
         from starlette.testclient import TestClient
+
+        from backend.app.database import get_db
+        from backend.app.main import app
 
         app.dependency_overrides[get_db] = _override_get_db
         try:
@@ -101,9 +102,10 @@ async def test_regions_endpoint_returns_alerts_array():
     with patch("backend.app.tasks.broker.startup", new_callable=AsyncMock), \
          patch("backend.app.tasks.broker.shutdown", new_callable=AsyncMock):
 
-        from backend.app.main import app
-        from backend.app.database import get_db
         from starlette.testclient import TestClient
+
+        from backend.app.database import get_db
+        from backend.app.main import app
 
         app.dependency_overrides[get_db] = _override_get_db
         try:

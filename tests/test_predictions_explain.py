@@ -6,7 +6,6 @@ TFT attention 기반 XAI 엔드포인트 동작 검증.
 """
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from unittest.mock import patch
 

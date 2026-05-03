@@ -4,10 +4,8 @@
 """
 from __future__ import annotations
 
-import asyncio
-from contextlib import asynccontextmanager
 from typing import AsyncIterator
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -42,8 +40,8 @@ def test_rag_report_stream_first_chunk_received():
 
     async def _mock_get_db():
         # 최소한의 in-memory session 반환 (signals 없이도 fallback 응답)
-        from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
         from sqlalchemy import text as sa_text
+        from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
         engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
         async with engine.begin() as conn:
@@ -69,6 +67,7 @@ def test_rag_report_stream_first_chunk_received():
          patch("backend.app.tasks.broker.shutdown", new_callable=AsyncMock):
 
         from starlette.testclient import TestClient
+
         from backend.app.main import app
 
         with TestClient(app, raise_server_exceptions=False) as c:
@@ -91,8 +90,8 @@ def test_rag_report_stream_anthropic_api_not_called():
         yield "테스트 청크"
 
     async def _mock_get_db():
-        from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
         from sqlalchemy import text as sa_text
+        from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
         engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
         async with engine.begin() as conn:
@@ -109,7 +108,7 @@ def test_rag_report_stream_anthropic_api_not_called():
             yield session
         await engine.dispose()
 
-    with patch("backend.app.api.alerts._stream_claude", side_effect=_mock_stream) as mock_fn, \
+    with patch("backend.app.api.alerts._stream_claude", side_effect=_mock_stream), \
          patch("backend.app.api.alerts.get_db", return_value=_mock_get_db()), \
          patch("backend.app.api.alerts._get_vdb", return_value=None), \
          patch("backend.app.api.alerts._retrieve_rag_context",
@@ -119,6 +118,7 @@ def test_rag_report_stream_anthropic_api_not_called():
          patch("backend.app.tasks.broker.shutdown", new_callable=AsyncMock):
 
         from starlette.testclient import TestClient
+
         from backend.app.main import app
 
         with TestClient(app, raise_server_exceptions=False) as c:

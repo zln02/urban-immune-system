@@ -20,7 +20,6 @@ from pipeline.report_trigger import (
     run_nightly_reports,
 )
 
-
 # ---------------------------------------------------------------------------
 # _build_report_prompt 테스트
 # ---------------------------------------------------------------------------
@@ -204,7 +203,11 @@ async def test_run_nightly_reports_counts_generated(monkeypatch: pytest.MonkeyPa
     """run_nightly_reports가 생성 건수를 올바르게 반환하는지 검증."""
     call_count = 0
 
-    async def fake_generate(region: str, triggered_by: str = "system_scheduler", trigger_source: str | None = None) -> dict | None:
+    async def fake_generate(
+        region: str,
+        triggered_by: str = "system_scheduler",
+        trigger_source: str | None = None,
+    ) -> dict | None:
         nonlocal call_count
         # 첫 3개 지역만 성공, 나머지는 스킵(None)
         if call_count < 3:
@@ -223,7 +226,11 @@ async def test_run_nightly_reports_continues_on_error() -> None:
     """지역 처리 중 예외가 발생해도 다음 지역으로 계속 진행하는지 검증."""
     call_regions: list[str] = []
 
-    async def fake_generate(region: str, triggered_by: str = "system_scheduler", trigger_source: str | None = None) -> dict | None:
+    async def fake_generate(
+        region: str,
+        triggered_by: str = "system_scheduler",
+        trigger_source: str | None = None,
+    ) -> dict | None:
         call_regions.append(region)
         if region == "부산광역시":
             raise RuntimeError("의도적 오류")
@@ -252,7 +259,12 @@ async def test_insert_alert_report_includes_audit_and_xai_columns() -> None:
 
     feature_values = {"l1": 40.0, "l2": 55.0, "l3": 32.0, "composite": 44.3}
     rag_sources = [{"topic": "influenza_guideline", "score": 0.87, "source": "KCDC"}]
-    model_metadata = {"model": "claude-haiku-4-5-20251001", "max_tokens": 1200, "system_prompt_hash": "abc123ef", "prompt_version": "v2"}
+    model_metadata = {
+        "model": "claude-haiku-4-5-20251001",
+        "max_tokens": 1200,
+        "system_prompt_hash": "abc123ef",
+        "prompt_version": "v2",
+    }
 
     result_id = await _insert_alert_report(
         region="서울특별시",

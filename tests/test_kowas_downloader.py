@@ -95,8 +95,8 @@ def test_list_reports_parses_title_pattern() -> None:
 
 def test_list_reports_returns_sorted_by_doc_no() -> None:
     """list_reports 반환값이 bbs_doc_no 내림차순으로 정렬되는지 검증."""
-    from pipeline.collectors.kowas_downloader import list_reports, KowasReport
-    import re
+
+    from pipeline.collectors.kowas_downloader import list_reports
 
     html_page1 = (
         '<a href="?">q_bbsDocNo=20260420000000001 '

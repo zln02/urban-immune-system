@@ -108,9 +108,18 @@ class TestEnrich:
 class TestAggregate:
     def test_mean_median(self) -> None:
         per_region = {
-            "A": {"f1": 0.9, "mcc": 0.8, "auprc": 0.85, "precision": 1.0, "recall": 0.8, "false_alarm_rate": 0.1, "balanced_accuracy": 0.85},
-            "B": {"f1": 0.8, "mcc": 0.7, "auprc": 0.75, "precision": 0.9, "recall": 0.7, "false_alarm_rate": 0.2, "balanced_accuracy": 0.75},
-            "C": {"f1": 0.7, "mcc": 0.6, "auprc": 0.65, "precision": 0.8, "recall": 0.6, "false_alarm_rate": 0.3, "balanced_accuracy": 0.65},
+            "A": {
+                "f1": 0.9, "mcc": 0.8, "auprc": 0.85, "precision": 1.0,
+                "recall": 0.8, "false_alarm_rate": 0.1, "balanced_accuracy": 0.85,
+            },
+            "B": {
+                "f1": 0.8, "mcc": 0.7, "auprc": 0.75, "precision": 0.9,
+                "recall": 0.7, "false_alarm_rate": 0.2, "balanced_accuracy": 0.75,
+            },
+            "C": {
+                "f1": 0.7, "mcc": 0.6, "auprc": 0.65, "precision": 0.8,
+                "recall": 0.6, "false_alarm_rate": 0.3, "balanced_accuracy": 0.65,
+            },
         }
         agg = aggregate_regional_metrics(per_region)
         assert agg["n_regions"] == 3

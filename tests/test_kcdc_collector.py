@@ -9,12 +9,9 @@
 """
 from __future__ import annotations
 
-import asyncio
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 
 # ─────────────────────── Fixtures ────────────────────────────────────────
 SAMPLE_API_XML = """<?xml version="1.0" encoding="UTF-8"?>
@@ -144,7 +141,7 @@ def test_fallback_to_archive_when_api_key_missing():
 # ─────────────────────── Case 4: 내장 아카이브 구조 검증 ─────────────────
 def test_archive_record_structure_and_fields():
     """내장 아카이브 레코드가 필수 필드를 모두 갖추는지, weeks 파라미터가 반영되는지 검증."""
-    from pipeline.collectors.kcdc_collector import collect_weekly_confirmed, REGIONS_17
+    from pipeline.collectors.kcdc_collector import REGIONS_17, collect_weekly_confirmed
 
     records = collect_weekly_confirmed(disease="influenza", weeks=20, regions=["서울특별시", "경기도"])
 
