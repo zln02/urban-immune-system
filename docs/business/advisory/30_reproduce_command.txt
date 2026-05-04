@@ -1,0 +1,27 @@
+Urban Immune System — 재현 가능성 검증
+
+# 1줄 명령으로 17지역 walk-forward 백테스트 수치 재현
+$ cd ~/urban-immune-system && source .venv/bin/activate
+$ python -m ml.reproduce_validation
+
+# 출력:
+#   F1=0.841 / Precision=0.960 / Recall=0.768 / AUC=0.931
+#   FAR (게이트 ON): 0.162 / FAR (게이트 OFF): 0.538
+#   평균 lead: 5.9주 (Top: 세종 9주, 부산·제주 8주, 서울 7주, 경기 6주)
+#   Granger composite p=0.021 / L3 p=0.007 (5% 미만 = 통계적 유의)
+#
+# 결과 파일:
+#   analysis/outputs/backtest_17regions.json
+#   analysis/outputs/lead_time_summary.json
+#   ml/outputs/validation.json
+
+# 추가 검증 — 17지역 백테스트 그래프
+$ python -m analysis.plot_backtest          # → analysis/outputs/*.png
+
+# 추가 검증 — TFT 실데이터 학습 (50 epoch)
+$ python -m ml.tft.train_real --epochs 50   # → ml/outputs/tft_real_metrics.json
+
+# 추가 검증 — 라이브 추론 API
+$ curl -X POST http://localhost:8001/predict/tft-14d \
+       -H "Content-Type: application/json" \
+       -d '{"region":"서울특별시","horizon_weeks":14}'

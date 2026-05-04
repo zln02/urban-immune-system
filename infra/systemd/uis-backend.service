@@ -1,0 +1,26 @@
+[Unit]
+Description=Urban Immune System — FastAPI Backend (port 8001)
+After=network-online.target uis-scheduler.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=wlsdud5035
+Group=wlsdud5035
+WorkingDirectory=/home/wlsdud5035/urban-immune-system
+EnvironmentFile=/home/wlsdud5035/urban-immune-system/.env
+ExecStart=/home/wlsdud5035/urban-immune-system/.venv/bin/uvicorn backend.app.main:app --host 127.0.0.1 --port 8001
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:/var/log/uis-backend.log
+StandardError=append:/var/log/uis-backend.log
+
+# 보안 하드닝 (scheduler.service 와 동일 정책)
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=/home/wlsdud5035/urban-immune-system /var/log
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

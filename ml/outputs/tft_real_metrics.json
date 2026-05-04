@@ -1,0 +1,265 @@
+{
+  "generated_at": "2026-04-29T07:48:21.894922+00:00",
+  "_superseded_by": "ml/outputs/tft_real_metrics_d4retrain.json (2026-05-03 D-4 재학습, encoder=12 / pred=2 D-5 안정 config, params=70253, best_val_loss=9.59). 본 파일(2026-04-29, encoder=24 / pred=3, params=148601)은 비교용 기록 보존. 발표 인용 금지 — 신뢰 수치는 analysis/outputs/backtest_17regions.json (XGBoost 17지역 walk-forward) + tft_real_metrics_d4retrain.json (TFT 보조).",
+  "config": {
+    "data_source": "real_db",
+    "pathogen": "influenza",
+    "n_weeks_meta": 26,
+    "n_regions": 17,
+    "n_rows": 1955,
+    "max_epochs": 50,
+    "batch_size": 32,
+    "max_encoder_length": 24,
+    "max_prediction_length": 3,
+    "feature_cols": [
+      "l1_otc",
+      "l2_wastewater",
+      "l3_search",
+      "temperature"
+    ],
+    "target_col": "confirmed_future",
+    "min_weeks_per_region": 30
+  },
+  "model_params": 148601,
+  "best_checkpoint": "/home/wlsdud5035/urban-immune-system/ml/checkpoints/tft_real/tft_best.ckpt",
+  "best_val_loss": 5.47993803024292,
+  "loss_curve_tail": [
+    {
+      "epoch": 11,
+      "step": 695,
+      "train_loss": null,
+      "val_loss": null
+    },
+    {
+      "epoch": 12,
+      "step": 699,
+      "train_loss": 1.8878239393234253,
+      "val_loss": null
+    },
+    {
+      "epoch": 12,
+      "step": 749,
+      "train_loss": 2.3635120391845703,
+      "val_loss": null
+    },
+    {
+      "epoch": 12,
+      "step": 753,
+      "train_loss": null,
+      "val_loss": 7.780022144317627
+    },
+    {
+      "epoch": 12,
+      "step": 753,
+      "train_loss": null,
+      "val_loss": null
+    },
+    {
+      "epoch": 13,
+      "step": 799,
+      "train_loss": 1.490652322769165,
+      "val_loss": null
+    },
+    {
+      "epoch": 13,
+      "step": 811,
+      "train_loss": null,
+      "val_loss": 8.553763389587402
+    },
+    {
+      "epoch": 13,
+      "step": 811,
+      "train_loss": null,
+      "val_loss": null
+    },
+    {
+      "epoch": 14,
+      "step": 849,
+      "train_loss": 2.177042961120605,
+      "val_loss": null
+    },
+    {
+      "epoch": 14,
+      "step": 869,
+      "train_loss": null,
+      "val_loss": 9.827455520629885
+    },
+    {
+      "epoch": 14,
+      "step": 869,
+      "train_loss": null,
+      "val_loss": null
+    },
+    {
+      "epoch": 15,
+      "step": 899,
+      "train_loss": 1.5758033990859983,
+      "val_loss": null
+    },
+    {
+      "epoch": 15,
+      "step": 927,
+      "train_loss": null,
+      "val_loss": 9.03053092956543
+    },
+    {
+      "epoch": 15,
+      "step": 927,
+      "train_loss": null,
+      "val_loss": null
+    },
+    {
+      "epoch": 16,
+      "step": 949,
+      "train_loss": 2.9718122482299805,
+      "val_loss": null
+    },
+    {
+      "epoch": 16,
+      "step": 985,
+      "train_loss": null,
+      "val_loss": 9.710489273071287
+    },
+    {
+      "epoch": 16,
+      "step": 985,
+      "train_loss": null,
+      "val_loss": null
+    },
+    {
+      "epoch": 17,
+      "step": 999,
+      "train_loss": 2.121419668197632,
+      "val_loss": null
+    },
+    {
+      "epoch": 17,
+      "step": 1043,
+      "train_loss": null,
+      "val_loss": 9.464824676513672
+    },
+    {
+      "epoch": 17,
+      "step": 1043,
+      "train_loss": null,
+      "val_loss": null
+    },
+    {
+      "epoch": 18,
+      "step": 1049,
+      "train_loss": 1.8780269622802732,
+      "val_loss": null
+    },
+    {
+      "epoch": 18,
+      "step": 1099,
+      "train_loss": 2.794870615005493,
+      "val_loss": null
+    },
+    {
+      "epoch": 18,
+      "step": 1101,
+      "train_loss": null,
+      "val_loss": 9.842028617858888
+    },
+    {
+      "epoch": 18,
+      "step": 1101,
+      "train_loss": null,
+      "val_loss": null
+    },
+    {
+      "epoch": 19,
+      "step": 1149,
+      "train_loss": 2.874781847000122,
+      "val_loss": null
+    },
+    {
+      "epoch": 19,
+      "step": 1159,
+      "train_loss": null,
+      "val_loss": 8.894729614257812
+    },
+    {
+      "epoch": 19,
+      "step": 1159,
+      "train_loss": null,
+      "val_loss": null
+    },
+    {
+      "epoch": 20,
+      "step": 1199,
+      "train_loss": 2.4094088077545166,
+      "val_loss": null
+    },
+    {
+      "epoch": 20,
+      "step": 1217,
+      "train_loss": null,
+      "val_loss": 9.702598571777344
+    },
+    {
+      "epoch": 20,
+      "step": 1217,
+      "train_loss": null,
+      "val_loss": null
+    }
+  ],
+  "prediction_summary": {
+    "n_samples": 17,
+    "horizon_steps": 3,
+    "mean_pred_per_horizon": [
+      19.58231544494629,
+      18.65125274658203,
+      17.654829025268555
+    ]
+  },
+  "attention_summary": {
+    "encoder_attention_shape": [
+      17,
+      3,
+      4,
+      24
+    ],
+    "encoder_variable_importance_shape": [
+      17,
+      24,
+      1,
+      7
+    ],
+    "mean_attention_per_encoder_step": [
+      0.0416666679084301,
+      0.04047081619501114,
+      0.03938077762722969
+    ],
+    "mean_encoder_variable_importance": [
+      [
+        0.4364125430583954,
+        0.08053078502416611,
+        0.11317930370569229,
+        0.1380726546049118,
+        0.06560535728931427,
+        0.013322284445166588,
+        0.1528770476579666
+      ]
+    ],
+    "encoder_variable_names": [
+      "encoder_length",
+      "confirmed_future_center",
+      "confirmed_future_scale",
+      "time_idx",
+      "relative_time_idx",
+      "l1_otc",
+      "l2_wastewater",
+      "l3_search",
+      "temperature",
+      "confirmed_future"
+    ],
+    "attention_top3_kr": [
+      "기온",
+      "OTC약국판매",
+      "하수기반감시"
+    ],
+    "attention_summary_kr": "기온(AUX) 0.15 · OTC(L1) 0.14 · 하수(L2) 0.07"
+  }
+}
