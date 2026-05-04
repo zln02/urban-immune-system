@@ -167,26 +167,30 @@ urban-immune-system/
 └── docs/             architecture · data-sources · business/
 ```
 
-## 🗺 Roadmap
+## 🗺 현재 상태 (D-3, 2026-05-04)
 
-- [x] **Phase 1** · Streamlit MVP + 시뮬레이션 데이터
-- [x] **Phase 2** · FastAPI 백엔드 + Kafka 파이프라인 + 17개 시·도 백테스트
-- [x] **Phase 3** · Next.js 대시보드 + SSE 스트리밍 + RAG 경보 리포트
-- [x] **Phase 4** · 17지역 walk-forward baseline (XGBoost F1=0.882) + TFT 재학습(attention 해석) + 데모 시나리오 e2e
-- [ ] **Phase 5** · Kafka Consumer 실구현 (현재 InMemoryBroker), HIRA OpenAPI L1 지역 분리, ISMS-P 풀 점검, 첫 PoC 계약
+- 17지역 baseline 산출 완료 (위 검증 결과 참조)
+- TFT D-4 재학습 완료 (encoder=12, pred=2, attention 해석 가능)
+- FastAPI backend (port 8001) 라우트/CORS/보안 미들웨어 동작
+- Streamlit 대시보드 5탭 + Next.js 14 대시보드 동시 운영
+- docker compose 5서비스 e2e 헬스체크 통과
+- pytest tests 22개 통과
+
+### 알려진 한계 (Phase 2 이월)
+
+- Kafka Consumer는 InMemoryBroker 사용 중 (실 KRaft consumer 미연결)
+- HIRA OpenAPI L1은 전국 단일값 broadcast (지역 분리 미적용)
+- ISMS-P 전체 통제항목 풀 점검 미완료
 
 ## ⚠️ 한계와 정직성
 
-전문가 운영 시스템 대비 **솔직한 격차**를 명시한다.
+전문가 운영 시스템 대비 **솔직한 격차**를 명시한다. (운영 인프라 한계는 위 "알려진 한계" 참조)
 
 - **표본 한계**: 시즌 단위 분석 — Granger 검정 통계적 유의성 제한적, 다음 시즌 데이터 누적 필수
 - **L2 약함**: 하수 신호 Granger p=0.267로 단독 유의성 부족 → 가중치 0.30으로 축소 검토 중
 - **TFT 위치**: 주모델은 XGBoost(walk-forward CV), TFT는 attention 기반 해석성 보조 (D-4 재학습 완료, prod 전환은 데이터 누적 후)
 - **L2 자동화**: KOWAS PDF 자동 다운로더 구현됐으나 일부 주차 carry-forward 적용 (`backtest_17regions.json` 참조)
-- **L1 지역성**: 네이버 쇼핑인사이트 API 제약으로 전국 단일값 → 17지역 broadcast (HIRA OpenAPI 교체로 Phase 5 분리)
-- **Kafka Consumer**: 현재 InMemoryBroker로 동작 (실 Consumer 구현 Phase 5)
 - **데이터 출처**: KCDC 확진 카운트는 내장 아카이브 기반(실시간 KCDC API 미연동)
-- **인증**: ISMS-P 풀 점검 Phase 5 예정
 
 본 수치는 학부 캡스톤 산출물이며, BlueDot/CDC NWSS 같은 운영 시스템과 직접 비교 불가.
 
