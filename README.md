@@ -176,7 +176,7 @@ urban-immune-system/
 - docker compose 5서비스 e2e 헬스체크 통과
 - pytest tests 22개 통과
 
-### 알려진 한계 (Phase 2 이월)
+### 알려진 한계 (Phase 5 이월)
 
 - Kafka Consumer는 InMemoryBroker 사용 중 (실 KRaft consumer 미연결)
 - HIRA OpenAPI L1은 전국 단일값 broadcast (지역 분리 미적용)
