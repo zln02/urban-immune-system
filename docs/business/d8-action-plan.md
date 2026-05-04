@@ -77,7 +77,7 @@ uis-advisory-package-2026-W18.zip
 ├── walk_forward_backtest.pdf     # 17지역 F1 0.841·5.9주·Granger p=0.021
 ├── architecture_diagram.pdf      # S05 6단계 시스템 + S05A 데이터 근거
 ├── reproduce_command.txt         # `python -m ml.reproduce_validation`
-├── demo_url.txt                  # http://34.158.197.122:3000/dashboard
+├── demo_url.txt                  # http://34.47.113.176:3000/dashboard
 ├── code_snapshot.tar.gz          # pipeline/scorer.py + ml/xgboost/model.py
 ├── slides_pdf.pdf                # 27장 슬라이드 PDF export
 └── DPIA_draft.md                 # 개인정보 영향평가 초안 (KISA 용)
@@ -152,7 +152,7 @@ zip -r uis-advisory-package-W18.zip docs/business/advisory/
 
 ### 녹화 시나리오 (3분 영상)
 
-1. **0:00~0:30** — 대시보드 진입 (`http://34.158.197.122:3000/dashboard`)
+1. **0:00~0:30** — 대시보드 진입 (`http://34.47.113.176:3000/dashboard`)
 2. **0:30~1:00** — 17지역 지도 인터랙션 (서울 클릭 → 위험도 상세)
 3. **1:00~1:30** — 시계열 차트 (composite 26주 추세)
 4. **1:30~2:30** — Claude RAG 리포트 SSE 생성 (한 줄씩 흘러나오는 것)
@@ -189,7 +189,7 @@ ffmpeg -f x11grab -s 1920x1080 -i :0.0 -framerate 30 \
 
 **1. 대시보드 진입 (S10 슬라이드 도중)**
 - 김나영: 노트북 좌측 모니터 — 슬라이드
-- 김나영: 노트북 우측 모니터 — `http://34.158.197.122:3000/dashboard`
+- 김나영: 노트북 우측 모니터 — `http://34.47.113.176:3000/dashboard`
 - 발표 슬라이드는 외부 키보드로 → 키 누름
 
 **2. 라이브 시연 (S10A 자동 발송 직전)**

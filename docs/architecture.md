@@ -69,7 +69,7 @@ RED    : composite ≥ 75
 ## 인프라 / 배포
 
 - **개발**: `docker compose up -d` (Kafka KRaft + TimescaleDB + Qdrant + kafka-ui)
-- **운영(현재)**: GCP e2-standard-2 단일 노드 `34.158.197.122` (4/29 IP 변경, ephemeral — static reserve 권장)
+- **운영(현재)**: GCP e2-standard-2 단일 노드 `${UIS_HOST}` (예: `34.47.113.176`, static IP `uis-capstone-ip` 예약 완료 — 2026-05-04)
 - **K8s 매니페스트**: `infra/k8s/` 정의 완료, Phase 4 배포 예정
 - **CI**: `.github/workflows/ci.yml` 6잡 (backend-lint·test, pipeline-lint, ml-lint, frontend-lint(tsc), legacy-test) · coverage gate `--cov-fail-under=35`
 

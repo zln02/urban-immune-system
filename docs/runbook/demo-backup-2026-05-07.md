@@ -1,5 +1,7 @@
 # 데모 영상 백업 가이드 (2026-05-07 중간발표)
 
+> ℹ️ IP `34.47.113.176`은 static 예약 완료(`uis-capstone-ip`, 2026-05-04). VM 재시작에도 유지. 발표 후 release 시 재예약 필요.
+
 > 목적: 발표 당일 GCP·인터넷 장애 시 즉시 폴백할 3분 데모 영상을 미리 녹화한다.
 > 녹화 시점: D-1 (2026-05-06). 발표 직전 코드 freeze 후.
 
@@ -21,10 +23,10 @@ ssh -L 3000:localhost:3000 \
     -L 8501:localhost:8501 \
     -L 6333:localhost:6333 \
     -L 5432:localhost:5432 \
-    wlsdud5035@34.158.197.122
+    wlsdud5035@34.47.113.176
 ```
 
-> ephemeral IP. 발표 직전 `gcloud compute instances describe uis-capstone --zone=...` 로 IP 재확인.
+> static IP 예약 완료 — 발표 직전 `gcloud compute addresses describe uis-capstone-ip` 로 status=`IN_USE` 재확인.
 
 ## 2. 데모 시나리오 (총 ~3분, 5 컷)
 
