@@ -12,8 +12,8 @@
 - `tests/` 전반 (단위 113 + 통합 19)
 
 ## 운영 환경
-- **GCP e2-standard-2 단일 노드** — `34.158.197.122` (4/29 IP 변경, ephemeral)
-- ⚠️ **static IP reserve 권장** — ephemeral 은 재부팅 시 변경 위험 (영업 데모 URL 망가짐)
+- **GCP e2-standard-2 단일 노드** — `${UIS_HOST}` (현재 static IP `uis-capstone-ip` 예약 완료)
+- 발표 후 release 시 재예약 필요 — 발표 도중 IP 변동 위험 제거됨
 - 타임존 KST (Asia/Seoul, UTC+9)
 - OS: Debian 12 / Ubuntu 22.04
 

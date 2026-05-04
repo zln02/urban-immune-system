@@ -40,6 +40,6 @@
 ## 연락처
 
 - 이메일: wlsdud5035@gmail.com (PM)
-- 데모: http://34.158.197.122:3000/dashboard
-- 슬라이드: http://34.158.197.122:3000/slides/index.html
+- 데모: http://34.47.113.176:3000/dashboard
+- 슬라이드: http://34.47.113.176:3000/slides/index.html
 - 깃허브: (내부 비공개 — 자문 회신 후 액세스 제공 검토)
