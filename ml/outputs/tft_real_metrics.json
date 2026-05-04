@@ -1,6 +1,6 @@
 {
   "generated_at": "2026-04-29T07:48:21.894922+00:00",
-  "_deprecated": "2026-05-03 D-4 점검: 본 산출물은 (24, 3) 기준 학습 결과이며, 현 train_real.py 는 (12, 2) 로 안정화됨. 발표 슬라이드 인용 금지 — 재학습 후 재생성 필요. 신뢰 가능 수치는 analysis/outputs/backtest_17regions.json (XGBoost 17지역 walk-forward) 만 인용할 것.",
+  "_superseded_by": "ml/outputs/tft_real_metrics_d4retrain.json (2026-05-03 D-4 재학습, encoder=12 / pred=2 D-5 안정 config, params=70253, best_val_loss=9.59). 본 파일(2026-04-29, encoder=24 / pred=3, params=148601)은 비교용 기록 보존. 발표 인용 금지 — 신뢰 수치는 analysis/outputs/backtest_17regions.json (XGBoost 17지역 walk-forward) + tft_real_metrics_d4retrain.json (TFT 보조).",
   "config": {
     "data_source": "real_db",
     "pathogen": "influenza",
