@@ -123,9 +123,6 @@ frontend/out/
 *.pdf
 docs/slides/
 docs/weekly-reports/
-# Next.js 정적 미러 (sync-slides.sh 로 로컬·서버에서 재생성)
-frontend/public/slides/
-
 # 회의자료 원본 (PDF/PPTX는 로컬 보관, MD 노트는 git 추적)
 docs/meeting/*.pdf
 docs/meeting/*.pptx
