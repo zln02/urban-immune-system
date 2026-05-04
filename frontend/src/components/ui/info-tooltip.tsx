@@ -41,7 +41,7 @@ export const GLOSSARY: Record<GlossaryKey, { title: string; body: string }> = {
   },
   leadtime: {
     title: "선행 시간 (lead time)",
-    body: "임상 신고(KCDC)가 늘어나기 며칠/몇 주 전에 우리 신호가 먼저 올랐는지. 양수일수록 좋음. 17지역 평균 5.9주(약 41일) 선행.",
+    body: "임상 신고(KCDC)가 늘어나기 며칠/몇 주 전에 우리 신호가 먼저 올랐는지. 양수일수록 좋음. 17지역 평균 6.47주(약 45일) 선행.",
   },
   f1: {
     title: "F1 점수",
