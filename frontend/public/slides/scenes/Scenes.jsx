@@ -589,7 +589,7 @@ function ArchFooter({ delay }) {
   const cells = [
     { tag: 'INGEST',   text: '수집·정규화·적재 = 데이터 우체통 + 시계열 DB' },
     { tag: 'ENSEMBLE', text: '앙상블 + 게이트 B = 단일신호 차단 룰을 코드로 강제' },
-    { tag: 'SERVE',    text: 'TFT 7·14·21d · AE 95p · RAG Claude + Qdrant top-5' },
+    { tag: 'SERVE',    text: 'TFT 7·14·21d · AE 99p · RAG Claude + Qdrant top-5' },
   ];
   // 좌우 패딩 100 균등, gap 24
   return (
@@ -713,7 +713,7 @@ function S08() {
     '교차검증 게이트 B — 단일신호 차단 코드 강제',
     'KOWAS PDF 픽셀 RGB 자동 파서 · 72 PDF',
     'Granger 인과검정 + CCF 리포트 (p=0.021)',
-    'TFT 79K params PoC + Attention top-3',
+    'TFT 70K params 실데이터 + Attention top-3',
     'RAG 9섹션 KDCA 표준 (Claude + Qdrant 17 docs)',
     'Next.js 17지역 지도 + SSE 실시간 리포트',
     'pytest 128 + GitHub Actions CI 통과',
@@ -769,7 +769,7 @@ function S09() {
     { name: 'RAG · Qdrant · WHO/ECDC/KDCA 17건 임베딩',           pct: 90 },
     { name: 'Infra · CI/CD · pytest 128 (정규화·DB·API·보안) · GH Actions',  pct: 85 },
     { name: 'Walk-forward 17지역 백테스트 · 1줄 재현',            pct: 80 },
-    { name: 'TFT 시계열 실학습 · 148K params · 실데이터 17지역 완료',  pct: 70 },
+    { name: 'TFT 시계열 실학습 · 70K params · 실데이터 17지역 완료',  pct: 70 },
   ];
   return (
     <>
@@ -1121,7 +1121,7 @@ function AnomalyTag({ delay }) {
       }} />
       <div>
         <div style={{ fontSize: 11, color: '#fff', fontWeight: 700 }}>이상탐지 · 부산</div>
-        <div style={{ fontSize: 9, color: WHITE_70, marginTop: 2 }}>재구성오차 0.78 (95p ↑)</div>
+        <div style={{ fontSize: 9, color: WHITE_70, marginTop: 2 }}>재구성오차 0.78 (99p ↑)</div>
       </div>
     </div>
   );
@@ -2129,7 +2129,7 @@ function S07C() {
     { t: '' },
     { t: '# ml/anomaly/autoencoder.py', dim: true },
     { t: 'threshold = np.percentile(errors, 95)', hi: true },
-    { t: '# 95p — 처음 보는 패턴만 이상 처리', dim: true },
+    { t: '# 99p — 처음 보는 패턴만 이상 처리', dim: true },
   ];
   return (
     <>
@@ -2138,7 +2138,7 @@ function S07C() {
       <Line x={120} y={200} delay={0.1} style={TYPE.title} width={1700}>미래로 과거를 학습하지 않는다.</Line>
 
       <CodeBox x={120} y={380} width={920} height={580} delay={0.5}
-        file="XGBoost walk-forward · Autoencoder 95p" lines={lines} />
+        file="XGBoost walk-forward · Autoencoder 99p" lines={lines} />
 
       <TrapPanel x={1080} y={380} width={720} height={520} delay={0.9}
         trap="일반 K-Fold(섞어 검증)는 미래 데이터로 과거를 학습 — 발표용 점수만 잘 나오고 실전에서 폭망."
@@ -2220,7 +2220,7 @@ function S07D2() {
               <div style={{ fontSize: 15, color: ACCENT, fontWeight: 700, fontFamily: CODE_FONT }}>alert_report.md</div>
               <div style={{ fontSize: 13, color: WHITE_70, marginTop: 4 }}>서울특별시 · 2025-W49 · alert_level: <span style={{ color: '#eab308', fontWeight: 700 }}>YELLOW</span></div>
             </div>
-            <div style={{ fontSize: 11, color: WHITE_45, fontFamily: CODE_FONT }}>Claude Sonnet 4.6 · SSE</div>
+            <div style={{ fontSize: 11, color: WHITE_45, fontFamily: CODE_FONT }}>Claude Haiku · SSE</div>
           </div>
 
           <ReportSection num="1" title="한 줄 요약"
@@ -2547,7 +2547,7 @@ function S07D() {
       <Line x={120} y={200} delay={0.1} style={TYPE.title} width={1700}>LLM 혼자 떠들지 않는다.</Line>
 
       <CodeBox x={120} y={380} width={920} height={580} delay={0.5}
-        file="Claude Sonnet 4.6 · Qdrant top-5 인용" lines={lines} />
+        file="Claude Haiku · Qdrant top-5 인용" lines={lines} />
 
       <TrapPanel x={1080} y={380} width={720} height={580} delay={0.9}
         trap="일반 챗봇은 그럴듯하게 지어낸다 — 보건당국이 절대 못 받는 이유."
