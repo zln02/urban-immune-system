@@ -138,6 +138,6 @@
       "far_pass": true,
       "lead_pass": true
     },
-    "notes_kr": "F1(0.841)·Precision(0.960)·FAR(0.162)·선행시간(5.9주) 4개 KPI 목표 달성. Recall(0.768)은 목표 0.85 미달 — 게이트 임계값 완화 또는 L2 가중치 상향으로 개선 가능. TFT는 합성 데이터 PoC 완료(79K params), 실데이터 12주 누적 후 프로덕션 전환 예정."
+    "notes_kr": "F1(0.841)·Precision(0.960)·FAR(0.162)·선행시간(5.9주) 4개 KPI 목표 달성. Recall(0.768)은 목표 0.85 미달 — 게이트 임계값 완화 또는 L2 가중치 상향으로 개선 가능. TFT는 합성 데이터 PoC 완료(79K params), 실데이터 12주 누적 후 프로덕션 전환 예정.\n참고: 17지역 5-fold 신 baseline은 analysis/outputs/backtest_17regions.json (F1=0.882, Lead=6.47w)"
   }
 }

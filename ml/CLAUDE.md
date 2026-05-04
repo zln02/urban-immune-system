@@ -6,7 +6,7 @@
 ## 기술 스택
 - PyTorch + PyTorch Forecasting (TFT)
 - scikit-learn (XGBoost, walk-forward CV)
-- LangChain + Qdrant (RAG)
+- Claude Haiku (RAG via Qdrant + MiniLM 임베딩)
 - FastAPI (추론 서빙, `serve.py`)
 
 ## 모델 선택 가이드
@@ -22,7 +22,7 @@
 # 목표: TFT (7/14/21일 예측) — Attention weight 해석 가능성 필수
 # Fallback: XGBoost (walk-forward) + LSTM (7/14일) — 데이터 증강 전
 # 이상탐지: Autoencoder (재구성 오차 99th percentile — ff17dfa 핫픽스 상향)
-# 리포트: RAG-LLM (Qdrant + GPT-4o-mini 또는 claude-haiku)
+# 리포트: Claude Haiku (RAG via Qdrant + MiniLM)
 ```
 
 ## LLM 설정
@@ -87,7 +87,7 @@ ml/
 ├── anomaly/
 │   └── autoencoder.py      # 이상탐지
 ├── rag/
-│   ├── report_generator.py # GPT-4o-mini / Claude-Haiku 리포트
+│   ├── report_generator.py # Claude Haiku 리포트 (default; openai legacy fallback)
 │   └── vectordb.py         # Qdrant 클라이언트
 ├── serve.py                # FastAPI 추론 엔드포인트
 └── checkpoints/            # ← 커밋 금지 (.gitignore)

@@ -65,7 +65,7 @@
 - **교차상관**: 하수 -2~-3주, OTC -1~-2주, 검색어 -1주 선행
 - **Granger 인과검정**: p < 0.05 (L1·L3 유의, L2 약함 — `analysis/outputs/lead_time_summary.json` 참조)
 - **3-Layer 17개 시·도 walk-forward 백테스트** (2025-2026 인플루엔자 시즌, n=1,020)
-  - F1=0.84 · Precision=0.96 · Recall=0.77 · FAR=0.16
-  - 평균 lead time 5.9주 (확진 peak 대비)
+  - F1=0.882 · Precision=0.949 · Recall=0.837 · FAR=0.206 (gate ON; 17지역 5-fold)
+  - 평균 lead time 6.47주 (확진 peak 대비)
   - 출처: `analysis/outputs/backtest_17regions.json`
 - **Train/Test Split**: walk-forward (TimeSeriesSplit, gap=4주)
