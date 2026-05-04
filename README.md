@@ -22,7 +22,8 @@
 ## 🎯 About
 
 약국 OTC 구매·하수 바이오마커·검색 트렌드라는 **비의료(non-clinical) 신호 3계층**을
-교차검증해 감염병 발생을 임상 신고보다 **평균 5.9주 선행**으로 포착한다.
+**XGBoost 주모델 + TFT 해석성 보조**로 교차검증해 감염병 발생을 임상 신고보다
+**평균 6.47주 선행**으로 포착한다.
 공공 보건당국(KDCA·지자체 역학조사과) 납품을 목표로 설계된 **B2G SaaS 프로토타입**.
 
 > Google Flu Trends 과대예측 실패 교훈 — **단일 계층 단독 경보 금지**, 최소 2개 계층 교차검증을 게이트 로직으로 강제한다.
@@ -36,23 +37,26 @@
 
 ## 📊 검증 결과
 
-> 17개 시·도 walk-forward 백테스트 (2025-2026 인플루엔자 시즌, n=1,020 주·지역)
-> 출처: [`analysis/outputs/backtest_17regions.json`](analysis/outputs/backtest_17regions.json)
+> 17개 시·도 walk-forward 백테스트 · gap = 4주 · 5-fold (2025-2026 인플루엔자 시즌)
+> 산출물: [`analysis/outputs/backtest_17regions.json`](analysis/outputs/backtest_17regions.json) — 재현 가능
 
 | Metric | Value | 기준선 |
 |---|---|---|
-| **F1-Score** | **0.84** | ≥ 0.80 ✅ |
-| **Precision** | **0.96** | ≥ 0.90 ✅ |
-| **Recall** | **0.77** | ≥ 0.75 ✅ |
-| **False Alarm Rate** | **0.16** | < 0.20 ✅ |
-| **Lead Time (avg)** | **5.9주** | ≥ 4주 ✅ |
+| **F1-Score** | **0.882** | ≥ 0.80 ✅ |
+| **Precision** | **0.949** | ≥ 0.90 ✅ |
+| **Recall** | **0.837** | ≥ 0.75 ✅ |
+| **False Alarm Rate (gate ON)** | **0.206** | < 0.30 ✅ (gate OFF: 0.602) |
+| **Lead Time (avg)** | **6.47주** | ≥ 4주 ✅ |
+| **MCC** | **0.595** | — |
+| **Balanced Accuracy** | **0.816** | — |
+| **AUPRC** | **0.973** | — |
 | **Granger 인과 (composite)** | **p=0.021** | < 0.05 ✅ |
 
 재현:
 
 ```bash
 python -m analysis.backtest_2025_flu_multi_17regions
-python -m ml.reproduce_validation
+cat analysis/outputs/backtest_17regions.json | jq '.summary'
 ```
 
 ## 🏗 아키텍처
@@ -74,7 +78,7 @@ graph LR
         SCORER["Scorer<br/>2-layer gate"]
         XGB["XGBoost<br/>walk-forward"]
         AE["Autoencoder<br/>이상탐지"]
-        TFT["TFT<br/>(Phase 2)"]
+        TFT["TFT<br/>(attention 해석)"]
     end
     subgraph Service["서비스 계층"]
         API["FastAPI :8001<br/>SSE streaming"]
@@ -94,8 +98,8 @@ graph LR
 | **Frontend** | Next.js 15 · React 19 · Deck.gl · Tailwind · TypeScript |
 | **Backend** | FastAPI · SQLAlchemy 2.0 (async) · Pydantic Settings · ReportLab |
 | **Pipeline** | APScheduler · httpx · pdfplumber · Kafka KRaft (no ZooKeeper) |
-| **ML** | XGBoost · scikit-learn · PyTorch Forecasting (TFT) · Autoencoder |
-| **LLM / RAG** | Claude Sonnet 4.6 (SSE) · Qdrant · multilingual MiniLM |
+| **ML** | XGBoost (주모델, walk-forward CV) · TFT (PyTorch Lightning, attention 해석성) · Autoencoder (이상탐지) |
+| **LLM / RAG** | Claude Haiku · RAG (Qdrant) · multilingual MiniLM 임베딩 |
 | **Data** | TimescaleDB (PG 16) · 하이퍼테이블 weekly partition |
 | **Infra** | Docker Compose · Kubernetes (GKE) · GitHub Actions · pre-commit |
 | **Quality** | pytest (105 ✅) · ruff · mypy --strict · detect-private-key |
@@ -105,6 +109,8 @@ graph LR
 ### 사전 요구사항
 - Python 3.11+, Node.js 20+, Docker 24+
 - API 키: `NAVER_CLIENT_ID/SECRET` (쇼핑인사이트+데이터랩 공용), `ANTHROPIC_API_KEY`, `KMA_API_KEY`
+- 환경변수: `DB_PASSWORD` (TimescaleDB), `NEXT_PUBLIC_NAVER_MAPS_KEY_ID` (지도, 옵셔널)
+- 원격 데모 시: `export UIS_HOST=<your-host>` (없으면 `localhost` 기본)
 
 ### 설치
 
@@ -135,7 +141,7 @@ streamlit run src/app.py --server.port 8501
 cd frontend && npm install && npm run dev
 ```
 
-브라우저: http://localhost:3000/dashboard (Next.js) · http://localhost:8501 (Streamlit)
+브라우저: `http://${UIS_HOST:-localhost}:3000/dashboard` (Next.js) · `http://${UIS_HOST:-localhost}:8501` (Streamlit)
 
 ### 검증
 
@@ -166,18 +172,21 @@ urban-immune-system/
 - [x] **Phase 1** · Streamlit MVP + 시뮬레이션 데이터
 - [x] **Phase 2** · FastAPI 백엔드 + Kafka 파이프라인 + 17개 시·도 백테스트
 - [x] **Phase 3** · Next.js 대시보드 + SSE 스트리밍 + RAG 경보 리포트
-- [ ] **Phase 4** · TFT 학습 완료 (XGBoost → TFT 전환), KOWAS 자동 다운로더 안정화
-- [ ] **Phase 5** · ISMS-P 인증 대비 보안 강화 + 첫 PoC 계약 (지자체 1곳)
+- [x] **Phase 4** · 17지역 walk-forward baseline (XGBoost F1=0.882) + TFT 재학습(attention 해석) + 데모 시나리오 e2e
+- [ ] **Phase 5** · Kafka Consumer 실구현 (현재 InMemoryBroker), HIRA OpenAPI L1 지역 분리, ISMS-P 풀 점검, 첫 PoC 계약
 
 ## ⚠️ 한계와 정직성
 
 전문가 운영 시스템 대비 **솔직한 격차**를 명시한다.
 
-- **표본 한계**: 26주 분석 — Granger 검정 통계적 유의성 제한적, 다음 시즌 데이터 누적 필수
+- **표본 한계**: 시즌 단위 분석 — Granger 검정 통계적 유의성 제한적, 다음 시즌 데이터 누적 필수
 - **L2 약함**: 하수 신호 Granger p=0.267로 단독 유의성 부족 → 가중치 0.30으로 축소 검토 중
-- **TFT 미완**: 현재 production 추론은 XGBoost(walk-forward), TFT는 학습 스크립트만 존재
+- **TFT 위치**: 주모델은 XGBoost(walk-forward CV), TFT는 attention 기반 해석성 보조 (D-4 재학습 완료, prod 전환은 데이터 누적 후)
 - **L2 자동화**: KOWAS PDF 자동 다운로더 구현됐으나 일부 주차 carry-forward 적용 (`backtest_17regions.json` 참조)
+- **L1 지역성**: 네이버 쇼핑인사이트 API 제약으로 전국 단일값 → 17지역 broadcast (HIRA OpenAPI 교체로 Phase 5 분리)
+- **Kafka Consumer**: 현재 InMemoryBroker로 동작 (실 Consumer 구현 Phase 5)
 - **데이터 출처**: KCDC 확진 카운트는 내장 아카이브 기반(실시간 KCDC API 미연동)
+- **인증**: ISMS-P 풀 점검 Phase 5 예정
 
 본 수치는 학부 캡스톤 산출물이며, BlueDot/CDC NWSS 같은 운영 시스템과 직접 비교 불가.
 
