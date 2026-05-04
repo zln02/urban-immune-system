@@ -1,3 +1,106 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ── Design tokens ─────────────────────────────────── */
+:root {
+  /* Primary (government navy) */
+  --primary-30: #1e40af;
+  --primary-70: #1e3a8a;
+  --primary-90: #172554;
+
+  /* Surface */
+  --bg-sub: #f8fafc;
+  --surface: #ffffff;
+
+  /* Border */
+  --border: #e2e8f0;
+  --border-strong: #94a3b8;
+
+  /* Text */
+  --text: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #94a3b8;
+
+  /* Neutral */
+  --gray-0: #ffffff;
+
+  /* Risk levels — Okabe-Ito CUD (색맹 안전) */
+  --risk-safe:    #009E73;
+  --risk-caution: #E69F00;
+  --risk-warning: #D55E00;
+  --risk-alert:   #CC0000;
+
+  /* Layer colours */
+  --layer-pharmacy: #be185d;
+  --layer-sewage:   #047857;
+  --layer-search:   #1d4ed8;
+
+  /* Spacing */
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+
+  /* Layout */
+  --rail-w:    52px;
+  --sidebar-w: 200px;
+  --header-h:  52px;
+
+  /* Font */
+  --font-sans: 'Pretendard', 'Noto Sans KR', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* ── Typography helpers ─────────────────────────────── */
+.t-label-01 {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.t-label-02 {
+  font-size: 11px;
+  font-weight: 500;
+}
+.t-h-04 {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.t-num-sm {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+/* ── Animations ─────────────────────────────────────── */
+@keyframes uis-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+@keyframes uis-cursor {
+  0%, 100% { border-color: currentColor; }
+  50%       { border-color: transparent; }
+}
+@keyframes uis-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Scrollbar ──────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  background: var(--bg-sub);
+  color: var(--text);
+}
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 3px;
+}

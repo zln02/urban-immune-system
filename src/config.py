@@ -17,9 +17,18 @@ RED = "#dc2626"
 ORANGE = "#ea580c"
 YELLOW = "#ca8a04"
 GREEN_SAFE = "#16a34a"
-L1_PHARMACY = "#be185d"
-L2_SEWAGE = "#047857"
-L3_SEARCH = "#1d4ed8"
+# 3-Layer 색상 — Okabe-Ito CUD 팔레트 (색맹 안전, B2G 권장 표준)
+# 출처: Okabe & Ito (2008) "Color Universal Design"
+# 색맹(특히 적록색맹·약 8% 남성)에서도 모든 색이 구분되도록 설계된 8색 세트.
+# 정부 납품·발표·의료 분야 데이터 시각화 표준 권고.
+L1_PHARMACY = "#D55E00"   # vermillion (주황) — 약국 OTC
+L2_SEWAGE = "#0072B2"     # blue (청색) — 하수
+L3_SEARCH = "#009E73"     # bluish green (청록) — 검색
+# Okabe-Ito 추가 안전색 (보조 시각화용)
+OKABE_YELLOW = "#F0E442"
+OKABE_SKYBLUE = "#56B4E9"
+OKABE_PURPLE = "#CC79A7"
+OKABE_ORANGE = "#E69F00"
 
 REGIONS = [
     "서울 강남구",

@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Urban Immune System — Capstone Mid-term</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+  <style>
+    :root {
+      --accent: #22E3FF;
+      --accent-dim: rgba(34,227,255,0.5);
+      --ink: #FFFFFF;
+      --ink-70: rgba(255,255,255,0.7);
+      --ink-45: rgba(255,255,255,0.45);
+      --ink-15: rgba(255,255,255,0.15);
+    }
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #05070B; overflow: hidden; font-family: "Helvetica Neue", Helvetica, "Pretendard", Arial, sans-serif; }
+    #root { position: fixed; inset: 0; overflow: hidden; }
+
+    /* Stage = full viewport. Canvas is absolute-centered (translate -50% twice
+       then scaled) so it stays pinned to the viewport center regardless of
+       scene content overflow. Flex centering was sensitive to scene overflow
+       and visually shifted the slide off-center; this is overflow-immune. */
+    .deck-stage {
+      position: fixed; inset: 0;
+      background: #05070B;
+      overflow: hidden;
+    }
+    .deck-canvas {
+      position: absolute;
+      left: 50%; top: 50%;
+      width: 1920px; height: 1080px;
+      transform-origin: center center;
+      overflow: hidden;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.04);
+    }
+
+    /* Bottom indicator dots */
+    .deck-indicator {
+      position: fixed; left: 50%; bottom: 18px;
+      transform: translateX(-50%);
+      display: flex; gap: 8px;
+      padding: 8px 14px;
+      background: rgba(5,7,11,0.6);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.08);
+      z-index: 50;
+      opacity: 0.25; transition: opacity 0.25s ease;
+    }
+    .deck-indicator:hover { opacity: 1; }
+    .deck-indicator .dot {
+      width: 10px; height: 10px; cursor: pointer;
+      background: rgba(255,255,255,0.18);
+      transition: background 0.18s ease, transform 0.18s ease;
+    }
+    .deck-indicator .dot:hover { background: rgba(255,255,255,0.45); }
+    .deck-indicator .dot.active { background: var(--accent); transform: scale(1.15); }
+
+    /* Top-right control cluster */
+    .deck-topright {
+      position: fixed; top: 16px; right: 18px;
+      display: flex; gap: 8px; align-items: center;
+      z-index: 50;
+      opacity: 0.35; transition: opacity 0.25s ease;
+    }
+    .deck-topright:hover { opacity: 1; }
+    .deck-counter {
+      padding: 6px 12px;
+      background: rgba(5,7,11,0.55);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: var(--accent);
+      font-family: "Helvetica Neue", Helvetica, monospace;
+      font-size: 14px; letter-spacing: 0.18em; font-weight: 500;
+      opacity: 0.7;
+    }
+    .deck-btn {
+      width: 34px; height: 34px;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(5,7,11,0.55);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.7);
+      cursor: pointer;
+      transition: background 0.15s ease, color 0.15s ease;
+      padding: 0;
+    }
+    .deck-btn:hover { background: rgba(34,227,255,0.15); color: var(--accent); border-color: var(--accent); }
+    .deck-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.7; }
+
+    /* Help overlay */
+    .deck-help {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(5,7,11,0.92);
+      backdrop-filter: blur(12px);
+      display: none; align-items: center; justify-content: center;
+      color: #fff; font-family: "Helvetica Neue", Helvetica, sans-serif;
+    }
+    .deck-help.show { display: flex; }
+    .deck-help .panel {
+      max-width: 640px; padding: 48px;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .deck-help h2 {
+      font-size: 14px; letter-spacing: 0.32em; text-transform: uppercase;
+      color: var(--accent); font-weight: 500; margin: 0 0 28px;
+    }
+    .deck-help table { border-collapse: collapse; width: 100%; }
+    .deck-help td { padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 18px; }
+    .deck-help td:first-child {
+      font-family: "JetBrains Mono", monospace;
+      color: var(--accent); width: 200px;
+    }
+
+    /* Speaker note overlay (toggle with N) */
+    .deck-note {
+      position: fixed; left: 18px; bottom: 56px; right: 18px;
+      max-height: 30vh; overflow-y: auto;
+      padding: 18px 22px;
+      background: rgba(5,7,11,0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(34,227,255,0.25);
+      border-left: 3px solid var(--accent);
+      color: rgba(255,255,255,0.92);
+      font-family: "Helvetica Neue", Helvetica, "Pretendard", sans-serif;
+      font-size: 15px; line-height: 1.6;
+      z-index: 60;
+      display: none;
+    }
+    .deck-note.show { display: block; }
+    .deck-note .label {
+      font-size: 11px; letter-spacing: 0.32em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 8px;
+    }
+  </style>
+
+  <script type="application/json" id="speaker-notes">
+  [
+    "안녕하세요. 동신대학교 컴퓨터공학과 캡스톤 디자인 팀의 PM 박진영입니다. 저희 프로젝트 이름은 Urban Immune System, 도시 면역 체계입니다. 올해 3월 한국능률협회 AI 아이디어 공모전에서 대상 1위를 받았고, 이제 그 아이디어를 실제로 만들고 있습니다. 오늘 15분 동안 문제, 아이디어, 현재 완성도, 그리고 솔직한 수치를 보여드리겠습니다.",
+    "기존 감염병 감시는 시민이 병원에 간 뒤에 시작됩니다. 증상, 병원 방문, 진단, 보건소 보고, 질병관리청 집계. 이걸 다 거치면 보통 2주가 걸립니다. 뉴스에 나올 쯤엔 이미 지역 확산은 시작되어 있습니다. 우리는 늘 2주 늦습니다.",
+    "저희는 병원 기록이 아니라, 시민이 평소에 남기는 흔적 세 가지를 읽습니다. 네이버 쇼핑인사이트에서 약국 감기약 구매, 질병관리청 KOWAS에서 하수 바이러스 농도, 네이버 데이터랩에서 검색 트렌드. 각각 1주, 2주, 3주씩 병원 기록보다 빠릅니다.",
+    "왜 세 개냐? 2013년 구글이 검색 하나로 독감을 예측하려다 실제의 두 배를 잘못 맞추고 서비스를 접었습니다. 단일 신호는 뉴스나 알고리즘 변화에 흔들립니다. 저희는 셋이 같이 오를 때만 경보를 냅니다. 하나만 튀면 무시합니다.",
+    "구조는 왼쪽에서 오른쪽으로 흐릅니다. 약국·하수·검색이 실시간 데이터 우체통, 카프카로 모이고, 시간 순 데이터베이스에 쌓입니다. AI 두 종류, 시계열 예측과 이상탐지가 돌고, Claude 기반 RAG가 리포트를 만들어 대시보드로 내보냅니다.",
+    "왜 하필 이 세 데이터냐는 질문 먼저 드리겠습니다. 첫 번째 약국 OTC는 시민이 돈을 쓴 행동입니다. 가짜 신호가 적습니다. 두 번째 하수 바이러스는 무증상자도 잡힙니다. 가장 객관적이고 가장 빠릅니다. 세 번째 검색 트렌드는 불안의 표면화입니다. 가장 빠르되 잡음이 많아 단독으로는 절대 안 씁니다. 그리고 확장성이 핵심입니다. 새 질병은 PATHOGEN_COLOR_RANGES 한 줄 추가, 새 지역은 SIDO 리스트 교체, 새 신호층은 가중치 한 칸 추가만으로 됩니다. 이 모델은 인플루엔자 전용이 아닙니다. 코드 한 줄로 다음 팬데믹용으로 바뀝니다.",
+    "3월 공모전 제안서에는 F1 0.71, 오경보 0건이라고 적었습니다. 이 수치로 대상을 받았습니다. 당당히 말씀드립니다. 다만 이건 단일 임계값 최적화 결과였습니다. 캡스톤에서는 더 엄격하게 다시 재봤습니다.",
+    "D-7 1차 walk-forward는 F1 0.667 / Precision 1.000 / Recall 0.500이었지만, 17지역 5-fold gap=4w로 확장하니 F1 0.882 / Recall 0.837로 안정화됐습니다. (※ 1.000 Precision은 양성 예측 자체가 적었기 때문 — 다음 슬라이드 참조) 누가 돌려도 같은 수치가 나오는 재현 가능성이 B2G 납품의 본질입니다.",
+    "그 수치가 나온 첫 번째 비결입니다. 데이터 수집부터 의도적으로 분리했습니다. L1 약국은 감기약, 타이레놀, 판콜 같은 구매 키워드. L3 검색은 독감 증상, 고열 원인, 타미플루 같은 증상검색 키워드. 같은 통에 섞지 않습니다. 구글 플루가 망한 게 바로 키워드를 한 통에 넣었기 때문입니다. L2 하수는 KOWAS 가 API를 안 열어줘서 PDF 그래프의 막대 색상 RGB 픽셀을 직접 측정해서 추출합니다. 이게 좌측 코드 마지막 두 줄, PATHOGEN_COLOR_RANGES 입니다.",
+    "수집한 데이터가 어떻게 DB까지 가는지 보여드립니다. 3단계입니다. 1단계 크롤링, KOWAS는 API가 비공개라 Selenium으로 PDF를 자동 다운로드합니다. 지금까지 72개 PDF가 자동 수집됐습니다. 2단계 Kafka, 계층별로 토픽 4개를 분리해서 보존 정책 충돌을 막습니다. acks=all에 retries=3, 데이터 손실 방지. 3단계 TimescaleDB INSERT, DELETE 후 INSERT하는 멱등 패턴입니다. 같은 명령 두 번 돌려도 결과는 같습니다. 이게 누가 돌려도 같은 수치가 나오는 재현성의 기반입니다.",
+    "여기까지를 5단계로 정리합니다. 수집·정규화·DB 적재·앙상블+게이트·모델 입력. 정규화는 단위 다른 신호를 0~100으로 줄세우는 것. Timescale 하이퍼테이블은 시간 자동 분할 DB. 앙상블은 가중평균에 게이트 B 더한 것. 마지막 모델 입력은 피처 5개. 어려운 용어 풀이는 슬라이드 하단 3줄에 박혀 있습니다.",
+    "두 번째, 그리고 핵심입니다. 코드 4줄로 단일 신호 단독 경보를 영원히 차단했습니다. _CROSS_VALIDATION_MIN_LAYERS 2 — 두 개 이상 계층이 30점 이상이어야 YELLOW 발령. 한 신호만 튀면 코드가 강제로 GREEN으로 떨어뜨립니다. Ablation, 즉 게이트 켰을 때와 껐을 때 비교한 결과 — 17개 시·도 평균 오경보율이 0.602에서 0.206으로 65.8 퍼센트 감소했습니다. 구글이 실패한 그 함정을, 우리는 정책이 아니라 코드 수준으로 막았습니다.",
+    "세 번째, 시계열 함정입니다. 일반적인 K-Fold 교차검증은 미래 데이터로 과거를 학습합니다. 그러면 발표용 점수만 잘 나오고 실전에선 폭망합니다. 저희는 TimeSeriesSplit 에 gap 4주, 즉 한 달치 미래를 강제로 차단합니다. 그리고 이상탐지 Autoencoder는 재구성 오차 99 퍼센트 분위수로 처음 보는 패턴만 잡습니다. 이 두 가지를 합쳐 17지역 walk-forward에서 F1 0.882, Precision 0.95, MCC 0.595, AUPRC 0.973을 재현 가능한 형태로 만들었습니다.",
+    "네 번째, RAG 챗봇입니다. 일반 챗봇은 그럴듯하게 지어내는데, 보건당국은 그런 답을 절대 받지 않습니다. 저희는 Qdrant라는 벡터 데이터베이스에 WHO 하수감시 가이드, ECDC 다중신호 매뉴얼, KDCA ILINet 지침을 임베딩해두고, 신호가 들어오면 관련 가이드 5건을 먼저 검색해 Claude Haiku에 함께 넘깁니다. 출력은 KDCA 표준 9개 섹션 — 요약, 핵심지표, 레이어별 분석, 7·14·21일 전망, 권고, 참고문헌, 면책. 면책 조항은 ISMS-P 2.9와 EU AI Act 13·14조에 맞춰 강제 삽입됩니다. 단순 LLM 출력이 아니라 출처가 있는 답변 — B2G 신뢰성의 핵심입니다.",
+    "실제 출력 예시입니다. 좌측이 alert_report.md, 보시다시피 KDCA 표준 9 섹션이 박혀 있습니다. 1번 요약에 위험등급이 한 단어로, 2번 핵심지표에 composite 점수와 전주 대비 변화, 3번 레이어별 분석, 4번 TFT 7·14·21일 전망, 5번 권고는 보건당국·의료기관·시민 3개 트랙. 7번 면책은 ISMS-P 2.9와 EU AI Act 13·14조 강제 삽입. 우측은 매 리포트마다 자동 첨부되는 인용 5건 — WHO 하수감시 가이드 p.42, ECDC 매뉴얼 p.15, KDCA ILINet 지침 p.8, Lazer 2014, Larsen·Wigginton 2020. 일반 챗봇은 그럴듯하게 지어내지만, 우리 RAG는 출처와 면책과 표준 포맷이 강제됩니다. 보건당국이 그대로 결재 라인에 올릴 수 있는 형식입니다.",
+    "모델이 왜 셋이냐는 질문, 자주 받습니다. 각자 다른 질문에 답하기 때문입니다. XGBoost는 회귀, 지금 빨간불인지 점수로 답합니다. TFT는 시계열 트랜스포머, 다음 주 다음 다음 주는 어떻게 될지 7·14·21일 미래를 예측합니다. 가운데 카드의 attention 막대는 실측값입니다. 17개 시·도 26주 실데이터로 학습한 결과 기온·OTC·하수가 상위 3위였고 검색은 4위로 밀렸습니다. 검색 단독으로 흔들리지 않게 게이트 B가 막아주는 셈입니다. Autoencoder는 이상탐지, 어 이건 처음 보는데 같은 신종 패턴을 감지합니다. 라벨 없이 학습합니다. XGB는 과거 패턴 안에서만 정확하고, TFT는 미래는 봐도 신종은 못 잡고, AE 단독으로는 점수를 못 냅니다. 역할이 다르기 때문에 셋이 필요합니다.",
+    "범위도 현실에 맞춰 조정했습니다. 상용 배포, 멀티리전 같은 7개는 이번 학기에선 뺐습니다. 대신 색맹 안전 팔레트, Claude 에이전트 병렬 개발, 재현 노트북, Granger 검정 리포트 등 8개를 추가했습니다. 깎고 더한 뒤가 지금의 모습입니다.",
+    "모듈별 완성도를 솔직하게 보여드립니다. Layer 2 하수는 자동 크롤링 파이프라인이 완성되어 100%, 약국과 검색도 100%. RAG 가이드 임베딩 100%(20건), 인프라와 CI·테스트는 128개 통과로 85%, walk-forward 재현 스크립트는 80%. TFT 시계열은 17지역 실데이터 D-4 재학습 완료, attention 해석(기온·OTC·하수 top3) 가능. KCDC confirmed_cases fine-tuning은 데이터 누적 후 Phase 5에서 prod 전환합니다.",
+    "이 부분은 김나영 학생이 이어서 데모를 보여드립니다. 대시보드는 Next.js 14 App Router로 만들었습니다. 17개 시·도 위치 데이터를 즉시 인지하려면 3D 히트맵이 가장 빠르다고 판단해 Deck.gl v9를 썼습니다. Claude 리포트는 단방향 스트리밍이면 충분하니 WebSocket이 아니라 SSE로 처리했습니다. 데이터 캐싱은 SWR이 60초 자동 갱신, 시계열 차트는 Recharts, 색상 토큰은 Tailwind globals.css에서 관리합니다. 리포트 본문은 WHO 하수감시 가이드, ECDC 다중신호 매뉴얼, 질병관리청 ILINet 지침 top-3을 자동 인용합니다. 단순 LLM 출력이 아니라 출처가 있는 B2G 신뢰성이 핵심입니다.",
+    "다음은 운영 단계 미리보기입니다. RED 경보가 뜨면 좌측처럼 빨간 알람이 뜨고, 부처 4곳에 동시 자동 발송됩니다 — KDCA, 서울시, KCDC, WHO. 경보 레벨별 라우팅 — YELLOW 1곳, ORANGE 3곳, RED 전체. Phase 2, 2026 하반기 가동 예정입니다.",
+    "실측 성능입니다. 17개 시·도 walk-forward 백테스트 결과 임상 확진 피크보다 평균 6.5주 전 YELLOW를 발령했습니다. 가장 빠른 곳은 세종 9주, 부산·제주 8주, 서울 7주, 경기 6주 순입니다. F1 0.882, Precision 0.949, Recall 0.837, MCC 0.595, Balanced Accuracy 0.816, AUPRC 0.973. 오경보율은 게이트 ON 상태에서 0.206. 게이트를 끄면 0.602가 되니 게이트가 65.8 퍼센트의 오경보를 막은 것입니다. 그리고 Granger 인과검정 — composite p값 0.021, L3 검색 p값 0.007. 둘 다 0.05 미만, 통계적으로 유의한 선행성입니다. 마지막으로 재현 명령 한 줄. python -m ml.reproduce_validation. 이 명령 하나로 누가 돌려도 같은 수치가 나옵니다.",
+    "경쟁 맵입니다. BlueDot은 뉴스 기반, CDC NWSS는 하수만, KAIST와 Xu 2025는 두 신호를 섞습니다. 저희는 세 신호를 교차합니다. 다만 데이터 규모와 임상 검증은 저쪽이 앞섭니다. 솔직히 인정하고, 그 부분이 다음 단계의 타깃입니다.",
+    "전문가 자문을 받기 전에 저희가 자체 검증한 결과입니다. 좌측은 시행 중인 글로벌 시스템 5건 — BlueDot, CDC NWSS, HealthMap, WHO EIOS, KCDC ILINet. 모두 단일 또는 이중 신호이고, 3계층 교차검증에 게이트 B를 더한 건 저희만 합니다. 우측은 국내 선행 자료 — ETRI 감염병 모니터링 등록특허, KAIST 이동량 논문, 서울대 보건대학원 검색 트렌드 논문, 환경부 KOWAS 운영. KIPRIS 검색 결과 OTC와 하수와 검색 3계층을 동시 결합한 특허는 미확인이고, KCDC와 환경부 운영 시스템과는 보완 관계입니다. 다음 단계는 변리사 자문 후 출원 검토. 이 조사 결과는 KDCA·KISA 자문 자료에 그대로 첨부합니다.",
+    "수치는 저희가 만들었지만 검증은 저희가 할 수 없습니다. 그래서 두 기관에 자문을 요청합니다. 의학과 역학은 질병관리청, 보안과 법은 한국인터넷진흥원 KISA. 발송 조건은 세 가지 — 17지역 백테스트 PDF, 실데이터 26주 누적, 그리고 누가 돌려도 같은 수치가 나오는 재현 스크립트. 셋 다 이미 충족됐습니다. 발송 자료는 walk-forward 결과 PDF, Granger 검정, 그리고 데모 URL. 발표 끝나면 바로 보낼 수 있는 상태입니다.",
+    "최종 비전은 2027년입니다. 인플루엔자는 검증 대상이고, 진짜 타깃은 다음 팬데믹입니다. 이상탐지가 레이더처럼 평소와 다른 패턴을 먼저 잡습니다. 타깃 고객은 질병관리청, 서울시 같은 광역 자치단체, 그리고 WHO 협력센터 세 곳입니다.",
+    "로드맵입니다. 지금은 Phase 1, 캡스톤 완주. 올해 하반기 ILINet 실데이터 PoC. 2027년 상반기 ISMS-P와 유료 계약 첫 건. 하반기 광역 두 곳으로 확장. 2028년부터 질병관리청 납품. 가격은 3-tier로 분리했습니다. Tier A 구독은 지자체 연 2,000에서 6,000만, 광역 연 1억에서 3억. Tier C는 PoC 1건당 30일 1,000만, 60일 2,000만, 90일 3,000만. Tier B 건당 리포트는 50만에서 300만, 보험사·연구기관·언론사용입니다. 6개월 안 목표는 정부과제 2~5천만, PoC 1건 (Tier C 1,000~3,000만), 논문 1편입니다. 가격은 추정치이며 정식 v1.0은 첫 PoC 수주 후 발행합니다.",
+    "마지막입니다. 다섯 명이 각자 모듈을 맡고 Claude Code 에이전트로 병렬 협업했습니다. 팀원 한 명 한 명 소개드리고, 남은 리스크 세 가지도 정직하게 알려드렸습니다. 이제 Q&A 받겠습니다. 어떤 질문이든 팀원 전원이 답변하겠습니다. 감사합니다."
+  ]
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- Top-right cluster: counter + fullscreen + note + help buttons -->
+  <div class="deck-topright">
+    <div class="deck-counter" id="counter">01 / 27</div>
+    <button class="deck-btn" id="btn-note" title="노트 토글 (N)">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 4h12l4 4v12H4z" /><path d="M16 4v4h4" /><path d="M8 12h8M8 16h6" />
+      </svg>
+    </button>
+    <button class="deck-btn" id="btn-fs" title="풀스크린 (F)">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+      </svg>
+    </button>
+    <button class="deck-btn" id="btn-help" title="단축키 (?)">
+      <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="9" /><path d="M9.5 9a2.5 2.5 0 015 0c0 1.5-1.25 2-2.5 2.5V14" />
+        <circle cx="12" cy="17" r="0.6" fill="currentColor" stroke="none" />
+      </svg>
+    </button>
+  </div>
+
+  <!-- Help overlay (toggle with ?) -->
+  <div class="deck-help" id="help" onclick="this.classList.remove('show')">
+    <div class="panel" onclick="event.stopPropagation()">
+      <h2>Keyboard / Click</h2>
+      <table>
+        <tr><td>→ Space PgDn</td><td>다음 슬라이드</td></tr>
+        <tr><td>← PgUp</td><td>이전 슬라이드</td></tr>
+        <tr><td>Home / End</td><td>처음 / 마지막</td></tr>
+        <tr><td>Click</td><td>다음 (좌클릭)</td></tr>
+        <tr><td>Right-click</td><td>이전 (우클릭)</td></tr>
+        <tr><td>F</td><td>풀스크린</td></tr>
+        <tr><td>N</td><td>발표자 노트 토글</td></tr>
+        <tr><td>?</td><td>이 도움말 토글</td></tr>
+        <tr><td>1–9, 0</td><td>해당 번호로 점프</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Speaker note (toggle with N) -->
+  <div class="deck-note" id="note">
+    <div class="label" id="note-label">SPEAKER NOTE · 01</div>
+    <div id="note-body"></div>
+  </div>
+
+  <!-- React + Babel (pinned) -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+
+  <!-- Animation primitives + scenes (existing files; design unchanged) -->
+  <script type="text/babel" src="animations.jsx"></script>
+  <script type="text/babel" src="scenes/WebGLBackground.jsx"></script>
+  <script type="text/babel" src="scenes/Primitives.jsx"></script>
+  <script type="text/babel" src="scenes/Scenes.jsx"></script>
+
+  <script type="text/babel">
+    // ─────────────────────────────────────────────────────────────────────────
+    // 발표용 수동 네비 모드. 디자인 (Plate / Chrome / 셰이더 / 컬러) 유지.
+    // 자동재생 OFF, 키 / 클릭 / URL 해시 / 풀스크린 / 점 인디케이터.
+    // 씬 진입 시 내부 애니는 평소처럼 0초부터 재생 (option 2i).
+    // ─────────────────────────────────────────────────────────────────────────
+
+    const {
+      S01, S02, S03, S04, S05,
+      S05A,
+      S06, S07,
+      S07A, S07A2, S07B, S07C, S07D, S07D2, S07E, S07F,
+      S08, S09, S10, S10A,
+      S11, S12, S12B,
+      S13B,
+      S14, S15, S16,
+    } = window.Scenes;
+
+    // 27씬 — D-8 추가 시간 확보로 S07E(5단계 흐름) 본문 복귀 (S07A2 직후)
+    const SCENES = [
+      S01, S02, S03, S04, S05,
+      S05A,
+      S06, S07,
+      S07A, S07A2, S07E, S07B, S07C, S07D, S07D2, S07F,
+      S08, S09, S10, S10A,
+      S11, S12, S12B,
+      S13B,
+      S14, S15, S16,
+    ];
+    const TOTAL = SCENES.length;
+
+    // 씬 애니 길이(초). 발표 모드에선 시간 고정 무관 — 0~SCENE_DUR 만 진행되면 끝.
+    const SCENE_DUR = 8;
+
+    // Mood — 기존 clinical 팔레트 유지
+    const MOOD = {
+      accent: '#22E3FF', accentRgb: [0.13, 0.89, 1.0],
+      ink: '#FFFFFF',
+      bg: [0.02, 0.025, 0.035],
+      pageBg: '#05070B',
+      moodK: 0.0,
+    };
+
+    // ── 한 씬을 자체 타임라인으로 mount ─────────────────────────────────────
+    // SpriteContext / TimelineContext 를 직접 공급 (Stage 우회).
+    function ManualSlide({ index }) {
+      const Component = SCENES[index];
+      const [t, setT] = React.useState(0);
+
+      React.useEffect(() => {
+        setT(0);
+        const start = performance.now();
+        let raf;
+        const step = (now) => {
+          const elapsed = (now - start) / 1000;
+          // 씬 내부 애니가 끝나도 마지막 프레임 유지 (clamp).
+          setT(Math.min(elapsed, SCENE_DUR));
+          if (elapsed < SCENE_DUR) raf = requestAnimationFrame(step);
+        };
+        raf = requestAnimationFrame(step);
+        return () => { if (raf) cancelAnimationFrame(raf); };
+      }, [index]);
+
+      const sprite = { localTime: t, progress: t / SCENE_DUR, duration: SCENE_DUR, visible: true };
+      const timeline = { time: t, duration: SCENE_DUR, playing: true };
+
+      return (
+        <TimelineContext.Provider value={timeline}>
+          <SpriteContext.Provider value={sprite}>
+            <Component />
+          </SpriteContext.Provider>
+        </TimelineContext.Provider>
+      );
+    }
+
+    // ── 셰이더 배경 (씬 인덱스를 variant 로 전달) ───────────────────────────
+    function BackgroundLayer({ index }) {
+      // WebGLBackground 는 자체 RAF 로 셰이더 시간 진행. variant 만 넘기면 됨.
+      return <WebGLBackground
+        variant={index}
+        width={1920} height={1080}
+        accent={MOOD.accentRgb} bg={MOOD.bg}
+        atmosphere={0.35} mood={MOOD.moodK} />;
+    }
+
+    // ── URL 해시 동기화 ────────────────────────────────────────────────────
+    function readHash() {
+      const m = /^#\/(\d+)$/.exec(window.location.hash);
+      if (!m) return 0;
+      const n = parseInt(m[1], 10) - 1;
+      return Math.max(0, Math.min(TOTAL - 1, n));
+    }
+    function writeHash(idx) {
+      const want = `#/${idx + 1}`;
+      if (window.location.hash !== want) {
+        history.replaceState(null, '', want);
+      }
+    }
+
+    // ── Auto-fit 스케일 ────────────────────────────────────────────────────
+    function useFitScale() {
+      const [scale, setScale] = React.useState(1);
+      React.useEffect(() => {
+        const measure = () => {
+          const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+          setScale(Math.max(0.05, s));
+        };
+        measure();
+        window.addEventListener('resize', measure);
+        return () => window.removeEventListener('resize', measure);
+      }, []);
+      return scale;
+    }
+
+    function App() {
+      const [idx, setIdx] = React.useState(readHash);
+      const scale = useFitScale();
+      const [showNote, setShowNote] = React.useState(false);
+
+      const next = React.useCallback(() => setIdx(i => Math.min(TOTAL - 1, i + 1)), []);
+      const prev = React.useCallback(() => setIdx(i => Math.max(0, i - 1)), []);
+      const goto = React.useCallback((n) => setIdx(Math.max(0, Math.min(TOTAL - 1, n))), []);
+
+      // URL 해시 ↔ 인덱스 동기화
+      React.useEffect(() => { writeHash(idx); }, [idx]);
+      React.useEffect(() => {
+        const onHash = () => setIdx(readHash());
+        window.addEventListener('hashchange', onHash);
+        return () => window.removeEventListener('hashchange', onHash);
+      }, []);
+
+      // 슬라이드 카운터·노트 갱신
+      React.useEffect(() => {
+        const c = document.getElementById('counter');
+        if (c) c.textContent = `${String(idx + 1).padStart(2, '0')} / ${String(TOTAL).padStart(2, '0')}`;
+
+        const noteEl = document.getElementById('note-body');
+        const noteLab = document.getElementById('note-label');
+        const data = JSON.parse(document.getElementById('speaker-notes').textContent);
+        if (noteEl) noteEl.textContent = data[idx] || '';
+        if (noteLab) noteLab.textContent = `SPEAKER NOTE · ${String(idx + 1).padStart(2, '0')} / ${TOTAL}`;
+      }, [idx]);
+
+      // 노트 표시 토글
+      React.useEffect(() => {
+        const el = document.getElementById('note');
+        if (el) el.classList.toggle('show', showNote);
+      }, [showNote]);
+
+      // 키보드
+      React.useEffect(() => {
+        const onKey = (e) => {
+          if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+          switch (e.code) {
+            case 'ArrowRight': case 'Space': case 'PageDown':
+              e.preventDefault(); next(); break;
+            case 'ArrowLeft': case 'PageUp':
+              e.preventDefault(); prev(); break;
+            case 'Home': e.preventDefault(); goto(0); break;
+            case 'End':  e.preventDefault(); goto(TOTAL - 1); break;
+            case 'KeyF':
+              if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+              else document.exitFullscreen?.();
+              break;
+            case 'KeyN':
+              setShowNote(s => !s); break;
+            case 'Slash':
+              if (e.shiftKey) document.getElementById('help').classList.toggle('show');
+              break;
+            case 'Escape':
+              document.getElementById('help').classList.remove('show'); break;
+          }
+          // 1~9, 0 = 해당 번호로 점프
+          if (/^Digit[0-9]$/.test(e.code)) {
+            const d = parseInt(e.code.slice(5), 10);
+            const target = d === 0 ? 9 : d - 1;
+            if (target < TOTAL) goto(target);
+          }
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+      }, [next, prev, goto]);
+
+      // 클릭: 좌클릭=다음, 우클릭=이전
+      const onClick = (e) => {
+        if (e.button === 0) next();
+      };
+      const onContextMenu = (e) => {
+        e.preventDefault(); prev();
+      };
+
+      // 우상단 버튼 핸들러 (DOM 직접 — React state와 동기화)
+      React.useEffect(() => {
+        const fs = document.getElementById('btn-fs');
+        const nt = document.getElementById('btn-note');
+        const hp = document.getElementById('btn-help');
+        const onFs = (e) => {
+          e.stopPropagation();
+          if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+          else document.exitFullscreen?.();
+        };
+        const onNt = (e) => { e.stopPropagation(); setShowNote(s => !s); };
+        const onHp = (e) => { e.stopPropagation(); document.getElementById('help').classList.toggle('show'); };
+        fs?.addEventListener('click', onFs);
+        nt?.addEventListener('click', onNt);
+        hp?.addEventListener('click', onHp);
+        return () => {
+          fs?.removeEventListener('click', onFs);
+          nt?.removeEventListener('click', onNt);
+          hp?.removeEventListener('click', onHp);
+        };
+      }, []);
+
+      return (
+        <>
+          <div className="deck-stage" onClick={onClick} onContextMenu={onContextMenu}>
+            <div className="deck-canvas" style={{ transform: `translate(-50%, -50%) scale(${scale})` }}>
+              <BackgroundLayer index={idx} />
+              <ManualSlide key={idx} index={idx} />
+            </div>
+          </div>
+
+          {/* 점 인디케이터 */}
+          <div className="deck-indicator">
+            {SCENES.map((_, i) => (
+              <div key={i} className={`dot ${i === idx ? 'active' : ''}`}
+                onClick={(e) => { e.stopPropagation(); goto(i); }} />
+            ))}
+          </div>
+        </>
+      );
+    }
+
+    document.body.style.background = MOOD.pageBg;
+    document.documentElement.style.setProperty('--accent', MOOD.accent);
+    document.documentElement.style.setProperty('--accent-dim', 'rgba(34,227,255,0.5)');
+    document.documentElement.style.setProperty('--ink', MOOD.ink);
+    document.documentElement.style.setProperty('--ink-70', 'rgba(255,255,255,0.7)');
+    document.documentElement.style.setProperty('--ink-45', 'rgba(255,255,255,0.45)');
+    document.documentElement.style.setProperty('--ink-15', 'rgba(255,255,255,0.12)');
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

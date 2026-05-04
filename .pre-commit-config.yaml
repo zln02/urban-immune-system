@@ -1,0 +1,59 @@
+repos:
+  # 코드 품질
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.4.4
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+        types_or: [python, pyi]
+      - id: ruff-format
+        types_or: [python, pyi]
+
+  # 보안: API 키·비밀 하드코딩 차단
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: detect-private-key
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=500]           # 500KB 초과 파일 커밋 차단 (PDF·체크포인트 방지)
+      - id: no-commit-to-branch
+        args: [--branch, main]        # main 직접 커밋 금지
+
+  # .env 파일 커밋 차단
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: [--baseline, .secrets.baseline]
+        exclude: .env.example
+
+  # 타입 체크
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.0
+    hooks:
+      - id: mypy
+        additional_dependencies:
+          - pydantic>=2.0
+          - types-requests
+        files: ^(src|backend|pipeline)/.+\.py$
+        args: [--ignore-missing-imports]
+
+  # pytest — 테스트 실패 시 커밋 중단
+  - repo: local
+    hooks:
+      - id: pytest
+        name: pytest
+        language: system
+        entry: python -m pytest
+        args:
+          - --tb=short
+          - -q
+          - --no-header
+        types: [python]
+        pass_filenames: false
+        always_run: true

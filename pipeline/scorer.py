@@ -1,0 +1,537 @@
+"""3계층 신호 앙상블 점수 계산 및 risk_scores 테이블 배치 적재.
+
+수집된 layer_signals (otc / wastewater / search) 를 읽어
+composite_score 를 계산하고 risk_scores 에 upsert 한다.
+
+경보 레벨 규칙:
+  composite < 30            → GREEN
+  30 ≤ composite < 55       → YELLOW
+  55 ≤ composite < 75       → ORANGE
+  composite ≥ 75            → RED
+  단, YELLOW 이상은 2개 이상 계층이 30 이상이어야 한다.
+  조건 미충족 시 GREEN 으로 강제 다운그레이드.
+"""
+from __future__ import annotations
+
+import asyncio
+import logging
+import os
+import warnings
+from dataclasses import dataclass
+from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
+
+import asyncpg
+from dotenv import load_dotenv
+
+# 프로젝트 루트 .env 로드 (python-dotenv)
+_project_root = Path(__file__).parent.parent
+load_dotenv(_project_root / ".env", override=False)
+
+logger = logging.getLogger(__name__)
+
+_DEFAULT_DB_URL = "postgresql://uis_user:changeme_local@localhost:5432/urban_immune"
+
+# ---------------------------------------------------------------------------
+# 경보 결정 상수
+# ---------------------------------------------------------------------------
+#
+# 게이트 A (L2 하수 미달 시 GREEN 강제) 는 17지역 sweep 결과 임계값 어느 값도
+# 'Recall ≥ 0.85 & FAR < 0.55 & F1 ≥ 0.66' 충족 못해서 폐기. (analysis/outputs/
+# l2_gate_sweep.json 참조). L2 데이터 sparse + carry-forward 가 근본 원인이라
+# 임계값 튜닝으로 해결 불가능 → L2 데이터 품질 개선 (Phase 2 KOWAS 자동 크롤링)
+# 후 재검토.
+#
+# 게이트 B (2계층 교차검증) 는 유지. CLAUDE.md 의 "단일 신호 단독 경보 금지" 와
+# Google Flu Trends 실패 교훈을 코드로 강제하는 핵심 룰.
+
+# 게이트 B: YELLOW 이상 발령을 위해 임계값 이상이어야 하는 최소 계층 수
+_CROSS_VALIDATION_MIN_LAYERS: int = 2
+
+# 게이트 B: 각 계층이 '기여 중' 으로 인정받는 최소 점수
+_CROSS_VALIDATION_LAYER_THRESHOLD: float = 30.0
+
+# RED 레벨 임계값
+_RED_THRESHOLD: float = 75.0
+
+# DB 커넥션 풀 싱글톤
+_pool: asyncpg.Pool | None = None
+
+
+# ---------------------------------------------------------------------------
+# 설정 로딩 — config.py 가중치 사용
+# ---------------------------------------------------------------------------
+
+def _load_weights() -> tuple[float, float, float]:
+    """backend/app/config.py 에서 앙상블 가중치를 로드한다.
+
+    Returns:
+        (w1_otc, w2_wastewater, w3_search) 튜플
+    """
+    try:
+        from backend.app.config import settings
+        return (
+            settings.ensemble_weight_l1,
+            settings.ensemble_weight_l2,
+            settings.ensemble_weight_l3,
+        )
+    except Exception as exc:
+        logger.warning("config.py 로드 실패, 기본값 사용 (w1=0.35 w2=0.40 w3=0.25): %s", exc)
+        return (0.35, 0.40, 0.25)
+
+
+# ---------------------------------------------------------------------------
+# 결과 데이터 클래스
+# ---------------------------------------------------------------------------
+
+@dataclass
+class RiskScoreRow:
+    """risk_scores 한 행을 표현하는 데이터 클래스."""
+
+    region: str
+    time: datetime
+    composite_score: float
+    l1_score: float | None
+    l2_score: float | None
+    l3_score: float | None
+    alert_level: str
+
+
+# ---------------------------------------------------------------------------
+# 경보 레벨 계산
+# ---------------------------------------------------------------------------
+
+def determine_alert_level(
+    composite: float,
+    l1: float | None,
+    l2: float | None,
+    l3: float | None,
+) -> str:
+    """composite_score 와 계층별 값으로 경보 레벨을 결정한다.
+
+    게이트 B — 2계층 교차검증 강제:
+      YELLOW 이상 발령은 L1/L2/L3 중 _CROSS_VALIDATION_MIN_LAYERS(2)개 이상이
+      _CROSS_VALIDATION_LAYER_THRESHOLD(30.0) 이상일 때만 가능.
+      단독 계층만 30+ 이면 GREEN 다운그레이드.
+
+    Args:
+        composite: 가중합 점수 (0-100)
+        l1: OTC 정규화 점수 (None = 데이터 없음)
+        l2: 하수도 정규화 점수 (None = 데이터 없음)
+        l3: 검색트렌드 정규화 점수 (None = 데이터 없음)
+
+    Returns:
+        'GREEN' | 'YELLOW' | 'ORANGE' | 'RED'
+    """
+    # composite 기반 원래 레벨 결정
+    if composite >= _RED_THRESHOLD:
+        raw_level = "RED"
+    elif composite >= 55:
+        raw_level = "ORANGE"
+    elif composite >= 30:
+        raw_level = "YELLOW"
+    else:
+        raw_level = "GREEN"
+
+    # GREEN 은 게이트 검사 불필요
+    if raw_level == "GREEN":
+        return "GREEN"
+
+    # 게이트 B: _CROSS_VALIDATION_MIN_LAYERS 개 이상 계층이
+    # _CROSS_VALIDATION_LAYER_THRESHOLD 이상이어야 YELLOW+ 발령
+    above_threshold = sum(
+        1 for v in (l1, l2, l3)
+        if v is not None and v >= _CROSS_VALIDATION_LAYER_THRESHOLD
+    )
+    if above_threshold < _CROSS_VALIDATION_MIN_LAYERS:
+        logger.info(
+            "게이트B 차단 (%.1f+ 계층 %d개 < %d개) — %s → GREEN 다운그레이드 "
+            "(l1=%.1f l2=%.1f l3=%.1f composite=%.1f)",
+            _CROSS_VALIDATION_LAYER_THRESHOLD,
+            above_threshold,
+            _CROSS_VALIDATION_MIN_LAYERS,
+            raw_level,
+            l1 or 0.0,
+            l2 or 0.0,
+            l3 or 0.0,
+            composite,
+        )
+        return "GREEN"
+
+    return raw_level
+
+
+# ---------------------------------------------------------------------------
+# DB 커넥션 풀
+# ---------------------------------------------------------------------------
+
+def _normalize_dsn(db_url: str) -> str:
+    """asyncpg 가 이해하는 DSN 형태로 변환한다.
+
+    SQLAlchemy 의 'postgresql+asyncpg://' 스킴을 asyncpg 표준 'postgresql://' 으로 치환.
+
+    Args:
+        db_url: DATABASE_URL 환경변수 값
+
+    Returns:
+        asyncpg 호환 DSN 문자열
+    """
+    return db_url.replace("postgresql+asyncpg://", "postgresql://")
+
+
+async def _get_pool() -> asyncpg.Pool:
+    """asyncpg 커넥션 풀 싱글톤을 반환한다."""
+    global _pool
+    if _pool is None:
+        raw_url = os.getenv("DATABASE_URL", _DEFAULT_DB_URL)
+        if "changeme" in raw_url:
+            warnings.warn(
+                "DATABASE_URL 에 플레이스홀더(changeme)가 포함되어 있습니다.",
+                UserWarning,
+                stacklevel=2,
+            )
+        db_url = _normalize_dsn(raw_url)
+        _pool = await asyncpg.create_pool(dsn=db_url, min_size=1, max_size=5)
+        logger.info("TimescaleDB 커넥션 풀 생성 완료")
+    return _pool
+
+
+async def _close_pool() -> None:
+    """커넥션 풀을 닫는다."""
+    global _pool
+    if _pool is not None:
+        await _pool.close()
+        _pool = None
+
+
+# ---------------------------------------------------------------------------
+# 지역별 최신 계층 신호 조회
+# ---------------------------------------------------------------------------
+
+async def _fetch_latest_signals(
+    pool: asyncpg.Pool,
+    region: str,
+    pathogen: str = "influenza",
+    as_of: datetime | None = None,
+) -> dict[str, float | None]:
+    """해당 지역의 L1/L2/L3 최신 값을 각각 조회한다.
+
+    layer_signals 에서 region 별로 각 계층(otc / wastewater / search) 의
+    가장 최근 row 를 가져온다. L2(KOWAS)는 pathogen 으로 분리 적재되므로
+    동일 pathogen 의 신호만 가져온다. L1/L3 는 인플루엔자 전제로 적재되므로
+    pathogen 인자 무시 (모든 row 가 default 'influenza').
+
+    Args:
+        pool: asyncpg 커넥션 풀
+        region: 지역명
+        pathogen: 병원체 라벨. 현재 인플루엔자 점수 계산만 지원.
+        as_of: 이 시점 이전(포함)의 신호만 조회. None=현재 시점 (기존 동작).
+            과거 시점 risk_scores 백필에 사용.
+
+    Returns:
+        {'otc': float|None, 'wastewater': float|None, 'search': float|None,
+         'latest_time': datetime|None}
+    """
+    rows = await pool.fetch(
+        """
+        SELECT DISTINCT ON (layer)
+            layer,
+            value,
+            time
+        FROM layer_signals
+        WHERE region = $1
+          AND layer IN ('otc', 'wastewater', 'search')
+          AND pathogen = $2
+          AND ($3::timestamptz IS NULL OR time <= $3)
+        ORDER BY layer, time DESC
+        """,
+        region,
+        pathogen,
+        as_of,
+    )
+
+    result: dict[str, float | None] = {
+        "otc": None,
+        "wastewater": None,
+        "search": None,
+    }
+    latest_time: datetime | None = None
+
+    for row in rows:
+        layer_name: str = row["layer"]
+        result[layer_name] = float(row["value"])
+        t: datetime = row["time"]
+        if latest_time is None or t > latest_time:
+            latest_time = t
+
+    result["latest_time"] = latest_time  # type: ignore[assignment]
+    return result
+
+
+# ---------------------------------------------------------------------------
+# 단일 지역 점수 계산
+# ---------------------------------------------------------------------------
+
+async def compute_risk_scores_for_region(
+    region: str,
+    target_date: date,
+) -> RiskScoreRow | None:
+    """단일 지역의 최신 신호로 composite_score 를 계산한다.
+
+    Args:
+        region: 지역명 (예: '서울특별시')
+        target_date: 점수 기준 날짜 (time 컬럼에 UTC 00:00 으로 저장)
+
+    Returns:
+        RiskScoreRow — 데이터 없으면 None
+    """
+    w1, w2, w3 = _load_weights()
+    pool = await _get_pool()
+    # target_date 끝(23:59:59 UTC)을 기준으로 그날 적재된 신호까지 포함.
+    # INSERT 시 score_time 은 별도로 00:00 으로 저장 (라인 318 근처).
+    as_of = datetime(
+        target_date.year,
+        target_date.month,
+        target_date.day,
+        23, 59, 59,
+        tzinfo=timezone.utc,
+    )
+    signals = await _fetch_latest_signals(pool, region, as_of=as_of)
+
+    l1 = signals["otc"]
+    l2 = signals["wastewater"]
+    l3 = signals["search"]
+
+    # 데이터가 하나도 없으면 None 반환
+    if l1 is None and l2 is None and l3 is None:
+        logger.warning("지역 '%s' — 모든 계층 데이터 없음. 스킵.", region)
+        return None
+
+    # 없는 계층은 0 으로 대체 (NaN 전파 방지)
+    safe_l1 = l1 if l1 is not None else 0.0
+    safe_l2 = l2 if l2 is not None else 0.0
+    safe_l3 = l3 if l3 is not None else 0.0
+
+    composite = round(w1 * safe_l1 + w2 * safe_l2 + w3 * safe_l3, 4)
+    alert_level = determine_alert_level(composite, l1, l2, l3)
+
+    score_time = datetime(
+        target_date.year,
+        target_date.month,
+        target_date.day,
+        tzinfo=timezone.utc,
+    )
+
+    return RiskScoreRow(
+        region=region,
+        time=score_time,
+        composite_score=composite,
+        l1_score=l1,
+        l2_score=l2,
+        l3_score=l3,
+        alert_level=alert_level,
+    )
+
+
+# ---------------------------------------------------------------------------
+# risk_scores upsert
+# ---------------------------------------------------------------------------
+
+async def _upsert_risk_score(pool: asyncpg.Pool, row: RiskScoreRow) -> bool:
+    """risk_scores 에 upsert 한다 (동일 region + time 중복 방지).
+
+    TimescaleDB 하이퍼테이블은 ON CONFLICT 가 제한적이므로
+    DELETE + INSERT 패턴을 사용한다.
+
+    Args:
+        pool: asyncpg 커넥션 풀
+        row: 삽입할 RiskScoreRow
+
+    Returns:
+        True — 신규 INSERT, False — 기존 레코드 업데이트
+    """
+    async with pool.acquire() as conn:
+        existing = await conn.fetchval(
+            "SELECT id FROM risk_scores WHERE region = $1 AND time = $2",
+            row.region,
+            row.time,
+        )
+        is_new = existing is None
+
+        if not is_new:
+            await conn.execute(
+                "DELETE FROM risk_scores WHERE region = $1 AND time = $2",
+                row.region,
+                row.time,
+            )
+
+        await conn.execute(
+            """
+            INSERT INTO risk_scores
+                (time, region, composite_score, l1_score, l2_score, l3_score, alert_level)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            """,
+            row.time,
+            row.region,
+            row.composite_score,
+            row.l1_score,
+            row.l2_score,
+            row.l3_score,
+            row.alert_level,
+        )
+
+    action = "INSERT" if is_new else "UPDATE"
+    logger.info(
+        "[%s] region=%s composite=%.2f level=%s (l1=%.1f l2=%.1f l3=%.1f)",
+        action,
+        row.region,
+        row.composite_score,
+        row.alert_level,
+        row.l1_score or 0.0,
+        row.l2_score or 0.0,
+        row.l3_score or 0.0,
+    )
+    return is_new
+
+
+# ---------------------------------------------------------------------------
+# 전체 지역 일괄 실행
+# ---------------------------------------------------------------------------
+
+async def run_weekly_scoring() -> int:
+    """모든 지역의 최신 신호로 composite_score 를 계산하고 risk_scores 에 적재한다.
+
+    layer_signals 에 존재하는 모든 region 을 자동 탐색하여 처리한다.
+
+    Returns:
+        INSERT(또는 UPDATE) 된 row 수
+    """
+    pool = await _get_pool()
+
+    # 현재 DB 에 존재하는 모든 region 탐색
+    regions: list[str] = [
+        row["region"]
+        for row in await pool.fetch(
+            "SELECT DISTINCT region FROM layer_signals ORDER BY region"
+        )
+    ]
+
+    if not regions:
+        logger.warning("layer_signals 에 데이터가 없습니다.")
+        return 0
+
+    logger.info("대상 지역 %d개: %s", len(regions), regions)
+
+    today = datetime.now(timezone.utc).date()
+    inserted = 0
+
+    for region in regions:
+        try:
+            score_row = await compute_risk_scores_for_region(region, today)
+            if score_row is None:
+                continue
+            await _upsert_risk_score(pool, score_row)
+            inserted += 1
+        except Exception as exc:
+            logger.error("지역 '%s' 처리 중 오류: %s", region, exc, exc_info=True)
+
+    logger.info("run_weekly_scoring 완료 — 처리된 지역: %d/%d", inserted, len(regions))
+    return inserted
+
+
+# ---------------------------------------------------------------------------
+# 과거 시점 시뮬레이션 백필
+# ---------------------------------------------------------------------------
+
+async def backfill_risk_scores(
+    start_date: date,
+    end_date: date,
+    step_days: int = 7,
+) -> int:
+    """과거 시점들에 대해 risk_scores 를 시뮬레이션 적재한다.
+
+    각 시점의 layer_signals (그 시점 이전 최신값) 으로 composite_score 를 계산해
+    risk_scores 에 INSERT/UPDATE. 발표 데모에서 1년치 경보 타임라인을 보여주기 위함.
+
+    Args:
+        start_date: 시작 날짜 (포함)
+        end_date: 종료 날짜 (포함)
+        step_days: 시점 간 간격 (기본 7일 = 주간)
+
+    Returns:
+        처리된 (region, time) 행 수
+    """
+    pool = await _get_pool()
+    regions: list[str] = [
+        row["region"]
+        for row in await pool.fetch(
+            "SELECT DISTINCT region FROM layer_signals ORDER BY region"
+        )
+    ]
+    if not regions:
+        logger.warning("layer_signals 가 비어있어 백필 불가")
+        return 0
+
+    total = 0
+    cur = start_date
+    weeks = 0
+    while cur <= end_date:
+        weeks += 1
+        week_count = 0
+        for region in regions:
+            try:
+                row = await compute_risk_scores_for_region(region, cur)
+                if row is None:
+                    continue
+                await _upsert_risk_score(pool, row)
+                week_count += 1
+            except Exception as exc:
+                logger.error("백필 실패 region=%s date=%s: %s", region, cur, exc)
+        logger.info("시점 %s — %d/%d 지역 처리", cur, week_count, len(regions))
+        total += week_count
+        cur = cur + timedelta(days=step_days)
+
+    logger.info("backfill_risk_scores 완료 — %d주 × 평균지역 = %d행", weeks, total)
+    return total
+
+
+# ---------------------------------------------------------------------------
+# 직접 실행 엔트리포인트
+# ---------------------------------------------------------------------------
+
+async def _main() -> None:
+    """python -m pipeline.scorer [--backfill START END] 실행 시 호출된다."""
+    import argparse
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s %(message)s",
+    )
+    parser = argparse.ArgumentParser(description="앙상블 scorer")
+    parser.add_argument(
+        "--backfill",
+        nargs=2,
+        metavar=("START", "END"),
+        help="과거 시점 시뮬레이션 백필 (YYYY-MM-DD YYYY-MM-DD)",
+    )
+    parser.add_argument("--step-days", type=int, default=7,
+                        help="백필 시점 간 간격 (기본 7일)")
+    args = parser.parse_args()
+
+    try:
+        if args.backfill:
+            start = date.fromisoformat(args.backfill[0])
+            end = date.fromisoformat(args.backfill[1])
+            logger.info("=== risk_scores 백필 시작: %s ~ %s ===", start, end)
+            count = await backfill_risk_scores(start, end, step_days=args.step_days)
+            logger.info("백필 완료 — 적재 행 수: %d", count)
+        else:
+            logger.info("=== 앙상블 scorer 수동 실행 시작 ===")
+            count = await run_weekly_scoring()
+            logger.info("완료 — risk_scores 적재 건수: %d", count)
+    finally:
+        await _close_pool()
+
+
+if __name__ == "__main__":
+    asyncio.run(_main())

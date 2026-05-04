@@ -27,4 +27,4 @@ analysis/data/
 3. Normalize weekly indices into `processed/`.
 4. Keep a source log with collection date, URL, and schema notes.
 
-The current Streamlit prototype uses simulated data only.
+Real data is loaded into TimescaleDB by `pipeline/collectors/`; the Streamlit fallback (`src/app.py`) consumes the same DB via FastAPI.

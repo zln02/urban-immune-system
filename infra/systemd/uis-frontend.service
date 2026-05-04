@@ -1,0 +1,30 @@
+[Unit]
+Description=Urban Immune System — Next.js Frontend (port 3000)
+After=network-online.target uis-backend.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=wlsdud5035
+Group=wlsdud5035
+WorkingDirectory=/home/wlsdud5035/urban-immune-system/frontend
+Environment="NODE_ENV=production"
+Environment="PORT=3000"
+EnvironmentFile=/home/wlsdud5035/urban-immune-system/.env
+# 프로덕션 빌드 → 시작. 빌드 산출물(.next/) 미존재 시 자동 빌드.
+ExecStartPre=/bin/bash -c '[ -d /home/wlsdud5035/urban-immune-system/frontend/.next ] || /usr/bin/npx next build'
+ExecStart=/usr/bin/npx next start -p 3000
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:/var/log/uis-frontend.log
+StandardError=append:/var/log/uis-frontend.log
+
+# 보안 하드닝
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=/home/wlsdud5035/urban-immune-system /var/log
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

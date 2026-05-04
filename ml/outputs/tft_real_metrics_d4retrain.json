@@ -1,0 +1,262 @@
+{
+  "generated_at": "2026-05-03T08:29:31.802786+00:00",
+  "config": {
+    "data_source": "real_db",
+    "pathogen": "influenza",
+    "n_weeks_meta": 26,
+    "n_regions": 17,
+    "n_rows": 1955,
+    "max_epochs": 30,
+    "batch_size": 8,
+    "max_encoder_length": 12,
+    "max_prediction_length": 2,
+    "feature_cols": [
+      "l1_otc",
+      "l2_wastewater",
+      "l3_search",
+      "temperature"
+    ],
+    "target_col": "confirmed_future",
+    "min_weeks_per_region": 14
+  },
+  "model_params": 70253,
+  "best_checkpoint": "/home/wlsdud5035/urban-immune-system/ml/checkpoints/tft_real/tft_best-v2.ckpt",
+  "best_val_loss": 9.58731460571289,
+  "loss_curve_tail": [
+    {
+      "epoch": 9,
+      "step": 2299,
+      "train_loss": 1.1846091747283936,
+      "val_loss": null
+    },
+    {
+      "epoch": 9,
+      "step": 2329,
+      "train_loss": null,
+      "val_loss": 9.750543594360352
+    },
+    {
+      "epoch": 9,
+      "step": 2329,
+      "train_loss": null,
+      "val_loss": null
+    },
+    {
+      "epoch": 10,
+      "step": 2349,
+      "train_loss": 1.8556734323501587,
+      "val_loss": null
+    },
+    {
+      "epoch": 10,
+      "step": 2399,
+      "train_loss": 1.8035117387771609,
+      "val_loss": null
+    },
+    {
+      "epoch": 10,
+      "step": 2449,
+      "train_loss": 1.8376331329345703,
+      "val_loss": null
+    },
+    {
+      "epoch": 10,
+      "step": 2499,
+      "train_loss": 1.1810755729675293,
+      "val_loss": null
+    },
+    {
+      "epoch": 10,
+      "step": 2549,
+      "train_loss": 1.889414668083191,
+      "val_loss": null
+    },
+    {
+      "epoch": 10,
+      "step": 2562,
+      "train_loss": null,
+      "val_loss": 9.978625297546388
+    },
+    {
+      "epoch": 10,
+      "step": 2562,
+      "train_loss": null,
+      "val_loss": null
+    },
+    {
+      "epoch": 11,
+      "step": 2599,
+      "train_loss": 3.103496789932251,
+      "val_loss": null
+    },
+    {
+      "epoch": 11,
+      "step": 2649,
+      "train_loss": 2.347602605819702,
+      "val_loss": null
+    },
+    {
+      "epoch": 11,
+      "step": 2699,
+      "train_loss": 2.2167108058929443,
+      "val_loss": null
+    },
+    {
+      "epoch": 11,
+      "step": 2749,
+      "train_loss": 6.763392925262451,
+      "val_loss": null
+    },
+    {
+      "epoch": 11,
+      "step": 2795,
+      "train_loss": null,
+      "val_loss": 9.922218322753906
+    },
+    {
+      "epoch": 11,
+      "step": 2795,
+      "train_loss": null,
+      "val_loss": null
+    },
+    {
+      "epoch": 12,
+      "step": 2799,
+      "train_loss": 4.204102039337158,
+      "val_loss": null
+    },
+    {
+      "epoch": 12,
+      "step": 2849,
+      "train_loss": 1.7289059162139893,
+      "val_loss": null
+    },
+    {
+      "epoch": 12,
+      "step": 2899,
+      "train_loss": 2.581129550933838,
+      "val_loss": null
+    },
+    {
+      "epoch": 12,
+      "step": 2949,
+      "train_loss": 1.0772883892059326,
+      "val_loss": null
+    },
+    {
+      "epoch": 12,
+      "step": 2999,
+      "train_loss": 2.289109706878662,
+      "val_loss": null
+    },
+    {
+      "epoch": 12,
+      "step": 3028,
+      "train_loss": null,
+      "val_loss": 9.633338928222656
+    },
+    {
+      "epoch": 12,
+      "step": 3028,
+      "train_loss": null,
+      "val_loss": null
+    },
+    {
+      "epoch": 13,
+      "step": 3049,
+      "train_loss": 1.6600595712661743,
+      "val_loss": null
+    },
+    {
+      "epoch": 13,
+      "step": 3099,
+      "train_loss": 0.9152089953422546,
+      "val_loss": null
+    },
+    {
+      "epoch": 13,
+      "step": 3149,
+      "train_loss": 3.3049490451812744,
+      "val_loss": null
+    },
+    {
+      "epoch": 13,
+      "step": 3199,
+      "train_loss": 2.2139363288879395,
+      "val_loss": null
+    },
+    {
+      "epoch": 13,
+      "step": 3249,
+      "train_loss": 2.9379570484161377,
+      "val_loss": null
+    },
+    {
+      "epoch": 13,
+      "step": 3261,
+      "train_loss": null,
+      "val_loss": 10.00698184967041
+    },
+    {
+      "epoch": 13,
+      "step": 3261,
+      "train_loss": null,
+      "val_loss": null
+    }
+  ],
+  "prediction_summary": {
+    "n_samples": 17,
+    "horizon_steps": 2,
+    "mean_pred_per_horizon": [
+      19.638078689575195,
+      19.471790313720703
+    ]
+  },
+  "attention_summary": {
+    "encoder_attention_shape": [
+      17,
+      2,
+      4,
+      12
+    ],
+    "encoder_variable_importance_shape": [
+      17,
+      12,
+      1,
+      7
+    ],
+    "mean_attention_per_encoder_step": [
+      0.0833333358168602,
+      0.07786198705434799
+    ],
+    "mean_encoder_variable_importance": [
+      [
+        0.482538640499115,
+        0.12113539129495621,
+        0.035787370055913925,
+        0.03799055516719818,
+        0.0848245695233345,
+        0.0312657505273819,
+        0.2064577341079712
+      ]
+    ],
+    "encoder_variable_names": [
+      "encoder_length",
+      "confirmed_future_center",
+      "confirmed_future_scale",
+      "time_idx",
+      "relative_time_idx",
+      "l1_otc",
+      "l2_wastewater",
+      "l3_search",
+      "temperature",
+      "confirmed_future"
+    ],
+    "attention_top3_kr": [
+      "기온",
+      "하수기반감시",
+      "OTC약국판매"
+    ],
+    "attention_summary_kr": "기온(AUX) 0.21 · 하수(L2) 0.08 · OTC(L1) 0.04"
+  }
+}

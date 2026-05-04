@@ -1,0 +1,53 @@
+{
+  "config": {
+    "users": 50,
+    "spawn_rate": 5,
+    "run_time": "3m",
+    "host": "http://localhost:8001"
+  },
+  "endpoints": {
+    "/api/v1/alerts/current": {
+      "requests": 1975,
+      "failures": 0,
+      "p50_ms": 7.0,
+      "p95_ms": 12.0,
+      "p99_ms": 23.0,
+      "avg_ms": 7.835328411303543,
+      "rps": 11.013639210366666
+    },
+    "/api/v1/alerts/regions": {
+      "requests": 3100,
+      "failures": 0,
+      "p50_ms": 8.0,
+      "p95_ms": 14.0,
+      "p99_ms": 27.0,
+      "avg_ms": 9.250163469771524,
+      "rps": 17.28723116563882
+    },
+    "/api/v1/predictions/explain": {
+      "requests": 650,
+      "failures": 0,
+      "p50_ms": 3.0,
+      "p95_ms": 6.0,
+      "p99_ms": 11.0,
+      "avg_ms": 3.552826668064182,
+      "rps": 3.6247420186016877
+    },
+    "/api/v1/signals/timeseries": {
+      "requests": 1245,
+      "failures": 0,
+      "p50_ms": 8.0,
+      "p95_ms": 15.0,
+      "p99_ms": 71.0,
+      "avg_ms": 10.349871692246285,
+      "rps": 6.942775097167848
+    }
+  },
+  "aggregate": {
+    "total_requests": 6970,
+    "total_failures": 0,
+    "failure_rate": 0.0,
+    "max_p95_ms": 15.0,
+    "sla_p95_500ms": true
+  }
+}

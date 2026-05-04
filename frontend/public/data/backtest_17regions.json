@@ -1,0 +1,386 @@
+{
+  "description": "UIS 17개 시·도 백테스트 (2025-W40 ~ 2026-W08)",
+  "gate_config": {
+    "cross_validation_min_layers": 2,
+    "cross_validation_layer_threshold": 30.0,
+    "red_threshold": 75.0,
+    "gate_a_status": "discarded (sweep 결과 sweet spot 없음)"
+  },
+  "regions": {
+    "서울특별시": {
+      "status": "ok",
+      "first_yellow_week": "2025-W43",
+      "confirmed_peak_week": "2025-W50",
+      "confirmed_peak_count": 43040,
+      "lead_weeks": 7,
+      "precision": 0.5,
+      "recall": 1.0,
+      "f1": 0.6667,
+      "false_alarm_rate": 0.6154,
+      "confusion_matrix": {
+        "TP": 8,
+        "FP": 8,
+        "FN": 0,
+        "TN": 5
+      },
+      "far_no_gate": 0.6154,
+      "recall_no_gate": 1.0,
+      "f1_no_gate": 0.6667,
+      "weeks_analyzed": 21
+    },
+    "경기도": {
+      "status": "ok",
+      "first_yellow_week": "2025-W44",
+      "confirmed_peak_week": "2025-W50",
+      "confirmed_peak_count": 60627,
+      "lead_weeks": 6,
+      "precision": 0.4375,
+      "recall": 0.875,
+      "f1": 0.5833,
+      "false_alarm_rate": 0.6923,
+      "confusion_matrix": {
+        "TP": 7,
+        "FP": 9,
+        "FN": 1,
+        "TN": 4
+      },
+      "far_no_gate": 0.6923,
+      "recall_no_gate": 0.875,
+      "f1_no_gate": 0.5833,
+      "weeks_analyzed": 21
+    },
+    "부산광역시": {
+      "status": "ok",
+      "first_yellow_week": "2025-W42",
+      "confirmed_peak_week": "2025-W50",
+      "confirmed_peak_count": 14810,
+      "lead_weeks": 8,
+      "precision": 0.4211,
+      "recall": 1.0,
+      "f1": 0.5926,
+      "false_alarm_rate": 0.8462,
+      "confusion_matrix": {
+        "TP": 8,
+        "FP": 11,
+        "FN": 0,
+        "TN": 2
+      },
+      "far_no_gate": 0.8462,
+      "recall_no_gate": 1.0,
+      "f1_no_gate": 0.5926,
+      "weeks_analyzed": 21
+    },
+    "인천광역시": {
+      "status": "ok",
+      "first_yellow_week": "2025-W45",
+      "confirmed_peak_week": "2025-W50",
+      "confirmed_peak_count": 13190,
+      "lead_weeks": 5,
+      "precision": 0.375,
+      "recall": 0.75,
+      "f1": 0.5,
+      "false_alarm_rate": 0.7692,
+      "confusion_matrix": {
+        "TP": 6,
+        "FP": 10,
+        "FN": 2,
+        "TN": 3
+      },
+      "far_no_gate": 0.7692,
+      "recall_no_gate": 0.75,
+      "f1_no_gate": 0.5,
+      "weeks_analyzed": 21
+    },
+    "대구광역시": {
+      "status": "ok",
+      "first_yellow_week": "2025-W45",
+      "confirmed_peak_week": "2025-W50",
+      "confirmed_peak_count": 10644,
+      "lead_weeks": 5,
+      "precision": 0.6,
+      "recall": 0.75,
+      "f1": 0.6667,
+      "false_alarm_rate": 0.3077,
+      "confusion_matrix": {
+        "TP": 6,
+        "FP": 4,
+        "FN": 2,
+        "TN": 9
+      },
+      "far_no_gate": 0.3077,
+      "recall_no_gate": 0.75,
+      "f1_no_gate": 0.6667,
+      "weeks_analyzed": 21
+    },
+    "대전광역시": {
+      "status": "ok",
+      "first_yellow_week": "2025-W44",
+      "confirmed_peak_week": "2025-W50",
+      "confirmed_peak_count": 6479,
+      "lead_weeks": 6,
+      "precision": 0.4118,
+      "recall": 0.875,
+      "f1": 0.56,
+      "false_alarm_rate": 0.7692,
+      "confusion_matrix": {
+        "TP": 7,
+        "FP": 10,
+        "FN": 1,
+        "TN": 3
+      },
+      "far_no_gate": 0.7692,
+      "recall_no_gate": 0.875,
+      "f1_no_gate": 0.56,
+      "weeks_analyzed": 21
+    },
+    "광주광역시": {
+      "status": "ok",
+      "first_yellow_week": "2025-W45",
+      "confirmed_peak_week": "2025-W50",
+      "confirmed_peak_count": 6479,
+      "lead_weeks": 5,
+      "precision": 0.4286,
+      "recall": 0.75,
+      "f1": 0.5455,
+      "false_alarm_rate": 0.6154,
+      "confusion_matrix": {
+        "TP": 6,
+        "FP": 8,
+        "FN": 2,
+        "TN": 5
+      },
+      "far_no_gate": 0.6154,
+      "recall_no_gate": 0.75,
+      "f1_no_gate": 0.5455,
+      "weeks_analyzed": 21
+    },
+    "울산광역시": {
+      "status": "ok",
+      "first_yellow_week": "2025-W44",
+      "confirmed_peak_week": "2025-W50",
+      "confirmed_peak_count": 4859,
+      "lead_weeks": 6,
+      "precision": 0.7778,
+      "recall": 0.875,
+      "f1": 0.8235,
+      "false_alarm_rate": 0.1538,
+      "confusion_matrix": {
+        "TP": 7,
+        "FP": 2,
+        "FN": 1,
+        "TN": 11
+      },
+      "far_no_gate": 0.1538,
+      "recall_no_gate": 0.875,
+      "f1_no_gate": 0.8235,
+      "weeks_analyzed": 21
+    },
+    "세종특별자치시": {
+      "status": "ok",
+      "first_yellow_week": "2025-W41",
+      "confirmed_peak_week": "2025-W50",
+      "confirmed_peak_count": 1851,
+      "lead_weeks": 9,
+      "precision": 0.4444,
+      "recall": 1.0,
+      "f1": 0.6154,
+      "false_alarm_rate": 0.7692,
+      "confusion_matrix": {
+        "TP": 8,
+        "FP": 10,
+        "FN": 0,
+        "TN": 3
+      },
+      "far_no_gate": 0.7692,
+      "recall_no_gate": 1.0,
+      "f1_no_gate": 0.6154,
+      "weeks_analyzed": 21
+    },
+    "강원특별자치도": {
+      "status": "ok",
+      "first_yellow_week": "2025-W45",
+      "confirmed_peak_week": "2025-W50",
+      "confirmed_peak_count": 6942,
+      "lead_weeks": 5,
+      "precision": 0.4615,
+      "recall": 0.75,
+      "f1": 0.5714,
+      "false_alarm_rate": 0.5385,
+      "confusion_matrix": {
+        "TP": 6,
+        "FP": 7,
+        "FN": 2,
+        "TN": 6
+      },
+      "far_no_gate": 0.5385,
+      "recall_no_gate": 0.75,
+      "f1_no_gate": 0.5714,
+      "weeks_analyzed": 21
+    },
+    "충청북도": {
+      "status": "ok",
+      "first_yellow_week": "2025-W45",
+      "confirmed_peak_week": "2025-W50",
+      "confirmed_peak_count": 7173,
+      "lead_weeks": 5,
+      "precision": 0.8571,
+      "recall": 0.75,
+      "f1": 0.8,
+      "false_alarm_rate": 0.0769,
+      "confusion_matrix": {
+        "TP": 6,
+        "FP": 1,
+        "FN": 2,
+        "TN": 12
+      },
+      "far_no_gate": 0.0769,
+      "recall_no_gate": 0.75,
+      "f1_no_gate": 0.8,
+      "weeks_analyzed": 21
+    },
+    "충청남도": {
+      "status": "ok",
+      "first_yellow_week": "2025-W45",
+      "confirmed_peak_week": "2025-W50",
+      "confirmed_peak_count": 9487,
+      "lead_weeks": 5,
+      "precision": 0.375,
+      "recall": 0.75,
+      "f1": 0.5,
+      "false_alarm_rate": 0.7692,
+      "confusion_matrix": {
+        "TP": 6,
+        "FP": 10,
+        "FN": 2,
+        "TN": 3
+      },
+      "far_no_gate": 0.7692,
+      "recall_no_gate": 0.75,
+      "f1_no_gate": 0.5,
+      "weeks_analyzed": 21
+    },
+    "전라북도": {
+      "status": "ok",
+      "first_yellow_week": "2025-W45",
+      "confirmed_peak_week": "2025-W50",
+      "confirmed_peak_count": 7868,
+      "lead_weeks": 5,
+      "precision": 0.4286,
+      "recall": 0.75,
+      "f1": 0.5455,
+      "false_alarm_rate": 0.6154,
+      "confusion_matrix": {
+        "TP": 6,
+        "FP": 8,
+        "FN": 2,
+        "TN": 5
+      },
+      "far_no_gate": 0.6154,
+      "recall_no_gate": 0.75,
+      "f1_no_gate": 0.5455,
+      "weeks_analyzed": 21
+    },
+    "전라남도": {
+      "status": "ok",
+      "first_yellow_week": "2025-W45",
+      "confirmed_peak_week": "2025-W50",
+      "confirmed_peak_count": 8099,
+      "lead_weeks": 5,
+      "precision": 0.4615,
+      "recall": 0.75,
+      "f1": 0.5714,
+      "false_alarm_rate": 0.5385,
+      "confusion_matrix": {
+        "TP": 6,
+        "FP": 7,
+        "FN": 2,
+        "TN": 6
+      },
+      "far_no_gate": 0.5385,
+      "recall_no_gate": 0.75,
+      "f1_no_gate": 0.5714,
+      "weeks_analyzed": 21
+    },
+    "경상북도": {
+      "status": "ok",
+      "first_yellow_week": "2025-W44",
+      "confirmed_peak_week": "2025-W50",
+      "confirmed_peak_count": 11570,
+      "lead_weeks": 6,
+      "precision": 0.6364,
+      "recall": 0.875,
+      "f1": 0.7368,
+      "false_alarm_rate": 0.3077,
+      "confusion_matrix": {
+        "TP": 7,
+        "FP": 4,
+        "FN": 1,
+        "TN": 9
+      },
+      "far_no_gate": 0.3077,
+      "recall_no_gate": 0.875,
+      "f1_no_gate": 0.7368,
+      "weeks_analyzed": 21
+    },
+    "경상남도": {
+      "status": "ok",
+      "first_yellow_week": "2025-W45",
+      "confirmed_peak_week": "2025-W50",
+      "confirmed_peak_count": 14810,
+      "lead_weeks": 5,
+      "precision": 0.4286,
+      "recall": 0.75,
+      "f1": 0.5455,
+      "false_alarm_rate": 0.6154,
+      "confusion_matrix": {
+        "TP": 6,
+        "FP": 8,
+        "FN": 2,
+        "TN": 5
+      },
+      "far_no_gate": 0.6154,
+      "recall_no_gate": 0.75,
+      "f1_no_gate": 0.5455,
+      "weeks_analyzed": 21
+    },
+    "제주특별자치도": {
+      "status": "ok",
+      "first_yellow_week": "2025-W42",
+      "confirmed_peak_week": "2025-W50",
+      "confirmed_peak_count": 3008,
+      "lead_weeks": 8,
+      "precision": 0.5714,
+      "recall": 1.0,
+      "f1": 0.7273,
+      "false_alarm_rate": 0.4615,
+      "confusion_matrix": {
+        "TP": 8,
+        "FP": 6,
+        "FN": 0,
+        "TN": 7
+      },
+      "far_no_gate": 0.4615,
+      "recall_no_gate": 1.0,
+      "f1_no_gate": 0.7273,
+      "weeks_analyzed": 21
+    }
+  },
+  "summary": {
+    "total_regions": 17,
+    "ok_regions": 17,
+    "skipped_regions": [],
+    "mean_recall": 0.838,
+    "mean_precision": 0.507,
+    "mean_f1": 0.621,
+    "mean_far_with_gate": 0.557,
+    "mean_far_no_gate": 0.557,
+    "far_delta": 0.0
+  },
+  "validation": {
+    "mean_far_lt_0.5": false,
+    "mean_far_lt_0.3": false,
+    "mean_recall_gte_0.85": false,
+    "ok_regions_gte_4": true,
+    "all_pass": false
+  }
+}

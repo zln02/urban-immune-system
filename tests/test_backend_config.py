@@ -13,7 +13,11 @@ def test_settings_parse_allowed_origins_from_csv() -> None:
 
 def test_settings_reject_placeholder_db_url_in_production() -> None:
     try:
-        Settings(environment="production")
+        Settings(
+            environment="production",
+            database_url="postgresql+asyncpg://user:changeme@localhost:5432/db",
+            ml_service_url="https://ml:8001",
+        )
     except ValueError as exc:
         assert "placeholder credentials" in str(exc)
     else:

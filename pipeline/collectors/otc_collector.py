@@ -12,15 +12,22 @@ from datetime import datetime, timedelta, timezone
 
 import httpx
 
-from pipeline.collectors.kafka_producer import TOPIC_L1, send_signal
-from pipeline.collectors.normalization import min_max_normalize
+from pipeline.collectors.db_writer import insert_signal_sync
 
 logger = logging.getLogger(__name__)
 DATALAB_URL = "https://openapi.naver.com/v1/datalab/shopping/categories"
 
 # OTC 의약품 카테고리 키워드 (쇼핑인사이트 카테고리 ID 매핑 필요)
 OTC_KEYWORDS = ["감기약", "해열제", "종합감기약", "타이레놀", "판콜"]
-TARGET_REGION = "서울특별시"
+
+# 쇼핑인사이트는 region 파라미터 미지원 → 전국 단일값.
+# 17개 시·도에 동일 값으로 broadcast 한다 (UI: "전국 단일값" caveat, HIRA 연동 후 Phase 2 차등화).
+SIDO_ALL = [
+    "서울특별시", "부산광역시", "대구광역시", "인천광역시", "광주광역시",
+    "대전광역시", "울산광역시", "세종특별자치시", "경기도", "강원특별자치도",
+    "충청북도", "충청남도", "전라북도", "전라남도", "경상북도",
+    "경상남도", "제주특별자치도",
+]
 
 def collect_otc_weekly(end_date: datetime | None = None) -> float | None:
     """최근 1주 OTC 트렌드 지수를 수집해 정규화 후 Kafka로 전송한다."""
@@ -39,8 +46,8 @@ def collect_otc_weekly(end_date: datetime | None = None) -> float | None:
         "endDate": end.strftime("%Y-%m-%d"),
         "timeUnit": "week",
         "category": [
-            # TODO: 네이버 쇼핑인사이트 실제 카테고리 ID로 교체
-            {"name": "OTC감기", "param": ["50000008"]},
+            # 일반의약품 감기약 카테고리 (네이버 쇼핑인사이트)
+            {"name": "OTC감기", "param": ["50000167"]},
         ],
         "device": "",
         "ages": [],
@@ -66,15 +73,21 @@ def collect_otc_weekly(end_date: datetime | None = None) -> float | None:
             return None
 
         raw_values = [p["ratio"] for p in results[0].get("data", [])]
-        normalized = min_max_normalize(raw_values)
-        latest = normalized[-1] if normalized else None
+        # 네이버 쇼핑인사이트 ratio는 이미 0-100 지수(max=100 기준)
+        # 구간 내 min-max 재정규화 시 최신 주가 최솟값이면 0으로 왜곡되므로
+        # ratio를 그대로 정규화 지수로 사용한다.
+        latest_raw = raw_values[-1] if raw_values else None
+        latest = round(latest_raw, 2) if latest_raw is not None else None
 
         if latest is not None:
-            send_signal(
-                TOPIC_L1, TARGET_REGION, "L1", latest,
-                raw_value=raw_values[-1], source="naver_shopping_insight",
-            )
-            logger.info("Layer 1 (OTC) 수집 완료: %.2f", latest)
+            # 17개 시·도에 동일 전국 값 broadcast — 단일 region 만 적재되면
+            # /alerts/regions 가 16개 region 결손, signals/timeseries 도 region 미스매치.
+            for region in SIDO_ALL:
+                insert_signal_sync(
+                    region, "otc", latest,
+                    raw_value=latest_raw, source="naver_shopping_insight",
+                )
+            logger.info("Layer 1 (OTC) 수집 완료: %.2f → %d 지역 broadcast", latest, len(SIDO_ALL))
         return latest
 
     except Exception as exc:

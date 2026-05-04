@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 
 import httpx
 
-from pipeline.collectors.kafka_producer import TOPIC_AUX, send_signal
+from pipeline.collectors.db_writer import insert_signal_sync
 
 logger = logging.getLogger(__name__)
 KMA_CURRENT_URL = "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst"
@@ -55,8 +55,7 @@ def collect_weather(region: str = "서울특별시") -> dict | None:
         if "temperature" in result:
             # 기온 정규화: -20°C~40°C → 0~100
             norm_temp = round((result["temperature"] + 20) / 60 * 100, 2)
-            send_signal(TOPIC_AUX, region, "AUX", norm_temp,
-                        raw_value=result["temperature"], source="kma_temperature")
+            insert_signal_sync(region, "AUX", norm_temp, raw_value=result["temperature"], source="kma_temperature")
 
         return result
 

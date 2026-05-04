@@ -6,23 +6,49 @@ from datetime import datetime
 
 import streamlit as st
 
+from src.api_client import get_current_alert
 from src.config import GRAY_500, GREEN_SAFE, L1_PHARMACY, L2_SEWAGE, L3_SEARCH, ORANGE, RED
 
 
 def render_report_tab(region: str) -> None:
     issued_at = datetime.now().strftime("%Y-%m-%d %H:%M")
     st.markdown("#### RAG-LLM 자동 경보 리포트")
-    st.markdown(
-        f"""
-        <div class="report-card">
-            <div class="report-header">
-                <h3>⚠️ 감염병 조기경보 — {region}</h3>
-                <p>발령: {issued_at} · 위험도: Level 4 (심각) · 예상 감염병: 인플루엔자 A</p>
+
+    # Try API for current alert summary
+    alert = get_current_alert(region)
+    if alert and alert.get("summary"):
+        level = alert["alert_level"]
+        score = alert["composite_score"]
+        color_map = {"GREEN": "🟢", "YELLOW": "🟡", "ORANGE": "🟠", "RED": "🔴"}
+        st.info(
+            f"{color_map.get(level, '⚪')} **{level}** (종합점수: {score}) — "
+            f"생성: {alert.get('generated_at', issued_at)}"
+        )
+        st.markdown(
+            f"""
+            <div class="report-card">
+                <div class="report-header">
+                    <h3>감염병 조기경보 — {region}</h3>
+                    <p>발령: {issued_at} · 경보단계: {level} · 종합점수: {score}</p>
+                </div>
+                <p>{alert['summary']}</p>
+                <div class="recommend-box"><strong>권고사항</strong><br>{alert.get('recommendations', '')}</div>
             </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            f"""
+            <div class="report-card">
+                <div class="report-header">
+                    <h3>⚠️ 감염병 조기경보 — {region}</h3>
+                    <p>발령: {issued_at} · 위험도: Level 4 (심각) · 예상 감염병: 인플루엔자 A</p>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     st.markdown("**Layer별 TFT Attention 기여도**")
     st.markdown(

@@ -1,0 +1,11 @@
+[run]
+source = backend, ml, pipeline
+omit =
+    tests/*
+    .venv/*
+    */migrations/*
+    */__init__.py
+
+[report]
+show_missing = True
+skip_empty = True
