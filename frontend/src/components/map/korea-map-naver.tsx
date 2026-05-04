@@ -187,7 +187,9 @@ export function KoreaMapNaver({ data, lang, selected, onSelect, height = 480 }: 
 
     return () => {
       cancelled = true;
-      polysRef.current.forEach((p) => p.setMap(null));
+      polysRef.current.forEach((p) => {
+        try { p.setMap(null); } catch { /* SDK 내부 race — 무시 */ }
+      });
       polysRef.current.clear();
       mapRef.current = null;
     };
