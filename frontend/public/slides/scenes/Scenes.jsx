@@ -761,36 +761,7 @@ function ScopeItem({ text, delay, accent, strike }) {
   );
 }
 
-// ----- S09 모듈별 진행사항 (수치 검증 반영) -----
-function S09() {
-  const mods = [
-    { name: 'L2 하수 자동 크롤링 · KOWAS PDF 72개 다운로드',     pct: 100 },
-    { name: 'L1·L3 · 약국 OTC + 검색 트렌드 수집·정규화',         pct: 100 },
-    { name: 'RAG · Qdrant · WHO/ECDC/KDCA 17건 임베딩',           pct: 90 },
-    { name: 'Infra · CI/CD · pytest 128 (정규화·DB·API·보안) · GH Actions',  pct: 85 },
-    { name: 'Walk-forward 17지역 백테스트 · 1줄 재현',            pct: 80 },
-    { name: 'TFT 시계열 실학습 · 70K params · 실데이터 17지역 완료',  pct: 70 },
-  ];
-  return (
-    <>
-      <Chrome index={9} label="09 · MODULE PROGRESS" />
-      <Line x={120} y={140} style={TYPE.eyebrow}>모듈별 진행사항 · 발표 직전 갱신</Line>
-      <Line x={120} y={200} delay={0.1} style={TYPE.title}>실제 산출물 기준, 솔직하게.</Line>
-
-      <Plate x={120} y={380} width={1680} height={580} delay={0.5}>
-        <div style={{ position: 'relative', padding: 56, height: '100%', boxSizing: 'border-box' }}>
-          {mods.map((m, i) => (
-            <Bar key={i} x={56} y={56 + i * 72} width={1568} pct={m.pct}
-              label={m.name} value={m.pct + '%'} delay={0.8 + i*0.12} />
-          ))}
-          <div style={{ position: 'absolute', left: 56, bottom: 40, ...TYPE.small, color: WHITE_70 }}>
-            마무리 작업 — TFT prod 전환 · 발표 시연 예행 · 외부 자문 자료 발송
-          </div>
-        </div>
-      </Plate>
-    </>
-  );
-}
+// (S09 Module Progress 제거 — 2026-05-05 다이어트, 검증 라인은 S11 하단으로 흡수)
 
 // ----- S10 Demo (강화 — 진짜 대시보드 mock UI + STACK) -----
 function S10() {
@@ -1360,12 +1331,14 @@ function S11() {
         </div>
       </Plate>
 
-      {/* 하단 재현 명령 배지 — Chrome footer(y=1020) 침범 방지 */}
+      {/* 하단 재현 명령 + 검증 배지 — Chrome footer(y=1020) 침범 방지 */}
       <Plate x={120} y={945} width={1680} height={50} delay={2.3} opacity={0.4}>
-        <div style={{ padding: '10px 28px', fontFamily: FONT, fontSize: 17, color: WHITE_70, display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div style={{ padding: '10px 28px', fontFamily: FONT, fontSize: 15, color: WHITE_70, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
           <span style={{ ...TYPE.label, color: ACCENT, fontSize: 13 }}>재현</span>
-          <span style={{ fontFamily: CODE_FONT, fontSize: 17, color: ACCENT }}>$ python -m ml.reproduce_validation</span>
-          <span>— 누가 돌려도 같은 수치</span>
+          <span style={{ fontFamily: CODE_FONT, fontSize: 16, color: ACCENT }}>$ python -m ml.reproduce_validation</span>
+          <span style={{ color: WHITE_45 }}>·</span>
+          <span style={{ ...TYPE.label, color: ACCENT, fontSize: 13 }}>검증</span>
+          <span>pytest 128 통과 · RAG 시드 20건 · KOWAS 17지역 적재 완료</span>
         </div>
       </Plate>
     </>
@@ -1451,51 +1424,86 @@ function GrangerRow({ label, p, delay }) {
   );
 }
 
-// ----- S12 Competitive map -----
+// ----- S12 Competitive landscape (2026-05-05 4-quadrant 통합 — S12B 흡수) -----
 function S12() {
-  const rows = [
-    ['BlueDot',        '뉴스·항공 NLP',    '글로벌',  '다수',   ''],
-    ['CDC NWSS',       '하수 감시',        '미국',    '1',      ''],
-    ['KAIST 연구',     '이동량+독감',      '한국',    '2',      ''],
-    ['Xu 2025',        '검색+하수',        '중국',    '2',      ''],
-    ['Urban Immune',   '약국·하수·검색',   '한국 시도','3',     'ours'],
+  const quadrants = [
+    {
+      pos: 'tl',
+      title: 'BlueDot',
+      tag: '글로벌 · 민간',
+      bullets: ['뉴스·SNS 텍스트 NLP', '9일 선행 (COVID-19)', '운영비 $$$$ · 2014~'],
+      tone: 'mid',
+    },
+    {
+      pos: 'tr',
+      title: 'HealthMap',
+      tag: '美 보스턴소아병원 · 2006~',
+      bullets: ['자동 뉴스 스크래핑', '의료 raw 데이터 0', 'SMS 신고 · 부분 단일 신호'],
+      tone: 'mid',
+    },
+    {
+      pos: 'bl',
+      title: '한국 KCDC ILINet',
+      tag: '질병관리청 · 2008~',
+      bullets: ['임상 신고 후행 (~2주)', '국가 표본감시 · AI 통합 0건', '2026.03 전략 심포지엄 단계'],
+      tone: 'warm',
+    },
+    {
+      pos: 'br',
+      title: '★ Urban Immune System',
+      tag: '한국 · 캡스톤 · 2026',
+      bullets: ['3-Layer 정량 신호 (OTC·하수·검색)', '6.47주 선행 · 게이트 B 교차검증', '한국 first-mover · KIPRIS 미확인'],
+      tone: 'hero',
+    },
   ];
   return (
     <>
-      <Chrome index={12} label="12 · COMPETITIVE MAP" />
-      <Line x={120} y={140} style={TYPE.eyebrow}>경쟁 맵</Line>
-      <Line x={120} y={200} delay={0.1} style={TYPE.title}>세 신호를 교차하는 한국 맞춤형.</Line>
+      <Chrome index={12} label="12 · COMPETITIVE LANDSCAPE" />
+      <Line x={120} y={140} style={TYPE.eyebrow}>선행 사례 · 자체 조사 — 외부 자문 직전</Line>
+      <Line x={120} y={200} delay={0.1} style={TYPE.title}>이미 누가, 우리는 어디에 서 있나.</Line>
 
-      <Plate x={120} y={380} width={1680} height={540} delay={0.5}>
-        <div style={{ padding: 40, fontFamily: FONT }}>
-          <div style={{ display:'grid', gridTemplateColumns:'2.2fr 2.6fr 1.6fr 1fr', gap: 24, ...TYPE.label, paddingBottom: 18, borderBottom:`1px solid ${WHITE_15}` }}>
-            <span>프로젝트</span><span>접근</span><span>지역</span><span style={{ textAlign:'right' }}>신호 수</span>
-          </div>
-          {rows.map((r, i) => <CompRow key={i} row={r} delay={0.9 + i*0.12} />)}
-        </div>
-      </Plate>
+      <div style={{ position: 'absolute', left: 120, top: 320, right: 120, display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 28, height: 600 }}>
+        {quadrants.map((q, i) => <QuadCard key={i} {...q} delay={0.5 + i * 0.18} />)}
+      </div>
 
-      <Line x={120} y={960} delay={2.0} style={{ ...TYPE.small, color: WHITE_45 }}>
-        솔직 인정 — 데이터 규모, 임상 검증은 다음 단계의 타깃.
+      <Line x={120} y={950} delay={1.6} style={{ ...TYPE.small, color: WHITE_45 }}>
+        KIPRIS 검색 — 3계층(OTC+하수+검색) 동시 결합 특허 미확인 · KDCA·환경부 운영과는 보완 관계.
       </Line>
     </>
   );
 }
-function CompRow({ row, delay }) {
+
+function QuadCard({ title, tag, bullets, tone, delay }) {
   const { localTime } = useSprite();
-  const p = Easing.easeOutCubic(Math.max(0, Math.min(1, (localTime - delay) / 0.5)));
-  const ours = row[4] === 'ours';
+  const p = Easing.easeOutCubic(Math.max(0, Math.min(1, (localTime - delay) / 0.6)));
+  const isHero = tone === 'hero';
+  const accentColor = isHero ? ACCENT : (tone === 'warm' ? '#F4A261' : WHITE_45);
   return (
     <div style={{
-      display:'grid', gridTemplateColumns:'2.2fr 2.6fr 1.6fr 1fr', gap: 24,
-      padding: '20px 0', borderBottom: `1px solid ${WHITE_15}`,
-      opacity: p, transform: `translateX(${(1-p)*-12}px)`,
-      color: ours ? ACCENT : WHITE, fontSize: 24, fontWeight: ours ? 600 : 400,
+      opacity: p, transform: `translateY(${(1-p)*14}px)`, fontFamily: FONT,
+      border: `1px solid ${isHero ? ACCENT : WHITE_15}`,
+      background: isHero ? 'rgba(34,227,255,0.08)' : 'rgba(5,7,11,0.45)',
+      padding: '24px 28px', boxSizing: 'border-box', position: 'relative',
     }}>
-      <span>{row[0]}{ours && <span style={{ marginLeft:10, fontSize:16, color:'#05070B', background:ACCENT, padding:'2px 10px' }}>OURS</span>}</span>
-      <span style={{ color: ours ? ACCENT : WHITE_70 }}>{row[1]}</span>
-      <span style={{ color: ours ? ACCENT : WHITE_70 }}>{row[2]}</span>
-      <span style={{ textAlign:'right', fontWeight: 600 }}>{row[3]}</span>
+      <div style={{ ...TYPE.label, color: accentColor, fontFamily: CODE_FONT, fontSize: 12 }}>{tag}</div>
+      <div style={{
+        fontSize: isHero ? 32 : 26, color: isHero ? ACCENT : WHITE,
+        fontWeight: isHero ? 700 : 600, marginTop: 10, letterSpacing: '-0.01em',
+      }}>{title}</div>
+      <div style={{ marginTop: 18 }}>
+        {bullets.map((b, i) => {
+          const ip = Easing.easeOutCubic(Math.max(0, Math.min(1, (localTime - delay - 0.35 - i * 0.1) / 0.4)));
+          return (
+            <div key={i} style={{
+              display: 'flex', alignItems: 'baseline', gap: 10,
+              padding: '8px 0', opacity: ip,
+            }}>
+              <span style={{ width: 5, height: 5, background: accentColor, flexShrink: 0, marginTop: 8 }} />
+              <span style={{ fontSize: 16, color: isHero ? WHITE : WHITE_70, lineHeight: 1.45 }}>{b}</span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -1609,114 +1617,119 @@ function CustRow({ name, desc, delay }) {
 }
 
 // ----- S15 Roadmap -----
+// =============================================================================
+// S15 — ROADMAP TO FINAL (2026-05-05 갈아엎음): 5/7 → 6/9~14 6주 plan
+// =============================================================================
 function S15() {
-  const phases = [
-    { tag: 'NOW',      date: '~2026.06', title: 'Phase 1', desc: '캡스톤 완주' },
-    { tag: 'NEXT',     date: '2026 H2',  title: 'Phase 2', desc: 'ILINet · PoC + 부처 자동 발송' },
-    { tag: '2027 H1',  date: '2027.01',  title: 'Phase 3', desc: 'ISMS-P · 유료 1곳' },
-    { tag: '2027 H2',  date: '2027.07',  title: 'Phase 4', desc: '광역 2곳 · AE 운영' },
-    { tag: '2028+',    date: '2028~',    title: 'Phase 5', desc: 'KDCA 납품 · WHO' },
+  const sections = [
+    {
+      tag: 'WEEK 1-2',
+      date: '5/8 ~ 5/21',
+      title: '운영 안정성',
+      tone: 'warm',
+      items: [
+        'Kafka Consumer 실연결 (InMemory → KRaft)',
+        '전처리 모듈 분리 (pipeline/features.py)',
+        '알람 신뢰도 점수 (binary → 0~1 score)',
+      ],
+    },
+    {
+      tag: 'WEEK 3-4',
+      date: '5/22 ~ 6/4',
+      title: '일반화 입증',
+      tone: 'mid',
+      items: [
+        'HIRA OpenAPI · L1 지역 분리',
+        '다질환 확장 · 코로나·노로 검증',
+        'AE threshold 튜닝 · FAR < 0.15',
+      ],
+    },
+    {
+      tag: 'WEEK 5-6',
+      date: '6/5 ~ 6/9',
+      title: '최종 검증',
+      tone: 'cool',
+      items: [
+        '시즌 추가 검증 · 2022-23, 2023-24 백테스트',
+        'K8s 다중 노드 · GKE 3 node',
+        '광역지자체 PoC MOU 시도',
+      ],
+    },
+  ];
+  const targets = [
+    { metric: 'F1', target: '> 0.90', baseline: '현 0.882', hero: true },
+    { metric: 'FAR', target: '< 0.15', baseline: '현 0.206', hero: true },
+    { metric: 'Multi-disease', target: '2종 검증', baseline: '현 인플루엔자 1종' },
+    { metric: 'PoC MOU', target: '광역지자체 1건 시도', baseline: '신규' },
   ];
   return (
     <>
-      <Chrome index={15} label="15 · ROADMAP" />
-      <Line x={120} y={140} style={TYPE.eyebrow}>로드맵 · 상용화</Line>
-      <Line x={120} y={200} delay={0.1} style={TYPE.title}>지금 → 2027 B2G.</Line>
+      <Chrome index={15} label="15 · ROADMAP TO FINAL" />
+      <Line x={120} y={140} style={TYPE.eyebrow}>ROADMAP TO FINAL — 5/7 ▶ 6/9~14 (6주)</Line>
+      <Line x={120} y={200} delay={0.1} style={TYPE.title}>중간발표 → 최종발표 6주.</Line>
 
-      <RoadmapBar delay={0.5} />
-
-      <div style={{ position:'absolute', left: 120, top: 440, right: 120, display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap: 32 }}>
-        {phases.map((p, i) => <PhaseCard key={i} {...p} delay={0.8 + i*0.14} accent={i<=1} />)}
+      <div style={{ position: 'absolute', left: 120, top: 320, right: 120, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 28 }}>
+        {sections.map((s, i) => <RoadmapSection key={i} section={s} delay={0.5 + i * 0.25} />)}
       </div>
 
-      <Plate x={120} y={760} width={820} height={220} delay={1.8}>
-        <div style={{ padding: 24, fontFamily: FONT }}>
-          <div style={{ ...TYPE.label, color: WHITE_45 }}>가격 모델 · B2G 3-tier (추정·docs/business/pricing-model.md)</div>
-          <div style={{ marginTop: 14 }}>
-            <PriceRow tier="A · 구독" detail="지자체 연 2,000~6,000만 · 광역 연 1~3억" delay={2.0} />
-            <PriceRow tier="C · PoC"  detail="30일 1,000만 / 60일 2,000만 / 90일 3,000만" delay={2.15} hero />
-            <PriceRow tier="B · 건당" detail="RAG 리포트 50~300만 / 건 (보험·연구·언론)" delay={2.30} dim />
-          </div>
-        </div>
-      </Plate>
-      <Plate x={980} y={760} width={820} height={220} delay={2.0}>
-        <div style={{ padding: 24, fontFamily: FONT }}>
-          <div style={{ ...TYPE.label, color: ACCENT }}>6개월 목표</div>
-          <div style={{ marginTop: 14 }}>
-            <GoalRow label="정부과제" value="2,000~5,000만" delay={2.15} />
-            <GoalRow label="PoC 1건" value="≈ 1,000~3,000만 (Tier C)" delay={2.30} hero />
-            <GoalRow label="논문" value="1편 (walk-forward 백테스트)" delay={2.45} />
+      <Plate x={120} y={780} width={1680} height={200} delay={1.6}>
+        <div style={{ padding: '22px 32px', fontFamily: FONT }}>
+          <div style={{ ...TYPE.label, color: ACCENT }}>FINAL TARGETS · 6/9~14</div>
+          <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+            {targets.map((t, i) => <TargetCard key={i} {...t} delay={1.95 + i * 0.12} />)}
           </div>
         </div>
       </Plate>
     </>
   );
 }
-function PriceRow({ tier, detail, delay, hero, dim }) {
+
+function RoadmapSection({ section, delay }) {
   const { localTime } = useSprite();
-  const p = Easing.easeOutCubic(Math.max(0, Math.min(1, (localTime - delay) / 0.5)));
+  const p = Easing.easeOutCubic(Math.max(0, Math.min(1, (localTime - delay) / 0.6)));
+  const tone = section.tone === 'warm' ? '#F4A261' : section.tone === 'mid' ? '#E9C46A' : ACCENT;
   return (
     <div style={{
-      display: 'flex', alignItems: 'baseline', gap: 16,
-      padding: '10px 0', borderBottom: `1px solid ${WHITE_15}`,
-      opacity: p, transform: `translateX(${(1-p)*-8}px)`,
+      opacity: p, transform: `translateY(${(1-p)*16}px)`, fontFamily: FONT,
+      border: `1px solid ${WHITE_15}`, borderTop: `3px solid ${tone}`,
+      background: 'rgba(5,7,11,0.45)', padding: '24px 26px', height: 420, boxSizing: 'border-box',
     }}>
-      <span style={{
-        width: 80, flexShrink: 0,
-        fontSize: 14, fontFamily: CODE_FONT, letterSpacing: '0.06em',
-        color: hero ? ACCENT : WHITE_45, fontWeight: 600,
-      }}>{tier}</span>
-      <span style={{
-        fontSize: hero ? 22 : 19,
-        color: hero ? WHITE : (dim ? WHITE_70 : WHITE),
-        fontWeight: hero ? 600 : 400, lineHeight: 1.4,
-      }}>{detail}</span>
+      <div style={{ ...TYPE.label, color: tone, fontFamily: CODE_FONT, fontSize: 13 }}>{section.tag}</div>
+      <div style={{ fontSize: 14, color: WHITE_45, marginTop: 6, fontFamily: CODE_FONT }}>{section.date}</div>
+      <div style={{ fontSize: 30, color: WHITE, fontWeight: 600, marginTop: 18, letterSpacing: '-0.01em' }}>{section.title}</div>
+      <div style={{ marginTop: 22 }}>
+        {section.items.map((it, i) => {
+          const ip = Easing.easeOutCubic(Math.max(0, Math.min(1, (localTime - delay - 0.3 - i * 0.12) / 0.4)));
+          return (
+            <div key={i} style={{
+              display: 'flex', alignItems: 'baseline', gap: 12,
+              padding: '12px 0', borderBottom: `1px solid ${WHITE_15}`,
+              opacity: ip, transform: `translateX(${(1-ip)*-8}px)`,
+            }}>
+              <span style={{ width: 6, height: 6, background: tone, flexShrink: 0, marginTop: 7 }} />
+              <span style={{ fontSize: 17, color: WHITE, lineHeight: 1.4 }}>{it}</span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
 
-function GoalRow({ label, value, delay, hero }) {
+function TargetCard({ metric, target, baseline, hero, delay }) {
   const { localTime } = useSprite();
   const p = Easing.easeOutCubic(Math.max(0, Math.min(1, (localTime - delay) / 0.5)));
   return (
     <div style={{
-      display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-      padding: '10px 0', borderBottom: `1px solid ${WHITE_15}`,
-      opacity: p, transform: `translateX(${(1-p)*-8}px)`,
+      opacity: p, transform: `translateY(${(1-p)*8}px)`,
+      borderLeft: `2px solid ${hero ? ACCENT : WHITE_45}`, paddingLeft: 14,
     }}>
-      <span style={{ fontSize: 17, color: WHITE_70 }}>{label}</span>
-      <span style={{
-        fontSize: hero ? 21 : 18,
-        color: hero ? ACCENT : WHITE,
-        fontWeight: hero ? 700 : 500, fontFeatureSettings: '"lnum"',
-      }}>{value}</span>
-    </div>
-  );
-}
-
-function RoadmapBar({ delay }) {
-  const { localTime } = useSprite();
-  const p = Easing.easeOutCubic(Math.max(0, Math.min(1, (localTime - delay) / 1.2)));
-  return (
-    <div style={{ position:'absolute', left:120, top: 400, right: 120, height: 2, background: WHITE_15 }}>
-      <div style={{ width: `${100*p}%`, height: '100%', background: ACCENT }} />
-    </div>
-  );
-}
-function PhaseCard({ tag, date, title, desc, delay, accent }) {
-  const { localTime } = useSprite();
-  const pp = Easing.easeOutCubic(Math.max(0, Math.min(1, (localTime - delay) / 0.5)));
-  return (
-    <div style={{ opacity: pp, transform:`translateY(${(1-pp)*12}px)`, fontFamily: FONT }}>
+      <div style={{ ...TYPE.label, color: hero ? ACCENT : WHITE_45, fontSize: 11, fontFamily: CODE_FONT }}>{metric}</div>
       <div style={{
-        width: 16, height: 16, borderRadius: 0,
-        background: accent ? ACCENT : WHITE_45,
-        marginTop: -49, marginBottom: 24,
-      }} />
-      <div style={{ ...TYPE.label, color: accent ? ACCENT : WHITE_45 }}>{tag}</div>
-      <div style={{ fontSize: 32, color: WHITE, fontWeight: 600, marginTop: 10 }}>{title}</div>
-      <div style={{ ...TYPE.small, color: WHITE_70, marginTop: 6 }}>{date}</div>
-      <div style={{ fontSize: 22, color: WHITE, marginTop: 16, fontWeight: 400 }}>{desc}</div>
+        fontSize: hero ? 24 : 20, color: hero ? ACCENT : WHITE,
+        fontWeight: hero ? 700 : 600, marginTop: 6, fontFeatureSettings: '"lnum"',
+      }}>{target}</div>
+      <div style={{ fontSize: 13, color: WHITE_45, marginTop: 4 }}>{baseline}</div>
     </div>
   );
 }
@@ -1983,98 +1996,15 @@ function S07A() {
 
       <TrapPanel x={1080} y={380} width={720} height={580} delay={0.9}
         trap="키워드 한 통에 섞으면 구매 의도와 증상 불안이 뒤섞여 신호가 무뎌진다."
-        fix="L1=구매(약), L3=증상검색을 의도적 분리. L2는 KOWAS PDF 그래프 RGB 픽셀로 직접 측정."
+        fix="L1=구매(약), L3=증상검색을 의도적 분리. L2는 KOWAS PDF 그래프 RGB 픽셀로 직접 측정. KOWAS는 API 비공개라 Selenium으로 PDF 자동 다운로드 (72개 자동 수집)."
         result="L1 130 · L2 952 · L3 130 건/주 — 17지역 26주 누적" />
     </>
   );
 }
 
 // =============================================================================
-// S07A2 — 크롤링 → Kafka → TimescaleDB 적재 (실제 코드)
+// (S07A2 + ERMini + ERTable 제거 — 2026-05-05 다이어트, S07A 에 한 줄 흡수)
 // =============================================================================
-function S07A2() {
-  const lines = [
-    { t: '# pipeline/collectors/kowas_downloader.py · Selenium', dim: true },
-    { t: 'def download_latest(client, n=8):' },
-    { t: '    reports = list_reports(client, max_pages=2)' },
-    { t: '    for r in reports[:n]:' },
-    { t: '        for url, name in fetch_pdf_links(client, r):' },
-    { t: '            download_pdf(client, url, name)   # → kowas/', hi: true },
-    { t: '' },
-    { t: '# pipeline/collectors/kafka_producer.py', dim: true },
-    { t: 'def send_signal(layer, region, value, time):' },
-    { t: '    producer.send(f"uis.{layer}", {...})       # 토픽 4', hi: true },
-    { t: '    # acks="all" · retries=3 · 168h 보존', dim: true },
-    { t: '' },
-    { t: '# pipeline/collectors/db_writer.py — idempotent', dim: true },
-    { t: 'async def insert_signal(layer, region, value, time):' },
-    { t: '    await pool.execute("DELETE … WHERE region=$1 …")', hi: true },
-    { t: '    await pool.execute("INSERT INTO layer_signals …")', hi: true },
-  ];
-  return (
-    <>
-      <Chrome index="07A2" label="07A2 · CRAWL → DB" />
-      <Line x={120} y={140} style={TYPE.eyebrow}>① 적재 — 크롤링부터 DB까지</Line>
-      <Line x={120} y={200} delay={0.1} style={TYPE.title} width={1700}>똑같이 돌려도 결과는 같다.</Line>
-
-      <CodeBox x={120} y={350} width={920} height={620} delay={0.5}
-        file="3 단계 · Selenium → Kafka → Timescale" lines={lines} />
-
-      <TrapPanel x={1080} y={350} width={720} height={460} delay={0.9}
-        trap="KOWAS API 비공개 · 같은 키로 두 번 넣으면 충돌 · 토픽 한 통이면 보관기간 충돌."
-        fix="브라우저 자동화(Selenium)로 PDF 다운로드 + 지웠다 다시 넣기로 중복 방지 + 계층별 토픽 4개 분리(7일 보관)."
-        result="KOWAS PDF 72개 자동 수집 · 손실 방지 설정 · DB 주 단위 자동 분할" />
-
-      <ERMini x={1080} y={830} delay={1.5} />
-    </>
-  );
-}
-
-// ER 미니 다이어그램 — TimescaleDB 3-table 구조 (S07A2 하단)
-function ERMini({ x, y, delay }) {
-  const { localTime } = useSprite();
-  const p = Easing.easeOutCubic(Math.max(0, Math.min(1, (localTime - delay) / 0.6)));
-  const pArrow = Easing.easeOutCubic(Math.max(0, Math.min(1, (localTime - delay - 0.5) / 0.6)));
-  return (
-    <div style={{
-      position: 'absolute', left: x, top: y, width: 720, height: 140,
-      fontFamily: FONT, opacity: p,
-    }}>
-      <div style={{ ...TYPE.label, color: ACCENT, fontSize: 12, marginBottom: 8 }}>DB 스키마 · TimescaleDB 3 hypertable</div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 0, position: 'relative' }}>
-        <ERTable name="layer_signals" cols={['region', 'layer', 'time', 'value']} delay={delay + 0.1} />
-        <ERTable name="risk_scores"   cols={['region', 'time', 'composite', 'alert_level']} delay={delay + 0.25} hero />
-        <ERTable name="alert_reports" cols={['region', 'time', 'summary', 'rag_docs']} delay={delay + 0.40} />
-
-        {/* 화살표 — region·time 조인 */}
-        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
-          <line x1="33%" y1="50%" x2={`${33 + 1*pArrow}%`} y2="50%"
-            stroke={ACCENT} strokeWidth={1} opacity={0.6} strokeDasharray="3 3" />
-          <line x1="66%" y1="50%" x2={`${66 + 1*pArrow}%`} y2="50%"
-            stroke={ACCENT} strokeWidth={1} opacity={0.6} strokeDasharray="3 3" />
-        </svg>
-      </div>
-    </div>
-  );
-}
-
-function ERTable({ name, cols, delay, hero }) {
-  const { localTime } = useSprite();
-  const p = Easing.easeOutCubic(Math.max(0, Math.min(1, (localTime - delay) / 0.4)));
-  return (
-    <div style={{
-      border: `1px solid ${hero ? ACCENT : WHITE_15}`,
-      background: hero ? 'rgba(34,227,255,0.08)' : 'rgba(5,7,11,0.5)',
-      padding: '8px 12px',
-      opacity: p, transform: `translateY(${(1-p)*6}px)`,
-    }}>
-      <div style={{ fontSize: 13, fontFamily: CODE_FONT, color: hero ? ACCENT : WHITE, fontWeight: 700 }}>{name}</div>
-      <div style={{ fontSize: 11, color: WHITE_70, marginTop: 4, fontFamily: CODE_FONT, lineHeight: 1.5 }}>
-        {cols.map((c, i) => <div key={i}>· {c}</div>)}
-      </div>
-    </div>
-  );
-}
 
 // =============================================================================
 // S07B — 앙상블·교차검증 게이트 (★ 최강)
@@ -2558,102 +2488,8 @@ function S07D() {
 }
 
 // =============================================================================
-// S12B — 선행 사례 조사 · 시행 시스템 + 특허·연구 (전문가 자문 직전 자체 검증)
+// (S12B + PriorArtRow 제거 — 2026-05-05 다이어트, S12 4-quadrant 로 통합)
 // =============================================================================
-function PriorArtRow({ name, where, year, kind, delay, hero }) {
-  const { localTime } = useSprite();
-  const p = Easing.easeOutCubic(Math.max(0, Math.min(1, (localTime - delay) / 0.4)));
-  return (
-    <div style={{
-      display: 'grid', gridTemplateColumns: '1.4fr 1fr 0.6fr 1fr', gap: 12,
-      padding: '11px 0', borderBottom: `1px solid ${WHITE_15}`,
-      opacity: p, transform: `translateX(${(1-p)*-8}px)`,
-      alignItems: 'baseline',
-    }}>
-      <span style={{ fontSize: 16, color: hero ? ACCENT : WHITE, fontWeight: hero ? 700 : 500 }}>{name}</span>
-      <span style={{ fontSize: 13, color: WHITE_70 }}>{where}</span>
-      <span style={{ fontSize: 13, color: WHITE_45, fontFamily: CODE_FONT }}>{year}</span>
-      <span style={{ fontSize: 12, color: ACCENT, fontFamily: CODE_FONT, letterSpacing: '0.06em' }}>{kind}</span>
-    </div>
-  );
-}
-
-function S12B() {
-  return (
-    <>
-      <Chrome index="12B" label="12B · PRIOR ART" />
-      <Line x={120} y={140} style={TYPE.eyebrow}>선행 사례 — 외부 자문 전 자체 조사</Line>
-      <Line x={120} y={200} delay={0.1} style={TYPE.title} width={1700}>이미 누가, 어디까지 했나.</Line>
-
-      {/* 좌측 — 시행 중 글로벌 시스템 */}
-      <Plate x={120} y={350} width={840} height={580} delay={0.5}>
-        <div style={{ padding: 28, fontFamily: FONT, height: '100%', boxSizing: 'border-box' }}>
-          <div style={{ ...TYPE.label, color: ACCENT }}>시행 중 시스템 · 글로벌</div>
-          <div style={{ ...TYPE.small, fontSize: 13, color: WHITE_70, marginTop: 4 }}>
-            현재 운영 중인 감염병 조기경보 5건
-          </div>
-
-          <div style={{ marginTop: 18, display: 'grid', gridTemplateColumns: '1.4fr 1fr 0.6fr 1fr', gap: 12, ...TYPE.label, fontSize: 11, paddingBottom: 10, borderBottom: `1px solid ${WHITE_15}`, color: WHITE_45 }}>
-            <span>시스템</span><span>운영 주체</span><span>운영 시작</span><span>접근 방식</span>
-          </div>
-
-          <PriorArtRow name="BlueDot"      where="캐나다 (민간)"        year="2014~" kind="항공·뉴스 NLP"      delay={1.0} />
-          <PriorArtRow name="CDC NWSS"     where="미국 CDC"             year="2020~" kind="하수 단일 신호"     delay={1.15} />
-          <PriorArtRow name="HealthMap"    where="美 보스턴소아병원"     year="2006~" kind="뉴스 NLP·SMS 신고"  delay={1.30} />
-          <PriorArtRow name="WHO EIOS"     where="WHO·EU 공동"          year="2017~" kind="이벤트 정보 통합"   delay={1.45} />
-          <PriorArtRow name="KCDC ILINet"  where="한국 질병관리청"       year="2008~" kind="표본감시 (임상기반)" delay={1.60} hero />
-
-          <div style={{ marginTop: 24, paddingTop: 16, borderTop: `1px solid ${WHITE_15}` }}>
-            <div style={{ ...TYPE.label, color: ACCENT, fontSize: 12 }}>차별 포인트</div>
-            <div style={{ marginTop: 8, fontSize: 14, color: WHITE_70, lineHeight: 1.5 }}>
-              모두 <span style={{ color: WHITE, fontWeight: 600 }}>단일 또는 이중 신호</span>.
-              <span style={{ color: ACCENT, fontWeight: 600 }}> 3계층 교차검증 + 게이트 B는 우리만.</span>
-            </div>
-          </div>
-        </div>
-      </Plate>
-
-      {/* 우측 — 국내 특허·연구 + 한국 시장 */}
-      <Plate x={980} y={350} width={820} height={580} delay={0.7}>
-        <div style={{ padding: 28, fontFamily: FONT, height: '100%', boxSizing: 'border-box', position: 'relative' }}>
-          <div style={{ ...TYPE.label, color: ACCENT }}>국내 특허 · 연구 · 운영</div>
-          <div style={{ ...TYPE.small, fontSize: 13, color: WHITE_70, marginTop: 4 }}>
-            한국 시장 선행 자료 4건 — KIPRIS(특허 검색) · 논문 · 정부 운영
-          </div>
-
-          <div style={{ marginTop: 18, display: 'grid', gridTemplateColumns: '1.4fr 1fr 0.6fr 1fr', gap: 12, ...TYPE.label, fontSize: 11, paddingBottom: 10, borderBottom: `1px solid ${WHITE_15}`, color: WHITE_45 }}>
-            <span>주체</span><span>주제</span><span>연도</span><span>형태</span>
-          </div>
-
-          <PriorArtRow name="ETRI"      where="감염병 모니터링 시스템" year="등록"  kind="국내 특허"        delay={1.2} />
-          <PriorArtRow name="KAIST"     where="이동량+독감 예측"        year="2021" kind="논문"            delay={1.35} />
-          <PriorArtRow name="서울대 보건대학원" where="검색 트렌드 역학"  year="2019" kind="논문"            delay={1.50} />
-          <PriorArtRow name="환경부 KOWAS" where="하수 바이러스 감시"   year="2021~" kind="정부 운영"       delay={1.65} hero />
-
-          <div style={{ marginTop: 24, paddingTop: 16, borderTop: `1px solid ${WHITE_15}` }}>
-            <div style={{ ...TYPE.label, color: ACCENT, fontSize: 12 }}>자체 사전 검증 결과</div>
-            <div style={{ marginTop: 8, fontSize: 14, color: WHITE_70, lineHeight: 1.6 }}>
-              · KIPRIS 검색 — <span style={{ color: WHITE, fontWeight: 600 }}>OTC+하수+검색 3계층 동시 결합 특허 미확인</span><br/>
-              · KCDC·환경부 운영 시스템과는 보완 관계 (단일 → 다중)<br/>
-              · 다음 단계: <span style={{ color: ACCENT }}>변리사 자문 후 출원 검토</span>
-            </div>
-          </div>
-
-          <div style={{
-            position: 'absolute', left: 28, right: 28, bottom: 28,
-            padding: '12px 14px',
-            background: 'rgba(34,227,255,0.08)', borderLeft: `2px solid ${ACCENT}`,
-          }}>
-            <div style={{ ...TYPE.label, color: ACCENT, fontSize: 12 }}>외부 자문 직전 — 자체 검증 완료</div>
-            <div style={{ marginTop: 6, fontSize: 13, color: WHITE_70, lineHeight: 1.4 }}>
-              KDCA·KISA 자문 자료에 본 조사 결과 첨부 예정
-            </div>
-          </div>
-        </div>
-      </Plate>
-    </>
-  );
-}
 
 // =============================================================================
 // S13B — 외부 자문 계획 (단순)
@@ -2747,10 +2583,9 @@ window.Scenes = {
   S01, S02, S03, S04, S05,
   S05A,
   S06, S07,
-  S07A, S07A2, S07B, S07C, S07D, S07D2, S07E, S07F,
-  S08, S09, S10, S10A,
+  S07A, S07B, S07C, S07D, S07D2, S07E, S07F,
+  S08, S10, S10A,
   S11, S12,
-  S12B,
   S13,
   S13B,
   S14, S15, S16,
