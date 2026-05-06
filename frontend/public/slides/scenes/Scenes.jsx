@@ -2426,11 +2426,11 @@ function S07F() {
         usage="Google Research 2020 · 전력 수요 · 교통 흐름 · 소매 매출 시계열"
         metaphor="다음 주, 다음 다음 주는 어떻게 될까?"
         attentionBars={[
-          { label: '기온',  value: 0.15 },
-          { label: 'OTC',   value: 0.14 },
-          { label: '하수',  value: 0.07 },
+          { label: '기온',  value: 0.21 },
+          { label: '하수',  value: 0.08 },
+          { label: 'OTC',   value: 0.04 },
         ]}
-        io={"과거 24주 → 다음 3주 예측 · 실측 attention 표기\n실데이터 17지역 학습 (DB 26주+)\n148K 파라미터 · 검증손실 5.48"} />
+        io={"과거 24주 → 다음 3주 예측 · 실측 attention 표기\n실데이터 17지역 학습 (DB 26주+)\n70K 파라미터 · 검증손실 9.59"} />
 
       <ModelCard x={1260} y={310} delay={0.8}
         badge="AUTOENCODER · 이상탐지"
@@ -2456,7 +2456,7 @@ function S07F() {
 function S07D() {
   const lines = [
     { t: '# ml/rag/report_generator.py', dim: true },
-    { t: 'LLM_MODEL = "claude-sonnet-4-6"', hi: true },
+    { t: 'LLM_MODEL = "claude-haiku-4-5"', hi: true },
     { t: 'COLLECTION = "epidemiology_docs"   # Qdrant', hi: true },
     { t: 'TOP_K = 5                          # WHO·ECDC·KDCA' },
     { t: '' },
