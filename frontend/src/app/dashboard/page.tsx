@@ -948,6 +948,13 @@ export default function DashboardPage() {
                 ? (trendDays === null ? searchValues : searchValues.slice(-trendDays))
                 : mockSeries.search,
             }}
+            dates={
+              hasSewage
+                ? (trendDays === null ? sewageSeries : sewageSeries.slice(-trendDays)).map((p) => p.time)
+                : hasOtc
+                ? (trendDays === null ? otcSeries : otcSeries.slice(-trendDays)).map((p) => p.date)
+                : undefined
+            }
             t={t}
             height={280}
           />

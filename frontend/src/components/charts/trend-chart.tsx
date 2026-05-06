@@ -3,13 +3,14 @@ import type { Translations } from "@/lib/i18n";
 
 interface TrendChartProps {
   series: SeriesData;
+  dates?: string[];
   t: Translations;
   height?: number;
 }
 
 const W = 800;
 const PT = 20;
-const PB = 28;
+const PB = 32;
 const PL = 32;
 const PR = 20;
 
@@ -41,6 +42,24 @@ function toAreaPath(pts: { x: number; y: number }[], h: number): string {
   return `${line} L ${pts[pts.length - 1].x},${bottom} L ${pts[0].x},${bottom} Z`;
 }
 
+function fmtDate(raw: string): string {
+  const d = new Date(raw);
+  if (isNaN(d.getTime())) return raw.slice(0, 10);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+function pickTicks(dates: string[], count = 4): { idx: number; label: string }[] {
+  const n = dates.length;
+  if (n === 0) return [];
+  if (n <= count) return dates.map((d, i) => ({ idx: i, label: fmtDate(d) }));
+  const ticks: { idx: number; label: string }[] = [];
+  for (let t = 0; t < count; t++) {
+    const idx = Math.round((t / (count - 1)) * (n - 1));
+    ticks.push({ idx, label: fmtDate(dates[idx]) });
+  }
+  return ticks;
+}
+
 const LINE_KEYS = ["pharmacy", "sewage", "search"] as const;
 
 const COLORS: Record<string, string> = {
@@ -49,8 +68,10 @@ const COLORS: Record<string, string> = {
   search: "var(--layer-search)",
 };
 
-export function TrendChart({ series, t, height = 200 }: TrendChartProps) {
+export function TrendChart({ series, dates, t, height = 200 }: TrendChartProps) {
   const h = height;
+  const ticks = pickTicks(dates ?? [], 4);
+  const iw = W - PL - PR;
 
   return (
     <div>
@@ -117,8 +138,27 @@ export function TrendChart({ series, t, height = 200 }: TrendChartProps) {
 
         {/* Baseline */}
         <line x1={PL} y1={h - PB} x2={W - PR} y2={h - PB} stroke="var(--border)" strokeWidth={0.5} />
-        <text x={PL} y={h - PB + 14} fontSize={9} fill="var(--text-tertiary)" textAnchor="start">이전</text>
-        <text x={W - PR} y={h - PB + 14} fontSize={9} fill="var(--text-tertiary)" textAnchor="end">현재</text>
+
+        {/* X-axis ticks — 실제 날짜 or 이전/현재 */}
+        {ticks.length > 0
+          ? ticks.map(({ idx, label }) => {
+              const n = dates!.length;
+              const x = PL + (n === 1 ? iw / 2 : (idx / (n - 1)) * iw);
+              return (
+                <g key={idx}>
+                  <line x1={x} y1={h - PB} x2={x} y2={h - PB + 4} stroke="var(--border)" strokeWidth={0.5} />
+                  <text x={x} y={h - PB + 14} fontSize={9} fill="var(--text-tertiary)" textAnchor="middle">
+                    {label}
+                  </text>
+                </g>
+              );
+            })
+          : (
+            <>
+              <text x={PL} y={h - PB + 14} fontSize={9} fill="var(--text-tertiary)" textAnchor="start">이전</text>
+              <text x={W - PR} y={h - PB + 14} fontSize={9} fill="var(--text-tertiary)" textAnchor="end">현재</text>
+            </>
+          )}
 
         {/* Area fills */}
         {LINE_KEYS.map((key, idx) => (
