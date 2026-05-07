@@ -446,7 +446,8 @@
     "far_delta": -0.396,
     "mean_mcc": 0.595,
     "mean_balanced_accuracy": 0.816,
-    "mean_auprc": 0.973
+    "mean_auprc": 0.973,
+    "recall_delta": -0.0674
   },
   "validation": {
     "mean_far_lt_0.5": true,
