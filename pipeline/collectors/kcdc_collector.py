@@ -280,7 +280,7 @@ async def _fetch_from_api(
     }
 
     try:
-        async with httpx.AsyncClient(timeout=15.0, verify=False) as client:
+        async with httpx.AsyncClient(timeout=15.0) as client:
             resp = await client.get(base_url, params=params)
             resp.raise_for_status()
         root = ET.fromstring(resp.text)
@@ -374,7 +374,9 @@ def collect_weekly_confirmed(
 # ──────────────────────── DB 적재 ─────────────────────────────────────────
 async def _insert_records(records: list[dict[str, Any]]) -> int:
     """confirmed_cases 테이블에 주간 확진자 데이터를 UPSERT한다."""
-    db_url = os.getenv("DATABASE_URL", "postgresql://uis_user:uis_dev_placeholder_20260414@localhost:5432/urban_immune")
+    db_url = os.getenv("DATABASE_URL")
+    if not db_url:
+        raise RuntimeError("DATABASE_URL 환경변수가 설정되지 않았습니다.")
     if db_url.startswith("postgresql+asyncpg://"):
         db_url = db_url.replace("postgresql+asyncpg://", "postgresql://", 1)
 

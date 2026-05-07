@@ -83,8 +83,8 @@ def _live_spec() -> dict:
             meta = json.loads(_AUTOENCODER_META.read_text(encoding="utf-8"))
             spec["autoencoder_threshold"] = float(meta.get("threshold", 0.0))
             spec["autoencoder_percentile"] = float(meta.get("threshold_percentile", 95.0))
-        except Exception:
-            logger.warning("autoencoder meta.json 파싱 실패 — 기본값 사용")
+        except (json.JSONDecodeError, ValueError, KeyError) as exc:
+            logger.warning("autoencoder meta.json 파싱 실패 — 기본값 사용: %s", exc)
     return spec
 
 
@@ -176,8 +176,8 @@ async def _stream_chat(req: ChatRequest) -> AsyncIterator[str]:
         ) as stream_resp:
             async for text in stream_resp.text_stream:
                 yield f"data: {json.dumps({'text': text}, ensure_ascii=False)}\n\n"
-    except Exception:
-        logger.exception("챗봇 SSE 스트리밍 오류")
+    except Exception as exc:
+        logger.exception("챗봇 SSE 스트리밍 오류: %s", exc)
         err_payload = json.dumps(
             {"error": "챗봇 일시 오류가 발생했어요. 잠시 후 다시 시도해주세요."},
             ensure_ascii=False,

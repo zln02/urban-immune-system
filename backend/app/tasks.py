@@ -23,5 +23,5 @@ async def generate_report_task(region: str, signals: dict) -> None:
         async with async_session() as db:
             await save_alert_report(report, db)
         logger.info("경보 리포트 생성 완료: region=%s level=%s", region, report.get("alert_level"))
-    except Exception:
-        logger.exception("경보 리포트 생성 실패: region=%s", region)
+    except Exception as exc:
+        logger.exception("경보 리포트 생성 실패: region=%s error=%s", region, exc)

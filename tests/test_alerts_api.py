@@ -26,5 +26,6 @@ def test_alert_level_red() -> None:
 
 def test_ensemble_weights_sum_to_one() -> None:
     """앙상블 가중치 합이 1.0인지 확인."""
-    from backend.app.api.alerts import W1, W2, W3
-    assert abs(W1 + W2 + W3 - 1.0) < 1e-9
+    from backend.app.config import settings
+    total = settings.ensemble_weight_l1 + settings.ensemble_weight_l2 + settings.ensemble_weight_l3
+    assert abs(total - 1.0) < 1e-9

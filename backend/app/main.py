@@ -1,7 +1,8 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 
 from .api import alerts, chat, predictions, signals
 from .config import settings
@@ -42,6 +43,16 @@ app.add_middleware(
     allow_headers=["*", "X-API-Key"],
 )
 app.add_middleware(AuditLogMiddleware)
+
+
+@app.middleware("http")
+async def security_headers(request: Request, call_next: object) -> Response:
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
+
 
 app.include_router(signals.router)
 app.include_router(predictions.router)

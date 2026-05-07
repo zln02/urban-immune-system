@@ -20,8 +20,6 @@ from ..tasks import generate_report_task
 router = APIRouter(prefix="/api/v1/alerts", tags=["alerts"])
 logger = logging.getLogger(__name__)
 
-# CLAUDE.md 앙상블 가중치
-W1, W2, W3 = 0.35, 0.40, 0.25
 
 _SYSTEM_PROMPT = (
     "당신은 공중보건 전문가입니다. "
@@ -105,7 +103,12 @@ async def get_current_alert(
         l1 = rows.get("otc", 0.0)
         l2 = rows.get("wastewater", 0.0)
         l3 = rows.get("search", 0.0)
-        composite = round(W1 * l1 + W2 * l2 + W3 * l3, 2)
+        composite = round(
+            settings.ensemble_weight_l1 * l1
+            + settings.ensemble_weight_l2 * l2
+            + settings.ensemble_weight_l3 * l3,
+            2,
+        )
         alert_level = _compute_alert_level(composite)
 
         # 교차검증: YELLOW 이상은 2개 이상 계층 30 이상 필수
@@ -214,7 +217,12 @@ async def list_region_alerts(
 
     # layer_signals fallback (risk_scores 없는 region)
     for rg, v in pivot.items():
-        composite = round(W1 * v["l1"] + W2 * v["l2"] + W3 * v["l3"], 2)
+        composite = round(
+            settings.ensemble_weight_l1 * v["l1"]
+            + settings.ensemble_weight_l2 * v["l2"]
+            + settings.ensemble_weight_l3 * v["l3"],
+            2,
+        )
         raw_level = _compute_alert_level(composite)
         n_above = sum(1 for x in (v["l1"], v["l2"], v["l3"]) if x >= 30)
         # 교차검증: GREEN 외 등급은 2개 이상 30 이상 필수
@@ -382,7 +390,7 @@ def _build_prompt(region: str, signals: dict, rag_context: str = "") -> str:
 
 async def _stream_claude(prompt: str) -> AsyncIterator[str]:
     import anthropic
-    client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
+    client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key, timeout=30.0)
     async with client.messages.stream(
         model=settings.llm_model,
         max_tokens=1500,
@@ -427,7 +435,7 @@ async def explain_alert_report(
             return val
         try:
             return json.loads(str(val))
-        except Exception:
+        except json.JSONDecodeError:
             return default
 
     raw_fv = _jsonb(row.get("feature_values"), {})

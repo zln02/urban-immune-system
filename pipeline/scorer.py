@@ -16,7 +16,6 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
-import warnings
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -30,7 +29,6 @@ load_dotenv(_project_root / ".env", override=False)
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_DB_URL = "postgresql://uis_user:changeme_local@localhost:5432/urban_immune"
 
 # ---------------------------------------------------------------------------
 # 경보 결정 상수
@@ -183,13 +181,9 @@ async def _get_pool() -> asyncpg.Pool:
     """asyncpg 커넥션 풀 싱글톤을 반환한다."""
     global _pool
     if _pool is None:
-        raw_url = os.getenv("DATABASE_URL", _DEFAULT_DB_URL)
-        if "changeme" in raw_url:
-            warnings.warn(
-                "DATABASE_URL 에 플레이스홀더(changeme)가 포함되어 있습니다.",
-                UserWarning,
-                stacklevel=2,
-            )
+        raw_url = os.getenv("DATABASE_URL")
+        if not raw_url:
+            raise RuntimeError("DATABASE_URL 환경변수가 설정되지 않았습니다.")
         db_url = _normalize_dsn(raw_url)
         _pool = await asyncpg.create_pool(dsn=db_url, min_size=1, max_size=5)
         logger.info("TimescaleDB 커넥션 풀 생성 완료")

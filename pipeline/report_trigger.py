@@ -93,10 +93,9 @@ ALL_REGIONS = [
 
 def _get_engine():
     """AsyncEngine 생성 — DATABASE_URL 환경변수 우선."""
-    db_url = os.getenv(
-        "DATABASE_URL",
-        "postgresql+asyncpg://uis_user:uis_dev_placeholder_20260414@localhost:5432/urban_immune",
-    )
+    db_url = os.getenv("DATABASE_URL")
+    if not db_url:
+        raise RuntimeError("DATABASE_URL 환경변수가 설정되지 않았습니다.")
     return create_async_engine(db_url, echo=False)
 
 

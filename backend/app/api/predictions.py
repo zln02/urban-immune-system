@@ -13,6 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..config import settings
 from ..database import get_db
 from ..services.prediction_service import get_risk_prediction
 
@@ -131,7 +132,12 @@ async def get_forecast(
         )
     except Exception as exc:
         logger.warning("ML 서비스 미연결, fallback 사용: %s", exc)
-        score = round(0.35 * l1 + 0.40 * l2 + 0.25 * l3, 2)
+        score = round(
+            settings.ensemble_weight_l1 * l1
+            + settings.ensemble_weight_l2 * l2
+            + settings.ensemble_weight_l3 * l3,
+            2,
+        )
         level = "GREEN" if score < 30 else "YELLOW" if score < 55 else "RED"
         return {
             "region": region,
