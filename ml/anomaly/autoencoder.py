@@ -76,7 +76,7 @@ class AnomalyDetector:
         self.threshold = float(np.percentile(errors, self.threshold_percentile))
         return losses
 
-    def predict(self, X: np.ndarray) -> dict:
+    def predict(self, X: np.ndarray) -> dict[str, object]:
         """이상 여부와 reconstruction error를 반환한다."""
         if self.threshold is None:
             raise RuntimeError("fit()을 먼저 호출하세요")

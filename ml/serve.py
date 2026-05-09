@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import List
 
 import numpy as np
 from fastapi import FastAPI, HTTPException, Query
@@ -55,8 +54,8 @@ class TFTPredictRequest(BaseModel):
 class TFTPredictResponse(BaseModel):
     region: str
     horizon: int
-    predictions: List[float]
-    attention_top3: List[str]
+    predictions: list[float]
+    attention_top3: list[str]
 
 
 @app.get("/health")

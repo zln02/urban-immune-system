@@ -7,10 +7,11 @@ production 환경에서는 settings.api_keys 가 반드시 1개 이상 설정되
 from __future__ import annotations
 
 import hmac
+from collections.abc import Awaitable, Callable
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, Response
 
 
 class APIKeyAuthMiddleware(BaseHTTPMiddleware):
@@ -34,7 +35,9 @@ class APIKeyAuthMiddleware(BaseHTTPMiddleware):
         self._is_production = environment.lower() == "production"
         self._header = header_name
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(
+        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
         path = request.url.path
         if path in self.PUBLIC_PATHS or path.startswith("/docs") or path.startswith("/redoc"):
             return await call_next(request)

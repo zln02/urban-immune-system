@@ -21,7 +21,6 @@ import { RISK_META } from "@/lib/risk";
 import { DICT, type Lang } from "@/lib/i18n";
 import { mockAlerts, mockDistricts, mockSeries, type DistrictData, type AlertRecord } from "@/lib/mock-data";
 
-type AlertRecordLike = AlertRecord;
 import { useOtcTrend, useSearchTrend } from "@/hooks/useNaverTrend";
 import { useWastewaterSeries } from "@/hooks/useSignalTimeseries";
 import { useRegionAlerts, type RegionAlert } from "@/hooks/useRegionAlerts";
@@ -85,7 +84,7 @@ export default function DashboardPage() {
 
   // AlertBanner / KpiCard / AlertTable 모두 실 regionAlerts 기반 (mockAlerts 의존 제거)
   // GREEN 만 있으면 activeAlerts = [] → AlertBanner 자동 숨김
-  const activeAlerts: AlertRecordLike[] = realAlerts
+  const activeAlerts: AlertRecord[] = realAlerts
     .filter((a) => a.alert_level !== "GREEN")
     .map((a, i) => ({
       id: `RT-${i}`,
@@ -1078,20 +1077,6 @@ const iconBtnDark: CSSProperties = {
   display: "grid",
   placeItems: "center",
   position: "relative",
-};
-
-const btnGhost: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 6,
-  padding: "7px 12px",
-  fontSize: 12,
-  fontWeight: 500,
-  background: "transparent",
-  color: "var(--text)",
-  border: "1px solid var(--border-strong)",
-  cursor: "pointer",
-  fontFamily: "inherit",
 };
 
 const btnPrimary: CSSProperties = {

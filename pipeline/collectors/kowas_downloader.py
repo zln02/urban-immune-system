@@ -299,13 +299,13 @@ if __name__ == "__main__":
             output_dir=args.output,
             skip_existing=not args.no_skip,
         )
-        print(f"\n결과: 다운로드 {len(paths)}건")
+        logger.info("결과: 다운로드 %d건", len(paths))
         for p in paths:
-            print(f"  {p.name}  ({p.stat().st_size // 1024}KB)")
+            logger.info("  %s  (%dKB)", p.name, p.stat().st_size // 1024)
     else:
         result = download_all(
             output_dir=args.output,
             skip_existing=not args.no_skip,
             limit=args.limit,
         )
-        print(f"\n결과: {result}")
+        logger.info("결과: %s", result)

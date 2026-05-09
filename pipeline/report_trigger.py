@@ -461,7 +461,7 @@ def _cli() -> None:
 
     if args.all:
         count = asyncio.run(run_nightly_reports(triggered_by="manual_cli", trigger_source=trigger_source))
-        print(f"[완료] 총 {count}건 생성")
+        logger.info("[완료] 총 %d건 생성", count)
     else:
         result = asyncio.run(
             generate_latest_alert_report(
@@ -471,11 +471,11 @@ def _cli() -> None:
             )
         )
         if result is None:
-            print(f"[스킵] {args.region}: risk_scores 없음 또는 GREEN 경보")
+            logger.info("[스킵] %s: risk_scores 없음 또는 GREEN 경보", args.region)
         else:
-            print(f"[완료] id={result['id']}, level={result['alert_level']}")
-            print(f"[triggered_by] {result['triggered_by']}")
-            print(f"[summary 앞 300자]\n{result['summary'][:300]}")
+            logger.info("[완료] id=%d, level=%s", result["id"], result["alert_level"])
+            logger.info("[triggered_by] %s", result["triggered_by"])
+            logger.info("[summary 앞 300자]\n%s", result["summary"][:300])
 
 
 if __name__ == "__main__":

@@ -18,6 +18,7 @@ import argparse
 import json
 import logging
 import os
+import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -244,10 +245,16 @@ def main() -> int:
         datefmt="%H:%M:%S",
     )
 
+    def _git(cmd: list[str]) -> str:
+        try:
+            return subprocess.check_output(cmd, stderr=subprocess.DEVNULL, text=True).strip()
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            return "unknown"
+
     result: dict[str, Any] = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "git_branch": os.popen("git rev-parse --abbrev-ref HEAD").read().strip(),
-        "git_commit": os.popen("git rev-parse --short HEAD").read().strip(),
+        "git_branch": _git(["git", "rev-parse", "--abbrev-ref", "HEAD"]),
+        "git_commit": _git(["git", "rev-parse", "--short", "HEAD"]),
         "stages": {},
     }
 
