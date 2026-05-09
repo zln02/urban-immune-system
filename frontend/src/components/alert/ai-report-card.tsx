@@ -145,8 +145,7 @@ export function AIReportCard({ t, lang, region = "전북특별자치도" }: AIRe
       link.download = `UIS_alert_${region}_${new Date().toISOString().slice(0, 10)}.pdf`;
       link.click();
       URL.revokeObjectURL(objUrl);
-    } catch (e) {
-      console.error(e);
+    } catch {
       alert(lang === "ko" ? "PDF 생성 실패 — 백엔드 로그 확인 필요" : "PDF generation failed");
     } finally {
       setPdfDownloading(false);

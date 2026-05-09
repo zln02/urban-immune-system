@@ -20,7 +20,7 @@ KMA_CURRENT_URL = "https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/get
 SEOUL_NX, SEOUL_NY = 60, 127
 
 
-def collect_weather(region: str = "서울특별시") -> dict | None:
+def collect_weather(region: str = "서울특별시") -> dict[str, float] | None:
     """기상청 초단기실황 API에서 기온·습도를 수집해 Kafka로 전송한다."""
     api_key = os.getenv("KMA_API_KEY", "")
 

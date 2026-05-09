@@ -334,13 +334,13 @@ def _chart_backtest(backtest: dict) -> bytes:
 # ── 데이터 조회 ────────────────────────────────────────────────
 async def _fetch_layer_series(db: AsyncSession, region: str, layer: str, days: int = 84) -> list[tuple]:
     rows = (await db.execute(
-        text(f"""
+        text("""
             SELECT time, value FROM layer_signals
             WHERE region = :region AND layer = :layer
-              AND time >= NOW() - INTERVAL '{int(days)} days'
+              AND time >= NOW() - make_interval(days => :days)
             ORDER BY time
         """),
-        {"region": region, "layer": layer},
+        {"region": region, "layer": layer, "days": days},
     )).all()
     return [(r[0], float(r[1])) for r in rows]
 
@@ -348,13 +348,13 @@ async def _fetch_layer_series(db: AsyncSession, region: str, layer: str, days: i
 async def _fetch_composite_series(db: AsyncSession, region: str, days: int = 84) -> list[tuple]:
     """composite_score 시계열 (risk_scores 테이블)."""
     rows = (await db.execute(
-        text(f"""
+        text("""
             SELECT time, composite_score FROM risk_scores
             WHERE region = :region
-              AND time >= NOW() - INTERVAL '{int(days)} days'
+              AND time >= NOW() - make_interval(days => :days)
             ORDER BY time
         """),
-        {"region": region},
+        {"region": region, "days": days},
     )).all()
     return [(r[0], float(r[1])) for r in rows]
 

@@ -514,6 +514,7 @@ def build_advisory_pdf(output_path: Path, week_label: str | None = None) -> Path
 
 
 def main() -> None:
+    logging.basicConfig(level=logging.INFO)
     parser = argparse.ArgumentParser(description="Advisory Surveillance Bulletin PDF 생성")
     parser.add_argument("--output", default="docs/business/advisory/10_surveillance_bulletin.pdf",
                         help="출력 PDF 경로 (repo 상대경로 또는 절대경로)")
@@ -524,8 +525,7 @@ def main() -> None:
     if not out.is_absolute():
         out = REPO_ROOT / out
     result = build_advisory_pdf(out, week_label=args.week)
-    print(f"✓ Advisory PDF 생성: {result}")
-    print(f"  size = {result.stat().st_size:,} bytes")
+    logger.info("Advisory PDF 생성: %s (size=%d bytes)", result, result.stat().st_size)
 
 
 if __name__ == "__main__":

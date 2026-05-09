@@ -2,7 +2,6 @@
 import { useState, useCallback, useRef } from "react";
 
 import { API_BASE } from "@/lib/api";
-const BACKEND = API_BASE;
 
 export interface RagCitation {
   rank: number;
@@ -47,7 +46,7 @@ export function useAlertStream(region: string): AlertStreamResult {
     setError(null);
     setStreaming(true);
 
-    const url = `${BACKEND}/api/v1/alerts/stream?region=${encodeURIComponent(region)}`;
+    const url = `${API_BASE}/api/v1/alerts/stream?region=${encodeURIComponent(region)}`;
     const sse = new EventSource(url);
     sseRef.current = sse;
 

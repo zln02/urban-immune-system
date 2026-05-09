@@ -138,9 +138,6 @@ def insert_signal_sync(
 ) -> None:
     """insert_signal()의 동기 래퍼. 비동기 루프가 없는 수집기에서 호출한다.
 
-    이미 실행 중인 이벤트 루프가 있으면 run_until_complete,
-    없으면 asyncio.run()을 사용한다.
-
     Args:
         region: 지역명
         layer: 계층 코드 ('otc' | 'wastewater' | 'search' | 'weather')
@@ -150,12 +147,8 @@ def insert_signal_sync(
     """
     coro = insert_signal(region, layer, value, raw_value=raw_value, source=source)
     try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            # 이미 실행 중인 루프 안에서 호출된 경우 (드문 케이스)
-            loop.run_until_complete(coro)
-        else:
-            loop.run_until_complete(coro)
-    except RuntimeError:
-        # 이벤트 루프가 없거나 닫힌 경우
         asyncio.run(coro)
+    except RuntimeError:
+        # 이미 실행 중인 이벤트 루프가 있는 경우 (드문 케이스)
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(coro)

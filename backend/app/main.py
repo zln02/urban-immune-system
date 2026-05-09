@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -10,7 +13,7 @@ from .tasks import broker
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await broker.startup()
     yield
     await broker.shutdown()

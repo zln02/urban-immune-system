@@ -237,7 +237,10 @@ if __name__ == "__main__":
     pathogens = ("covid", "influenza", "norovirus") if args.pathogen == "all" else (args.pathogen,)
     results = parse_report(args.pdf, args.year, args.week, pathogens)
 
-    print(f"\n=== {args.pdf.name} → {len(results)} readings ===")
-    print(f"{'region':<14} {'pathogen':<11} {'week':>5} {'level':>7} {'bars':>5}")
+    logger.info("=== %s → %d readings ===", args.pdf.name, len(results))
+    logger.info("%-14s %-11s %5s %7s %5s", "region", "pathogen", "week", "level", "bars")
     for r in results:
-        print(f"{r.region:<14} {r.pathogen:<11} {r.week:>5} {r.relative_level:>7.2f} {r.bar_count:>5}")
+        logger.info(
+            "%-14s %-11s %5d %7.2f %5d",
+            r.region, r.pathogen, r.week, r.relative_level, r.bar_count,
+        )

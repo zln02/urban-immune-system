@@ -5,13 +5,13 @@ import streamlit as st
 from streamlit_folium import st_folium
 
 from src.api_client import get_current_alert
+from src.config import GREEN_SAFE, ORANGE, RED, YELLOW
 from src.map.builder import build_map
 
 
 def render_map_tab(region: str) -> None:
     st.markdown("#### 17개 광역(시·도) 감염병 위험도 현황")
 
-    # Try API for current alert
     alert = get_current_alert(region)
     if alert and alert.get("composite_score") is not None:
         level = alert["alert_level"]
@@ -26,12 +26,12 @@ def render_map_tab(region: str) -> None:
 
     st_folium(build_map(region), width=None, height=500, returned_objects=[])
     st.markdown(
-        """
+        f"""
         <div class="legend-row">
-            <div class="legend-item"><div class="swatch" style="background:#16a34a;"></div>Level 1 낮음</div>
-            <div class="legend-item"><div class="swatch" style="background:#ca8a04;"></div>Level 2 주의</div>
-            <div class="legend-item"><div class="swatch" style="background:#ea580c;"></div>Level 3 경계</div>
-            <div class="legend-item"><div class="swatch" style="background:#dc2626;"></div>Level 4 심각</div>
+            <div class="legend-item"><div class="swatch" style="background:{GREEN_SAFE};"></div>Level 1 낮음</div>
+            <div class="legend-item"><div class="swatch" style="background:{YELLOW};"></div>Level 2 주의</div>
+            <div class="legend-item"><div class="swatch" style="background:{ORANGE};"></div>Level 3 경계</div>
+            <div class="legend-item"><div class="swatch" style="background:{RED};"></div>Level 4 심각</div>
         </div>
         """,
         unsafe_allow_html=True,

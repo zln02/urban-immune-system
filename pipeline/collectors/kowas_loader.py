@@ -149,7 +149,6 @@ async def run(
         try:
             if skip_db:
                 # 파싱만 (캐시 JSON 갱신용)
-                from pipeline.collectors.kowas_parser import parse_report
                 readings = parse_report(pdf, year, week)
                 JSON_CACHE_DIR.mkdir(parents=True, exist_ok=True)
                 (JSON_CACHE_DIR / f"kowas_{year}_w{week:02d}.json").write_text(

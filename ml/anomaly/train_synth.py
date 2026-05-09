@@ -31,6 +31,17 @@ OUTPUT_PATH = Path(__file__).parent.parent / "outputs" / "anomaly_metrics.json"
 CHECKPOINT_DIR = Path(__file__).parent.parent / "checkpoints" / "autoencoder"
 FEATURE_COLS = ["l1_otc", "l2_wastewater", "l3_search", "temperature"]
 
+_PROJECT_ROOT = Path(__file__).parent.parent.parent
+
+
+def _load_dotenv_once() -> None:
+    """프로젝트 루트 .env를 로드한다. 실패해도 조용히 넘어간다."""
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(_PROJECT_ROOT / ".env")
+    except ImportError:
+        pass
+
 
 def _make_normal_period(n_weeks: int, seed: int) -> np.ndarray:
     """비유행 기간(여름·가을) 정상 신호만 생성. 0-1 정규화."""
@@ -67,13 +78,7 @@ async def _fetch_real_normal_data(min_rows: int = 50) -> tuple[np.ndarray, list[
     except ImportError as exc:
         raise RuntimeError("asyncpg 미설치 — pip install asyncpg") from exc
 
-    # DATABASE_URL 로드 (dotenv 또는 환경변수)
-    try:
-        from dotenv import load_dotenv
-        load_dotenv(Path(__file__).parent.parent.parent / ".env")
-    except ImportError:
-        pass
-
+    _load_dotenv_once()
     import os
     db_url = os.getenv("DATABASE_URL", "")
     if not db_url:
@@ -322,12 +327,7 @@ async def _async_infer_17_regions(
         logger.warning("asyncpg 없음 — 17지역 추론 스킵")
         return {}
 
-    try:
-        from dotenv import load_dotenv
-        load_dotenv(Path(__file__).parent.parent.parent / ".env")
-    except ImportError:
-        pass
-
+    _load_dotenv_once()
     import os
     db_url = os.getenv("DATABASE_URL", "").replace("postgresql+asyncpg://", "postgresql://")
     if not db_url:

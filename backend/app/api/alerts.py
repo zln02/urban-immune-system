@@ -20,8 +20,10 @@ from ..tasks import generate_report_task
 router = APIRouter(prefix="/api/v1/alerts", tags=["alerts"])
 logger = logging.getLogger(__name__)
 
-# CLAUDE.md 앙상블 가중치
-W1, W2, W3 = 0.35, 0.40, 0.25
+# 앙상블 가중치 — backend/app/config.py 단일 출처
+W1: float = settings.ensemble_weight_l1
+W2: float = settings.ensemble_weight_l2
+W3: float = settings.ensemble_weight_l3
 
 _SYSTEM_PROMPT = (
     "당신은 공중보건 전문가입니다. "
@@ -307,7 +309,7 @@ async def _sse_generator(region: str, signals: dict) -> AsyncIterator[str]:
 _VDB = None
 
 
-def _get_vdb():
+def _get_vdb() -> object | None:
     global _VDB
     if _VDB is None:
         try:

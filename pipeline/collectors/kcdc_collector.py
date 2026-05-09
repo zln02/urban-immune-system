@@ -374,9 +374,11 @@ def collect_weekly_confirmed(
 # ──────────────────────── DB 적재 ─────────────────────────────────────────
 async def _insert_records(records: list[dict[str, Any]]) -> int:
     """confirmed_cases 테이블에 주간 확진자 데이터를 UPSERT한다."""
-    db_url = os.getenv("DATABASE_URL", "postgresql://uis_user:uis_dev_placeholder_20260414@localhost:5432/urban_immune")
-    if db_url.startswith("postgresql+asyncpg://"):
-        db_url = db_url.replace("postgresql+asyncpg://", "postgresql://", 1)
+    raw_url = os.getenv("DATABASE_URL", "postgresql://uis_user:uis_dev_placeholder_20260414@localhost:5432/urban_immune")
+    # asyncpg는 'postgresql://' 또는 'postgres://' 만 지원 — SQLAlchemy 스킴 변환
+    db_url = raw_url.replace("postgresql+asyncpg://", "postgresql://", 1).replace(
+        "postgres+asyncpg://", "postgresql://", 1
+    )
 
     pool = await asyncpg.create_pool(dsn=db_url, min_size=1, max_size=3)
     inserted = 0
@@ -441,16 +443,21 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     records = collect_weekly_confirmed(disease=args.disease, weeks=args.weeks)
-    print(f"\n수집 완료: {len(records)}개 레코드")
+    logger.info("수집 완료: %d개 레코드", len(records))
     if records:
-        print(f"기간: {records[0]['iso_week']} ~ {records[-1]['iso_week']}")
+        logger.info("기간: %s ~ %s", records[0]["iso_week"], records[-1]["iso_week"])
         seoul_records = [r for r in records if r["region"] == "서울특별시"]
         if seoul_records:
             peak = max(seoul_records, key=lambda x: x["case_count"])
-            print(f"서울 peak: {peak['iso_week']} ({peak['case_count']:,}명, {peak['per_100k']:.1f}/10만)")
+            logger.info(
+                "서울 peak: %s (%s명, %.1f/10만)",
+                peak["iso_week"],
+                f"{peak['case_count']:,}",
+                peak["per_100k"],
+            )
 
     if not args.dry_run:
         n = insert_confirmed_sync(records)
-        print(f"DB 적재 완료: {n}개 rows")
+        logger.info("DB 적재 완료: %d개 rows", n)
     else:
-        print("[dry-run] DB 저장 건너뜀")
+        logger.info("[dry-run] DB 저장 건너뜀")
