@@ -68,6 +68,10 @@ addopts = "-v --tb=short --ignore=tests/load"
 # 커버리지 측정·게이트는 CI 워크플로우의 전체 스위트 잡(legacy-test)에서만 적용한다.
 # addopts 에 두면 단일 파일 잡(backend-test) 에서 coverage dilution → fail-under 충돌
 asyncio_mode = "auto"
+markers = [
+    "slow: marks tests as slow — skip with '-m \"not slow\"' in CI",
+    "integration: marks tests as integration tests requiring live services",
+]
 
 [tool.coverage.run]
 source = ["backend", "ml", "pipeline"]
