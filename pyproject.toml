@@ -76,7 +76,7 @@ omit = ["tests/*", ".venv/*", "*/migrations/*", "*/__init__.py"]
 [tool.coverage.report]
 show_missing = true
 skip_empty = true
-# TODO(W18): 70% 복구 목표 — W17 중간발표 기준 60%로 강하 가능성 있음
+# TODO(W19): 현재 39% → W19 50%+ 달성 목표 (2026-05-10)
 
 [tool.mypy]
 python_version = "3.11"

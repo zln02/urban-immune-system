@@ -1,4 +1,4 @@
-"""앙상블 경보 로직 단위 테스트.
+"""앙상블 경보 로직 + scorer 유틸리티 단위 테스트.
 
 검증 항목:
 1. 경계값 — composite 정확한 레벨 경계
@@ -16,10 +16,28 @@ sweet spot 못 찾아서 폐기 (analysis/outputs/l2_gate_sweep.json). 게이트
 """
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+from unittest.mock import AsyncMock, MagicMock
+
 from pipeline.scorer import (
     RiskScoreRow,
+    _fetch_latest_signals,
+    _load_weights,
+    _normalize_dsn,
     determine_alert_level,
 )
+
+
+def _make_mock_pool(mock_conn: AsyncMock) -> MagicMock:
+    """asyncpg Pool mock 헬퍼."""
+    mock_pool = MagicMock()
+
+    @asynccontextmanager
+    async def _acquire():
+        yield mock_conn
+
+    mock_pool.acquire = _acquire
+    return mock_pool
 
 
 # ---------------------------------------------------------------------------
@@ -152,3 +170,52 @@ def test_risk_score_row_instantiation() -> None:
     assert row.alert_level == "YELLOW"
 
 
+# ---------------------------------------------------------------------------
+# Case 12: _normalize_dsn — SQLAlchemy dialect 치환
+# ---------------------------------------------------------------------------
+def test_normalize_dsn_replaces_dialect() -> None:
+    """'postgresql+asyncpg://' 스킴을 'postgresql://'로 치환해야 한다."""
+    result = _normalize_dsn("postgresql+asyncpg://u:p@h/db")
+    assert result == "postgresql://u:p@h/db"
+
+
+# ---------------------------------------------------------------------------
+# Case 13: _normalize_dsn — 일반 DSN은 변경 없이 통과
+# ---------------------------------------------------------------------------
+def test_normalize_dsn_plain_passthrough() -> None:
+    """일반 'postgresql://' DSN은 변경 없이 그대로 반환해야 한다."""
+    dsn = "postgresql://u:p@h/db"
+    result = _normalize_dsn(dsn)
+    assert result == dsn
+
+
+# ---------------------------------------------------------------------------
+# Case 14: _load_weights — 3개 float 튜플, 합계 ≈ 1.0
+# ---------------------------------------------------------------------------
+def test_load_weights_returns_tuple() -> None:
+    """_load_weights()는 합계가 약 1.0인 3-tuple of floats를 반환해야 한다."""
+    weights = _load_weights()
+    assert isinstance(weights, tuple)
+    assert len(weights) == 3
+    assert all(isinstance(w, float) for w in weights)
+    assert abs(sum(weights) - 1.0) < 1e-6, f"가중치 합={sum(weights):.6f}, 1.0이어야 함"
+
+
+# ---------------------------------------------------------------------------
+# Case 15: _fetch_latest_signals — 데이터 없음 → l1/l2/l3 모두 None
+# ---------------------------------------------------------------------------
+import pytest
+
+
+@pytest.mark.asyncio
+async def test_fetch_latest_signals_no_data() -> None:
+    """pool.fetch가 빈 리스트를 반환하면 l1/l2/l3가 모두 None이어야 한다."""
+    mock_conn = AsyncMock()
+    mock_pool = MagicMock()
+    mock_pool.fetch = AsyncMock(return_value=[])
+
+    result = await _fetch_latest_signals(mock_pool, "서울특별시")
+
+    assert result.get("otc") is None
+    assert result.get("wastewater") is None
+    assert result.get("search") is None
