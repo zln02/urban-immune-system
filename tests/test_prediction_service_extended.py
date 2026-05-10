@@ -89,7 +89,7 @@ async def test_get_risk_prediction_http_error() -> None:
 
 async def test_get_tft_forecast_success() -> None:
     """200 응답 → TFT 예측 dict 반환."""
-    mock_client = _make_mock_client("get", response_data={"forecast": [1.2, 1.5, 1.8]})
+    mock_client = _make_mock_client("post", response_data={"forecast": [1.2, 1.5, 1.8]})
     with patch("backend.app.services.prediction_service.httpx.AsyncClient", return_value=mock_client):
         result = await get_tft_forecast("서울특별시")
     assert result["forecast"] == [1.2, 1.5, 1.8]
@@ -98,7 +98,7 @@ async def test_get_tft_forecast_success() -> None:
 
 async def test_get_tft_forecast_timeout() -> None:
     """TimeoutException → fallback dict 반환."""
-    mock_client = _make_mock_client("get", side_effect=httpx.TimeoutException("tft timeout"))
+    mock_client = _make_mock_client("post", side_effect=httpx.TimeoutException("tft timeout"))
     with patch("backend.app.services.prediction_service.httpx.AsyncClient", return_value=mock_client):
         result = await get_tft_forecast("인천광역시")
     assert result["fallback"] is True
