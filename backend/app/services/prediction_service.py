@@ -42,7 +42,10 @@ async def get_tft_forecast(region: str) -> dict:
     """ML 서비스에서 TFT 예측 결과를 받아온다."""
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.get(f"{ML_SERVICE_URL}/predict/tft", params={"region": region})
+            resp = await client.post(
+                f"{ML_SERVICE_URL}/predict/tft-7d",
+                json={"region": region},
+            )
             resp.raise_for_status()
             return resp.json()
     except (httpx.TimeoutException, httpx.ConnectError, httpx.HTTPStatusError) as e:
