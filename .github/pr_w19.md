@@ -1,16 +1,19 @@
-# feat(uis): P0 ML reconnect + coverage 47→[TBD]% + isolation fix
+# feat(uis): P0 ML reconnect + coverage 47→64% + isolation fix
 
 ## Summary
 Round 1~5 통합 PR. 직전 세션 대비 주요 변경:
 
 - **P0 ML 미연결 fix**: GET→POST /predict/tft-7d + .env 경로 수정 (ml/serve.py)
-- **커버리지 폭증**: backend/ml/pipeline 주요 모듈 47%→[TBD]% (pytest --cov)
+- **커버리지 폭증**: backend/ml/pipeline 주요 모듈 47%→64% (pytest --cov)
   - signals.py 44→100%, report_pdf.py 16→94%, scorer.py 37→81%, kowas_loader.py 40→87%, reproduce_validation.py 0→68%
 - **약점 방어**: cv_limitations.md 130줄 추가 (단일시즌 한계, recall 0.837 정직 처리)
 - **systemd 서비스**: uis-ml.service active(running), POST /predict/tft-7d 정상 확인
-- **격리 fix** [TBD-isolation-fix-SHA]: test_report_pdf registerFont 전역 오염 해결
+- **격리 fix** (035107b): asyncio.get_event_loop() → asyncio.run() 교체 (Python 3.10+ 격리 보장)
 
 ## Commits
+035107b fix(test): replace get_event_loop() with asyncio.run() in test_report_pdf
+5c3fab3 docs(claude-md): add Worker DoD — mandate pytest tests/ before commit
+4f55b0a docs: draft PR description for w19 branch
 ade818a test(api-signals): cover routes + region params + fallback (44% -> 100%)
 8959b94 test(report-pdf): cover PDF generation paths (16% -> 94%)
 9d3a1a7 test(ml): smoke tests for train scripts + @pytest.mark.slow marker
@@ -24,14 +27,13 @@ e112583 docs(arch): add CV fold NaN limitation analysis
 2ac79f7 docs: add IP action guide for SW copyright + patent TLO consultation
 4c08583 feat(tests): boost coverage 39%→47%, add fallback logic, fix CI gate
 d5e4a18 chore: cleanup slides artifacts, add team guide and docs
-[TBD-isolation-fix-SHA] — fix(test): isolation fix for registerFont leak
 
 ## Verification
-- [ ] pytest tests/ — [TBD] passed, 0 failed
-- [ ] 전체 커버리지: [TBD]% (목표 ≥47%)
-- [ ] ML 서비스: POST /predict/tft-7d → 서울 [18.04] 정상
-- [ ] anomaly 17지역 정상 (대전 score=90.6)
-- [ ] CI gate --cov-fail-under=[TBD] 통과
+- [x] pytest tests/ — 319 passed, 3 skipped, 0 failed
+- [x] 전체 커버리지: 64% (CI gate --cov-fail-under=62 통과)
+- [x] ML 서비스: POST /predict/tft-7d → 서울 [18.04] 정상
+- [x] anomaly 17지역 정상 (대전 score=90.6)
+- [x] CI gate --cov-fail-under=62 (45→62 상향)
 
 ## Risks
 - scorer.py 임계값 미변경 (C2 recall 0.841/FAR 0.235, C3 recall 0.844/FAR 0.250 모두 거부) → recall 0.837 현행 유지
