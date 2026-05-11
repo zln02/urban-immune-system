@@ -25,7 +25,7 @@ import pytest
 
 def _run(coro):
     """동기 컨텍스트에서 coroutine 실행."""
-    return asyncio.get_event_loop().run_until_complete(coro)
+    return asyncio.run(coro)
 
 
 # ---------------------------------------------------------------------------
@@ -553,7 +553,7 @@ def test_build_alert_pdf_returns_bytes():
             result = await report_pdf.build_alert_pdf("서울", mock_db)
         return result
 
-    result = asyncio.get_event_loop().run_until_complete(run())
+    result = asyncio.run(run())
     assert isinstance(result, bytes)
     assert result[:4] == b"%PDF"
     assert called["region"] == "서울"
