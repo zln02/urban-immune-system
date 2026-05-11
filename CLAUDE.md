@@ -600,3 +600,22 @@ prediction_lengths: [7, 14, 21]
 | 스킬 | 사용 시점 |
 |------|----------|
 | `/simplify` | 수집기 코드 리뷰 후 품질 개선 |
+
+---
+
+## Worker Definition of Done (DoD)
+2026-05-10 격리 실패 사고 재발 방지.
+
+### 필수 검증
+- 자기 모듈: pytest tests/<module> -v
+- **전체 통합 ⭐ 의무**: pytest tests/ 2>&1 | tail -5
+- 단독 PASS / 전체 FAIL = 격리 실패 → fix 후 재커밋
+- pre-commit run --all-files
+- 커버리지 보고 (모듈 + 전체)
+
+### 격리 가드
+- reportlab registerFont → fixture autouse cleanup
+- asyncio → pytest-asyncio fixture, 글로벌 loop X
+- monkeypatch fixture만 (글로벌 X)
+- tmp_path fixture (mkdtemp X)
+- DB mock → AsyncMock per-test

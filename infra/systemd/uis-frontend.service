@@ -12,8 +12,8 @@ Environment="NODE_ENV=production"
 Environment="PORT=3000"
 EnvironmentFile=/home/wlsdud5035/urban-immune-system/.env
 # 프로덕션 빌드 → 시작. 빌드 산출물(.next/) 미존재 시 자동 빌드.
-ExecStartPre=/bin/bash -c '[ -d /home/wlsdud5035/urban-immune-system/frontend/.next ] || /usr/bin/npx next build'
-ExecStart=/usr/bin/npx next start -p 3000
+ExecStartPre=/bin/bash -c '[ -d /home/wlsdud5035/urban-immune-system/frontend/.next ] || /home/wlsdud5035/urban-immune-system/frontend/node_modules/.bin/next build'
+ExecStart=/home/wlsdud5035/urban-immune-system/frontend/node_modules/.bin/next start -p 3000
 Restart=on-failure
 RestartSec=10
 StandardOutput=append:/var/log/uis-frontend.log

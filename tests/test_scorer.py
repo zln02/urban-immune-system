@@ -1,4 +1,4 @@
-"""앙상블 경보 로직 단위 테스트.
+"""앙상블 경보 로직 + scorer 유틸리티 단위 테스트.
 
 검증 항목:
 1. 경계값 — composite 정확한 레벨 경계
@@ -9,6 +9,8 @@
 6. ORANGE 경계 — 55 ≤ composite < 75, 2계층 이상 30 이상
 7. RED 경계 + 교차검증 실패 시 GREEN 다운그레이드
 8. 단독 계층 차단 — 한 계층만 30+ 이면 GREEN 다운그레이드
+9. asyncpg.Pool mock — _upsert_risk_score, run_weekly_scoring, backfill 경로
+10. compute_risk_scores_for_region — 정상/데이터없음/에러 경로
 
 NOTE: 게이트 A (L2 미달 시 GREEN 강제) 는 17지역 sweep 결과 임계값 어느 값도
 sweet spot 못 찾아서 폐기 (analysis/outputs/l2_gate_sweep.json). 게이트 B
@@ -16,10 +18,39 @@ sweet spot 못 찾아서 폐기 (analysis/outputs/l2_gate_sweep.json). 게이트
 """
 from __future__ import annotations
 
+import sys
+from contextlib import asynccontextmanager
+from datetime import date, datetime, timezone, timedelta
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+
 from pipeline.scorer import (
     RiskScoreRow,
+    _fetch_latest_signals,
+    _load_weights,
+    _normalize_dsn,
+    _upsert_risk_score,
+    compute_risk_scores_for_region,
+    run_weekly_scoring,
+    backfill_risk_scores,
     determine_alert_level,
 )
+
+
+import pipeline.scorer as _scorer_module
+
+
+def _make_mock_pool(mock_conn: AsyncMock) -> MagicMock:
+    """asyncpg Pool mock 헬퍼."""
+    mock_pool = MagicMock()
+
+    @asynccontextmanager
+    async def _acquire():
+        yield mock_conn
+
+    mock_pool.acquire = _acquire
+    return mock_pool
 
 
 # ---------------------------------------------------------------------------
@@ -152,3 +183,420 @@ def test_risk_score_row_instantiation() -> None:
     assert row.alert_level == "YELLOW"
 
 
+# ---------------------------------------------------------------------------
+# Case 12: _normalize_dsn — SQLAlchemy dialect 치환
+# ---------------------------------------------------------------------------
+def test_normalize_dsn_replaces_dialect() -> None:
+    """'postgresql+asyncpg://' 스킴을 'postgresql://'로 치환해야 한다."""
+    result = _normalize_dsn("postgresql+asyncpg://u:p@h/db")
+    assert result == "postgresql://u:p@h/db"
+
+
+# ---------------------------------------------------------------------------
+# Case 13: _normalize_dsn — 일반 DSN은 변경 없이 통과
+# ---------------------------------------------------------------------------
+def test_normalize_dsn_plain_passthrough() -> None:
+    """일반 'postgresql://' DSN은 변경 없이 그대로 반환해야 한다."""
+    dsn = "postgresql://u:p@h/db"
+    result = _normalize_dsn(dsn)
+    assert result == dsn
+
+
+# ---------------------------------------------------------------------------
+# Case 14: _load_weights — 3개 float 튜플, 합계 ≈ 1.0
+# ---------------------------------------------------------------------------
+def test_load_weights_returns_tuple() -> None:
+    """_load_weights()는 합계가 약 1.0인 3-tuple of floats를 반환해야 한다."""
+    weights = _load_weights()
+    assert isinstance(weights, tuple)
+    assert len(weights) == 3
+    assert all(isinstance(w, float) for w in weights)
+    assert abs(sum(weights) - 1.0) < 1e-6, f"가중치 합={sum(weights):.6f}, 1.0이어야 함"
+
+
+# ---------------------------------------------------------------------------
+# Case 15: _fetch_latest_signals — 데이터 없음 → l1/l2/l3 모두 None
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_fetch_latest_signals_no_data() -> None:
+    """pool.fetch가 빈 리스트를 반환하면 l1/l2/l3가 모두 None이어야 한다."""
+    mock_conn = AsyncMock()
+    mock_pool = MagicMock()
+    mock_pool.fetch = AsyncMock(return_value=[])
+
+    result = await _fetch_latest_signals(mock_pool, "서울특별시")
+
+    assert result.get("otc") is None
+    assert result.get("wastewater") is None
+    assert result.get("search") is None
+
+
+# ---------------------------------------------------------------------------
+# 공통 픽스처 — asyncpg Pool mock
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def mock_conn() -> AsyncMock:
+    """asyncpg Connection AsyncMock."""
+    conn = AsyncMock()
+    conn.fetchval = AsyncMock(return_value=None)   # 기본: 신규 레코드
+    conn.execute = AsyncMock(return_value="INSERT 0 1")
+    conn.fetch = AsyncMock(return_value=[])
+    return conn
+
+
+@pytest.fixture
+def mock_pool(mock_conn: AsyncMock) -> MagicMock:
+    """asyncpg Pool mock — pool.acquire() async context manager 포함."""
+    pool = MagicMock()
+
+    @asynccontextmanager
+    async def _acquire():
+        yield mock_conn
+
+    pool.acquire = _acquire
+    pool.fetch = AsyncMock(return_value=[])
+    return pool
+
+
+# ---------------------------------------------------------------------------
+# Case 16: _upsert_risk_score — 신규 INSERT (fetchval=None → is_new=True)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_upsert_risk_score_new_insert(mock_pool: MagicMock, mock_conn: AsyncMock) -> None:
+    """기존 레코드 없을 때 _upsert_risk_score 는 True(신규 INSERT) 반환."""
+    mock_conn.fetchval = AsyncMock(return_value=None)  # 신규
+
+    row = RiskScoreRow(
+        region="서울특별시",
+        time=datetime(2026, 5, 1, tzinfo=timezone.utc),
+        composite_score=45.0,
+        l1_score=50.0,
+        l2_score=40.0,
+        l3_score=30.0,
+        alert_level="YELLOW",
+    )
+    is_new = await _upsert_risk_score(mock_pool, row)
+
+    assert is_new is True
+    # execute 는 INSERT 1번만 호출
+    assert mock_conn.execute.call_count == 1
+    # DELETE 는 호출되지 않아야 함
+    for call in mock_conn.execute.call_args_list:
+        assert "DELETE" not in call.args[0]
+
+
+@pytest.mark.asyncio
+async def test_upsert_risk_score_update_existing(mock_pool: MagicMock, mock_conn: AsyncMock) -> None:
+    """기존 레코드 있을 때 _upsert_risk_score 는 False(UPDATE) 반환 + DELETE+INSERT."""
+    mock_conn.fetchval = AsyncMock(return_value=42)  # 기존 id=42
+
+    row = RiskScoreRow(
+        region="부산광역시",
+        time=datetime(2026, 5, 1, tzinfo=timezone.utc),
+        composite_score=60.0,
+        l1_score=70.0,
+        l2_score=55.0,
+        l3_score=35.0,
+        alert_level="ORANGE",
+    )
+    is_new = await _upsert_risk_score(mock_pool, row)
+
+    assert is_new is False
+    # execute: DELETE + INSERT = 2번
+    assert mock_conn.execute.call_count == 2
+    calls_sql = [c.args[0] for c in mock_conn.execute.call_args_list]
+    assert any("DELETE" in sql for sql in calls_sql)
+    assert any("INSERT" in sql for sql in calls_sql)
+
+
+# ---------------------------------------------------------------------------
+# Case 17: _upsert_risk_score — None 점수 처리 (l1/l2/l3 가 None 인 경우)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_upsert_risk_score_none_scores(mock_pool: MagicMock, mock_conn: AsyncMock) -> None:
+    """l1/l2/l3 가 None 이어도 _upsert_risk_score 가 정상 작동해야 한다."""
+    mock_conn.fetchval = AsyncMock(return_value=None)
+
+    row = RiskScoreRow(
+        region="대구광역시",
+        time=datetime(2026, 5, 1, tzinfo=timezone.utc),
+        composite_score=0.0,
+        l1_score=None,
+        l2_score=None,
+        l3_score=None,
+        alert_level="GREEN",
+    )
+    is_new = await _upsert_risk_score(mock_pool, row)
+    assert is_new is True
+
+
+# ---------------------------------------------------------------------------
+# Case 18: compute_risk_scores_for_region — 정상 경로
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_compute_risk_scores_for_region_normal() -> None:
+    """정상 신호 데이터가 있을 때 RiskScoreRow 를 반환해야 한다."""
+    target = date(2026, 5, 1)
+
+    mock_fetch_result = {
+        "otc": 50.0,
+        "wastewater": 40.0,
+        "search": 30.0,
+        "latest_time": datetime(2026, 4, 28, tzinfo=timezone.utc),
+    }
+
+    with patch.object(_scorer_module, "_get_pool", new=AsyncMock()) as mock_get_pool, \
+         patch.object(_scorer_module, "_fetch_latest_signals", new=AsyncMock(return_value=mock_fetch_result)):
+
+        mock_get_pool.return_value = MagicMock()
+        result = await compute_risk_scores_for_region("서울특별시", target)
+
+    assert result is not None
+    assert result.region == "서울특별시"
+    assert result.l1_score == 50.0
+    assert result.l2_score == 40.0
+    assert result.l3_score == 30.0
+    assert result.time == datetime(2026, 5, 1, tzinfo=timezone.utc)
+    assert result.alert_level in ("GREEN", "YELLOW", "ORANGE", "RED")
+
+
+@pytest.mark.asyncio
+async def test_compute_risk_scores_for_region_all_none() -> None:
+    """모든 계층이 None 이면 None 반환해야 한다."""
+    mock_fetch_result = {
+        "otc": None,
+        "wastewater": None,
+        "search": None,
+        "latest_time": None,
+    }
+
+    with patch.object(_scorer_module, "_get_pool", new=AsyncMock()) as mock_get_pool, \
+         patch.object(_scorer_module, "_fetch_latest_signals", new=AsyncMock(return_value=mock_fetch_result)):
+
+        mock_get_pool.return_value = MagicMock()
+        result = await compute_risk_scores_for_region("강원도", date(2026, 5, 1))
+
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_compute_risk_scores_gate_b_threshold() -> None:
+    """게이트B: composite ≥ 30 이어도 계층 1개만 30+ 이면 GREEN 이어야 한다."""
+    # l1=80(단독), l2=10, l3=10 → composite=0.35*80+0.40*10+0.25*10=32.5 YELLOW 범위
+    # 게이트B: 30+ 계층 1개 → GREEN 다운그레이드
+    mock_fetch_result = {
+        "otc": 80.0,
+        "wastewater": 10.0,
+        "search": 10.0,
+        "latest_time": datetime(2026, 4, 28, tzinfo=timezone.utc),
+    }
+
+    with patch.object(_scorer_module, "_get_pool", new=AsyncMock()) as mock_get_pool, \
+         patch.object(_scorer_module, "_fetch_latest_signals", new=AsyncMock(return_value=mock_fetch_result)):
+
+        mock_get_pool.return_value = MagicMock()
+        result = await compute_risk_scores_for_region("경기도", date(2026, 5, 1))
+
+    assert result is not None
+    assert result.alert_level == "GREEN", f"게이트B 차단 기대 GREEN, 실제 {result.alert_level}"
+
+
+# ---------------------------------------------------------------------------
+# Case 19: run_weekly_scoring — 정상 처리 / 빈 regions
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_run_weekly_scoring_no_regions() -> None:
+    """layer_signals 에 데이터 없을 때 run_weekly_scoring 는 0 반환."""
+    mock_p = MagicMock()
+    mock_p.fetch = AsyncMock(return_value=[])  # 빈 regions
+
+    with patch.object(_scorer_module, "_get_pool", new=AsyncMock(return_value=mock_p)):
+        count = await run_weekly_scoring()
+
+    assert count == 0
+
+
+@pytest.mark.asyncio
+async def test_run_weekly_scoring_normal() -> None:
+    """정상 지역 2개가 있을 때 run_weekly_scoring 이 2를 반환해야 한다."""
+    mock_p = MagicMock()
+    mock_p.fetch = AsyncMock(return_value=[
+        {"region": "서울특별시"},
+        {"region": "부산광역시"},
+    ])
+
+    dummy_row = RiskScoreRow(
+        region="서울특별시",
+        time=datetime(2026, 5, 1, tzinfo=timezone.utc),
+        composite_score=42.0,
+        l1_score=50.0,
+        l2_score=40.0,
+        l3_score=30.0,
+        alert_level="YELLOW",
+    )
+
+    with patch.object(_scorer_module, "_get_pool", new=AsyncMock(return_value=mock_p)), \
+         patch.object(_scorer_module, "compute_risk_scores_for_region", new=AsyncMock(return_value=dummy_row)), \
+         patch.object(_scorer_module, "_upsert_risk_score", new=AsyncMock(return_value=True)):
+        count = await run_weekly_scoring()
+
+    assert count == 2
+
+
+@pytest.mark.asyncio
+async def test_run_weekly_scoring_region_error_skipped() -> None:
+    """한 지역 처리 중 예외 발생 시 나머지 지역은 계속 처리해야 한다."""
+    mock_p = MagicMock()
+    mock_p.fetch = AsyncMock(return_value=[
+        {"region": "서울특별시"},
+        {"region": "부산광역시"},
+    ])
+
+    dummy_row = RiskScoreRow(
+        region="부산광역시",
+        time=datetime(2026, 5, 1, tzinfo=timezone.utc),
+        composite_score=35.0,
+        l1_score=40.0,
+        l2_score=35.0,
+        l3_score=20.0,
+        alert_level="YELLOW",
+    )
+
+    call_count = 0
+
+    async def _side_effect(region: str, target_date: date):
+        nonlocal call_count
+        call_count += 1
+        if region == "서울특별시":
+            raise RuntimeError("DB 연결 실패")
+        return dummy_row
+
+    with patch.object(_scorer_module, "_get_pool", new=AsyncMock(return_value=mock_p)), \
+         patch.object(_scorer_module, "compute_risk_scores_for_region", side_effect=_side_effect), \
+         patch.object(_scorer_module, "_upsert_risk_score", new=AsyncMock(return_value=True)):
+        count = await run_weekly_scoring()
+
+    assert count == 1  # 서울 실패 → 부산만 성공
+    assert call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_run_weekly_scoring_score_row_none_skipped() -> None:
+    """compute_risk_scores_for_region 이 None 반환 시 해당 지역 카운트 제외."""
+    mock_p = MagicMock()
+    mock_p.fetch = AsyncMock(return_value=[{"region": "제주특별자치도"}])
+
+    with patch.object(_scorer_module, "_get_pool", new=AsyncMock(return_value=mock_p)), \
+         patch.object(_scorer_module, "compute_risk_scores_for_region", new=AsyncMock(return_value=None)), \
+         patch.object(_scorer_module, "_upsert_risk_score", new=AsyncMock(return_value=True)):
+        count = await run_weekly_scoring()
+
+    assert count == 0
+
+
+# ---------------------------------------------------------------------------
+# Case 20: backfill_risk_scores — 날짜 범위 백필
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_backfill_risk_scores_no_regions() -> None:
+    """layer_signals 비어있으면 backfill 은 0 반환."""
+    mock_p = MagicMock()
+    mock_p.fetch = AsyncMock(return_value=[])
+
+    with patch.object(_scorer_module, "_get_pool", new=AsyncMock(return_value=mock_p)):
+        count = await backfill_risk_scores(date(2026, 1, 1), date(2026, 1, 7))
+
+    assert count == 0
+
+
+@pytest.mark.asyncio
+async def test_backfill_risk_scores_two_weeks() -> None:
+    """2주 범위 (step_days=7) + 지역 1개 → 처리 행 2개 기대."""
+    mock_p = MagicMock()
+    mock_p.fetch = AsyncMock(return_value=[{"region": "서울특별시"}])
+
+    dummy_row = RiskScoreRow(
+        region="서울특별시",
+        time=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        composite_score=40.0,
+        l1_score=50.0,
+        l2_score=35.0,
+        l3_score=25.0,
+        alert_level="YELLOW",
+    )
+
+    with patch.object(_scorer_module, "_get_pool", new=AsyncMock(return_value=mock_p)), \
+         patch.object(_scorer_module, "compute_risk_scores_for_region", new=AsyncMock(return_value=dummy_row)), \
+         patch.object(_scorer_module, "_upsert_risk_score", new=AsyncMock(return_value=True)):
+        count = await backfill_risk_scores(date(2026, 1, 1), date(2026, 1, 8), step_days=7)
+
+    # 1/1 → 1/8 → loop: cur=1/1 (≤1/8), cur=1/8 (≤1/8), cur=1/15 (>1/8) → 2회 × 1 지역 = 2
+    assert count == 2
+
+
+@pytest.mark.asyncio
+async def test_backfill_risk_scores_error_skipped() -> None:
+    """backfill 중 특정 지역/날짜 오류는 로그 후 계속 진행해야 한다."""
+    mock_p = MagicMock()
+    mock_p.fetch = AsyncMock(return_value=[
+        {"region": "서울특별시"},
+        {"region": "부산광역시"},
+    ])
+
+    dummy_row = RiskScoreRow(
+        region="부산광역시",
+        time=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        composite_score=35.0,
+        l1_score=40.0,
+        l2_score=30.0,
+        l3_score=20.0,
+        alert_level="YELLOW",
+    )
+
+    async def _side_effect(region: str, cur_date: date):
+        if region == "서울특별시":
+            raise ValueError("테스트용 오류")
+        return dummy_row
+
+    with patch.object(_scorer_module, "_get_pool", new=AsyncMock(return_value=mock_p)), \
+         patch.object(_scorer_module, "compute_risk_scores_for_region", side_effect=_side_effect), \
+         patch.object(_scorer_module, "_upsert_risk_score", new=AsyncMock(return_value=True)):
+        count = await backfill_risk_scores(date(2026, 1, 1), date(2026, 1, 1), step_days=7)
+
+    # 서울 실패, 부산 성공 → 1
+    assert count == 1
+
+
+# ---------------------------------------------------------------------------
+# Case 21: _fetch_latest_signals — 데이터 있는 경우 값 파싱
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_fetch_latest_signals_with_data() -> None:
+    """pool.fetch 가 3계층 데이터를 반환하면 otc/wastewater/search 값이 채워져야 한다."""
+    from datetime import datetime, timezone
+
+    t = datetime(2026, 4, 28, tzinfo=timezone.utc)
+
+    rows = [
+        {"layer": "otc", "value": 55.0, "time": t},
+        {"layer": "wastewater", "value": 42.0, "time": t},
+        {"layer": "search", "value": 30.0, "time": t},
+    ]
+    mock_pool = MagicMock()
+    mock_pool.fetch = AsyncMock(return_value=rows)
+
+    result = await _fetch_latest_signals(mock_pool, "서울특별시")
+
+    assert result["otc"] == 55.0
+    assert result["wastewater"] == 42.0
+    assert result["search"] == 30.0
+    assert result["latest_time"] == t

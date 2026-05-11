@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-04-27T08:48:03.726167+00:00",
-  "git_branch": "feat/dashboard-pdf-report",
-  "git_commit": "7284213",
+  "generated_at": "2026-05-06T16:23:40.003120+00:00",
+  "git_branch": "develop",
+  "git_commit": "74f9ea9",
   "stages": {
     "synthetic_hardened": {
       "data_source": "synthetic_hardened",
@@ -78,15 +78,22 @@
         "auc_roc": 1.0
       }
     },
+    "real": {
+      "data_source": "real",
+      "region": "서울특별시",
+      "status": "skipped",
+      "reason": "실데이터 부족 (3계층 교집합 0주, 최소 30주 필요) — 단계 스킵",
+      "n_weeks_3layer_intersection": 0
+    },
     "realistic": {
       "status": "ok",
       "data_source": "17regions_backtest",
       "task": "alert_classification (composite ≥ alert_threshold)",
       "n_regions": 17,
-      "cv_mean_f1": 0.621,
-      "cv_mean_precision": 0.507,
-      "cv_mean_recall": 0.838,
-      "cv_mean_far": 0.557,
+      "cv_mean_f1": 0.882,
+      "cv_mean_precision": 0.949,
+      "cv_mean_recall": 0.837,
+      "cv_mean_far": 0.206,
       "skipped_regions": [],
       "source_file": "analysis/outputs/backtest_17regions.json",
       "lead_time_weeks": {
@@ -109,35 +116,5 @@
       },
       "analysis_window": "2025-09 ~ 2026-03"
     }
-  },
-  "summary": {
-    "presentation_date": "2026-04-30",
-    "comparison": {
-      "synthetic": {
-        "f1": 0.9677,
-        "precision": 0.9375,
-        "recall": 1.0
-      },
-      "realistic": {
-        "f1": 0.621,
-        "precision": 0.507,
-        "recall": 0.838
-      }
-    },
-    "ensemble_17regions_avg": {
-      "f1": 0.8414,
-      "precision": 0.9605,
-      "recall": 0.7682,
-      "far": 0.1618,
-      "lead_weeks": 5.9412
-    },
-    "kpi_status": {
-      "f1_pass": true,
-      "precision_pass": true,
-      "recall_pass": false,
-      "far_pass": true,
-      "lead_pass": true
-    },
-    "notes_kr": "F1(0.841)·Precision(0.960)·FAR(0.162)·선행시간(5.9주) 4개 KPI 목표 달성. Recall(0.768)은 목표 0.85 미달 — 게이트 임계값 완화 또는 L2 가중치 상향으로 개선 가능. TFT는 합성 데이터 PoC 완료(79K params), 실데이터 12주 누적 후 프로덕션 전환 예정.\n참고: 17지역 5-fold 신 baseline은 analysis/outputs/backtest_17regions.json (F1=0.882, Lead=6.47w)"
   }
 }
