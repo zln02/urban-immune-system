@@ -1,0 +1,27 @@
+[Unit]
+Description=UIS ML Inference Service (XGBoost + TFT + AE)
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=wlsdud5035
+Group=wlsdud5035
+WorkingDirectory=/home/wlsdud5035/urban-immune-system
+Environment="PATH=/home/wlsdud5035/urban-immune-system/.venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+EnvironmentFile=-/home/wlsdud5035/urban-immune-system/.env
+ExecStart=/home/wlsdud5035/urban-immune-system/.venv/bin/uvicorn ml.serve:app --host 127.0.0.1 --port 8002 --workers 1
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# 보안 하드닝 (backend.service 와 동일 정책)
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=/home/wlsdud5035/urban-immune-system
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

@@ -5,6 +5,7 @@ import json
 import logging
 from collections.abc import AsyncIterator
 from datetime import datetime, timezone
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
@@ -306,19 +307,23 @@ async def _sse_generator(region: str, signals: dict) -> AsyncIterator[str]:
 
 
 # RAG 벡터DB 싱글톤 — 모듈 첫 로드 시 한 번만 초기화 (SentenceTransformer 100MB 모델 캐싱)
-_VDB = None
+_VDB: object | None = None
+_VDB_FAILED: bool = False  # 명시적 실패 sentinel — 매번 재시도 방지
 
 
-def _get_vdb() -> object | None:
-    global _VDB
+def _get_vdb() -> Any | None:
+    global _VDB, _VDB_FAILED
+    if _VDB_FAILED:
+        return None
     if _VDB is None:
         try:
             from ml.rag.vectordb import EpidemiologyVectorDB
             _VDB = EpidemiologyVectorDB()
         except Exception as exc:
             logger.warning("RAG 벡터DB 초기화 실패 (이후 호출도 빈 컨텍스트 반환): %s", exc)
-            _VDB = False  # 명시적 실패 sentinel — 매번 재시도 방지
-    return _VDB if _VDB is not False else None
+            _VDB_FAILED = True
+            return None
+    return _VDB
 
 
 def _retrieve_rag_context(region: str, signals: dict) -> tuple[str, list[dict]]:
