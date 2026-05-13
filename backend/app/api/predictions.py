@@ -1,4 +1,5 @@
 """예측 API — ML 서비스 연동 + DB fallback."""
+
 from __future__ import annotations
 
 import json
@@ -15,6 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
 from ..services.prediction_service import get_risk_prediction
+from ._validators import validate_region
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/predictions", tags=["predictions"])
@@ -28,10 +30,22 @@ _CKPT_DIR = Path(__file__).parent.parent.parent.parent / "ml" / "checkpoints" / 
 
 # 전국 17개 시·도 목록 (korea-regions.ts 와 동일 순서)
 _KR_REGIONS = [
-    "서울특별시", "경기도", "인천광역시", "강원특별자치도",
-    "충청북도", "충청남도", "대전광역시", "세종특별자치시",
-    "전라북도", "전라남도", "광주광역시",
-    "경상북도", "경상남도", "대구광역시", "울산광역시", "부산광역시",
+    "서울특별시",
+    "경기도",
+    "인천광역시",
+    "강원특별자치도",
+    "충청북도",
+    "충청남도",
+    "대전광역시",
+    "세종특별자치시",
+    "전라북도",
+    "전라남도",
+    "광주광역시",
+    "경상북도",
+    "경상남도",
+    "대구광역시",
+    "울산광역시",
+    "부산광역시",
     "제주특별자치도",
 ]
 
@@ -58,6 +72,7 @@ def _load_autoencoder() -> dict[str, Any]:
 
     try:
         from ml.anomaly.autoencoder import SignalAutoencoder
+
         meta = json.loads(meta_path.read_text(encoding="utf-8"))
         input_dim = meta.get("input_dim", 4)
         model = SignalAutoencoder(input_dim=input_dim)
@@ -78,6 +93,7 @@ def _load_autoencoder() -> dict[str, Any]:
         logger.error("Autoencoder 로드 오류: %s", exc)
         raise RuntimeError(f"Autoencoder 로드 오류: {exc}") from exc
 
+
 # tft_metrics.json 경로 — 프로젝트 루트 기준
 # predictions.py → api/ → app/ → backend/ → project_root
 _TFT_METRICS_PATH = Path(__file__).parent.parent.parent.parent / "ml" / "outputs" / "tft_metrics.json"
@@ -94,7 +110,7 @@ def _load_tft_metrics() -> dict:
 
 @router.get("/forecast")
 async def get_forecast(
-    region: str = Query("서울특별시", min_length=2, max_length=100),
+    region: str = Depends(validate_region),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """ML 모델 기반 위험도 예측 (ML 서비스 미연결 시 가중평균 fallback).
@@ -127,7 +143,11 @@ async def get_forecast(
 
     try:
         return await get_risk_prediction(
-            l1=l1, l2=l2, l3=l3, temperature=aux, region=region,
+            l1=l1,
+            l2=l2,
+            l3=l3,
+            temperature=aux,
+            region=region,
         )
     except Exception as exc:
         logger.warning("ML 서비스 미연결, fallback 사용: %s", exc)
@@ -147,7 +167,7 @@ async def get_forecast(
 
 @router.get("/explain")
 async def get_prediction_explain(
-    region: str = Query("서울특별시", min_length=2, max_length=100),
+    region: str = Depends(validate_region),
 ) -> dict:
     """TFT attention 기반 예측 설명 (XAI).
 
@@ -233,10 +253,7 @@ async def get_anomaly_scores(
     except RuntimeError as exc:
         raise HTTPException(
             status_code=503,
-            detail=(
-                "Autoencoder 미학습 — "
-                "`python -m ml.anomaly.train_synth --save-checkpoint` 실행 필요"
-            ),
+            detail=("Autoencoder 미학습 — `python -m ml.anomaly.train_synth --save-checkpoint` 실행 필요"),
         ) from exc
 
     model: Any = cache["model"]
@@ -255,10 +272,7 @@ async def get_anomaly_scores(
         ORDER BY region, time DESC
     """)
     risk_result = await db.execute(risk_query, {"regions": _KR_REGIONS})
-    risk_map: dict[str, dict] = {
-        row["region"]: dict(row)
-        for row in risk_result.mappings().all()
-    }
+    risk_map: dict[str, dict] = {row["region"]: dict(row) for row in risk_result.mappings().all()}
 
     # 3) temperature — layer_signals AUX/weather
     temp_query = text("""
@@ -271,10 +285,7 @@ async def get_anomaly_scores(
         ORDER BY region, time DESC
     """)
     temp_result = await db.execute(temp_query, {"regions": _KR_REGIONS})
-    temp_map: dict[str, float] = {
-        row["region"]: float(row["value"])
-        for row in temp_result.mappings().all()
-    }
+    temp_map: dict[str, float] = {row["region"]: float(row["value"]) for row in temp_result.mappings().all()}
 
     # 4) 지역별 추론
     anomaly_scores: list[dict] = []
@@ -306,19 +317,21 @@ async def get_anomaly_scores(
         else:
             status = "normal"
 
-        anomaly_scores.append({
-            "region": region,
-            "score": score,
-            "reconstruction_error": round(error, 6),
-            "status": status,
-            "features": {
-                "l1": round(l1, 2),
-                "l2": round(l2, 2),
-                "l3": round(l3, 2),
-                "temperature": round(temperature, 2),
-            },
-            "fallback_temperature": fallback_temperature,
-        })
+        anomaly_scores.append(
+            {
+                "region": region,
+                "score": score,
+                "reconstruction_error": round(error, 6),
+                "status": status,
+                "features": {
+                    "l1": round(l1, 2),
+                    "l2": round(l2, 2),
+                    "l3": round(l3, 2),
+                    "temperature": round(temperature, 2),
+                },
+                "fallback_temperature": fallback_temperature,
+            }
+        )
 
     return {
         "model": "autoencoder",

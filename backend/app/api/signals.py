@@ -9,6 +9,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..database import get_db
+from ._validators import validate_region
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +39,7 @@ async def get_latest_signals(db: AsyncSession = Depends(get_db)) -> dict:
 @router.get("/timeseries")
 async def get_timeseries(
     layer: str = Query(..., pattern="^(otc|wastewater|search|composite)$"),
-    region: str = Query("서울특별시", min_length=2, max_length=100),
+    region: str = Depends(validate_region),
     days: int = Query(90, ge=7, le=365),
     pathogen: str = Query("influenza", pattern="^(influenza|covid|norovirus)$"),
     db: AsyncSession = Depends(get_db),
@@ -79,9 +80,7 @@ async def get_timeseries(
         )
         rows = result.mappings().all()
     except (SQLAlchemyError, asyncio.TimeoutError) as exc:
-        logger.exception(
-            "signals/timeseries DB query failed (layer=%s, region=%s)", layer, region
-        )
+        logger.exception("signals/timeseries DB query failed (layer=%s, region=%s)", layer, region)
         raise HTTPException(status_code=503, detail="signals store unavailable") from exc
     return {
         "layer": layer,

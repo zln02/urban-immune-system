@@ -3,6 +3,7 @@
 XGBoost 체크포인트가 없으면 pytest.skip.
 체크포인트 있으면 실제 예측값이 0~100 사이인지 확인.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -24,9 +25,7 @@ def test_xgb_predict_endpoint_schema():
     with TestClient(ml_app) as c:
         resp = c.get(
             "/predict/risk",
-            params={"l1": 62.5, "l2": 71.0, "l3": 48.3,
-                    "temperature": 12.0, "humidity": 65.0,
-                    "region": "서울특별시"},
+            params={"l1": 62.5, "l2": 71.0, "l3": 48.3, "temperature": 12.0, "humidity": 65.0, "region": "서울특별시"},
         )
 
     assert resp.status_code == 200, f"Expected 200, got {resp.status_code}: {resp.text}"
@@ -85,8 +84,7 @@ def test_xgb_predict_with_synthetic_model():
     with TestClient(ml_app) as c:
         resp = c.get(
             "/predict/risk",
-            params={"l1": 55.0, "l2": 65.0, "l3": 40.0,
-                    "temperature": 10.0, "humidity": 70.0},
+            params={"l1": 55.0, "l2": 65.0, "l3": 40.0, "temperature": 10.0, "humidity": 70.0},
         )
 
     serve_mod._xgb_model = original

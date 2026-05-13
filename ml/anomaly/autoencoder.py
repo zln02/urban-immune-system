@@ -5,6 +5,7 @@
 
 아키텍처: Encoder(64→32→16) + Decoder(16→32→64→input_dim)
 """
+
 from __future__ import annotations
 
 import numpy as np

@@ -1,4 +1,5 @@
 """ML inference service entrypoint."""
+
 from __future__ import annotations
 
 import logging
@@ -16,7 +17,7 @@ _xgb_model = None
 _tft_model = None
 
 # TFT 체크포인트 경로 — real 우선, synth fallback
-_TFT_CKPT_REAL  = Path(__file__).parent / "checkpoints" / "tft_real"  / "tft_best.ckpt"
+_TFT_CKPT_REAL = Path(__file__).parent / "checkpoints" / "tft_real" / "tft_best.ckpt"
 _TFT_CKPT_SYNTH = Path(__file__).parent / "checkpoints" / "tft_synth" / "tft_best.ckpt"
 # 하위 호환 (기존 _TFT_CKPT 참조용)
 _TFT_CKPT = _TFT_CKPT_SYNTH
@@ -76,6 +77,7 @@ async def predict_risk(
     global _xgb_model
     if _xgb_model is None:
         from ml.xgboost.model import load_model
+
         _xgb_model = load_model()
 
     if _xgb_model is None:
@@ -133,6 +135,7 @@ def _load_tft():
 
     try:
         from pytorch_forecasting import TemporalFusionTransformer
+
         _tft_model = TemporalFusionTransformer.load_from_checkpoint(str(ckpt_path))
         _tft_model.eval()
         source = "real" if "tft_real" in str(ckpt_path) else "synth"
@@ -148,6 +151,7 @@ def _tft_attention_top3(model) -> list[str]:
     try:
         # 저장된 tft_*_metrics.json에서 attention 읽기 (real 우선, synth fallback)
         import json
+
         for name in ("tft_real_metrics.json", "tft_metrics.json"):
             metrics_path = Path(__file__).parent / "outputs" / name
             if metrics_path.exists():
@@ -174,6 +178,7 @@ def _make_tft_predictions(model, region: str, horizon_steps: int) -> list[float]
     import warnings
 
     from ml.tft.train_synth import MAX_PREDICTION, _build_dataset, _make_dataframe
+
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -184,9 +189,11 @@ def _make_tft_predictions(model, region: str, horizon_steps: int) -> list[float]
             train_df = df[df["time_idx"] <= train_cutoff].reset_index(drop=True)
             train_ds = _build_dataset(train_df, training=True)
             from pytorch_forecasting import TimeSeriesDataSet
+
             val_ds = TimeSeriesDataSet.from_dataset(train_ds, val_df, predict=True, stop_randomization=True)
             loader = val_ds.to_dataloader(train=False, batch_size=1, num_workers=0)
             import torch
+
             pred = model.predict(loader, mode="prediction")
             pred_t = torch.as_tensor(pred).float()
             # 3 horizon 값 (1주/2주/3주 = 7/14/21일)
@@ -207,6 +214,7 @@ def _make_tft_predictions(model, region: str, horizon_steps: int) -> list[float]
 
 def _tft_predict_endpoint(horizon_days: int):
     """horizon_days(7/14/21)에 따른 TFT 예측 엔드포인트 공통 로직."""
+
     async def _endpoint(body: TFTPredictRequest) -> TFTPredictResponse:
         model = _load_tft()
         if model is None:
@@ -222,6 +230,7 @@ def _tft_predict_endpoint(horizon_days: int):
             predictions=predictions,
             attention_top3=attention_top3,
         )
+
     return _endpoint
 
 

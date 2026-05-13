@@ -1,4 +1,5 @@
 """pipeline/collectors/kowas_loader.py 단위 테스트."""
+
 from __future__ import annotations
 
 import json
@@ -27,10 +28,10 @@ def test_iso_week_end_date_w1() -> None:
 # ---------------------------------------------------------------------------
 def test_iso_week_end_date_w17() -> None:
     """2026년 17주차 일요일을 정확히 반환해야 한다."""
-    from pipeline.collectors.kowas_loader import iso_week_end_date
-
     # 직접 계산: date.fromisocalendar(2026, 17, 1) + 6일
     from datetime import timedelta
+
+    from pipeline.collectors.kowas_loader import iso_week_end_date
 
     expected = date.fromisocalendar(2026, 17, 1) + timedelta(days=6)
     result = iso_week_end_date(2026, 17)

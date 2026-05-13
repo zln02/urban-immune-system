@@ -12,11 +12,12 @@
 9. _download_reports — 실제 다운로드 경로 (첨부파일 처리 포함)
 10. download_all limit 옵션
 """
+
 from __future__ import annotations
 
 import inspect
 from pathlib import Path
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -105,9 +106,9 @@ def test_list_reports_returns_sorted_by_doc_no() -> None:
 
     html_page1 = (
         '<a href="?">q_bbsDocNo=20260420000000001 '
-        '>2026년 16주차 하수기반</a>'
+        ">2026년 16주차 하수기반</a>"
         '<a href="?">q_bbsDocNo=20260413000000001 '
-        '>2026년 15주차 하수기반</a>'
+        ">2026년 15주차 하수기반</a>"
     )
 
     # 검출 불가 HTML → 0건 반환해도 정렬 조건 충족
@@ -202,9 +203,7 @@ def test_list_reports_fallback_pattern_when_title_missing() -> None:
     from pipeline.collectors.kowas_downloader import list_reports
 
     # 제목 패턴은 없고, bbs_doc_no만 포함된 HTML (17자리)
-    fallback_html = (
-        'q_bbsDocNo=20260420000000001 some other content'
-    )
+    fallback_html = "q_bbsDocNo=20260420000000001 some other content"
 
     mock_resp = MagicMock()
     mock_resp.text = fallback_html
@@ -277,8 +276,7 @@ def test_fetch_pdf_links_extracts_file_links() -> None:
     from pipeline.collectors.kowas_downloader import KowasReport, fetch_pdf_links
 
     detail_html = (
-        '<a href="/pot/component/file/ND_fileDownload.do?q_fileSn=12345&amp;q_fileId=abc-123-def">'
-        "주간보고 PDF</a>"
+        '<a href="/pot/component/file/ND_fileDownload.do?q_fileSn=12345&amp;q_fileId=abc-123-def">주간보고 PDF</a>'
     )
 
     mock_resp = MagicMock()
@@ -514,18 +512,16 @@ def test_download_all_with_limit(tmp_path: Path) -> None:
     from pipeline.collectors.kowas_downloader import KowasReport, download_all
 
     reports = [
-        KowasReport(bbs_doc_no=f"2026042000000000{i}", title=f"2026년 {i}주차", year=2026, week=i)
-        for i in range(1, 6)
+        KowasReport(bbs_doc_no=f"2026042000000000{i}", title=f"2026년 {i}주차", year=2026, week=i) for i in range(1, 6)
     ]
 
-    mock_client = MagicMock()
     # list_reports 결과 mock
     with (
         patch("pipeline.collectors.kowas_downloader.list_reports", return_value=reports),
         patch("pipeline.collectors.kowas_downloader._download_reports") as mock_dl,
     ):
         mock_dl.return_value = {"downloaded": 2, "skipped": 0, "failed": 0}
-        result = download_all(output_dir=tmp_path, skip_existing=True, limit=2)
+        download_all(output_dir=tmp_path, skip_existing=True, limit=2)
 
     # _download_reports가 limit=2로 잘린 리스트로 호출됐는지 확인
     called_reports = mock_dl.call_args[0][0]
@@ -537,8 +533,7 @@ def test_download_all_no_limit(tmp_path: Path) -> None:
     from pipeline.collectors.kowas_downloader import KowasReport, download_all
 
     reports = [
-        KowasReport(bbs_doc_no=f"2026042000000000{i}", title=f"2026년 {i}주차", year=2026, week=i)
-        for i in range(1, 6)
+        KowasReport(bbs_doc_no=f"2026042000000000{i}", title=f"2026년 {i}주차", year=2026, week=i) for i in range(1, 6)
     ]
 
     with (
@@ -546,7 +541,7 @@ def test_download_all_no_limit(tmp_path: Path) -> None:
         patch("pipeline.collectors.kowas_downloader._download_reports") as mock_dl,
     ):
         mock_dl.return_value = {"downloaded": 5, "skipped": 0, "failed": 0}
-        result = download_all(output_dir=tmp_path, skip_existing=True, limit=None)
+        download_all(output_dir=tmp_path, skip_existing=True, limit=None)
 
     called_reports = mock_dl.call_args[0][0]
     assert len(called_reports) == 5
@@ -555,7 +550,6 @@ def test_download_all_no_limit(tmp_path: Path) -> None:
 # ─────────────────────── Case 11: download_pdf raise_for_status 호출 ────────
 def test_download_pdf_calls_raise_for_status(tmp_path: Path) -> None:
     """download_pdf가 HTTP 오류 응답에서 raise_for_status를 호출해야 한다."""
-    import httpx
     from pipeline.collectors.kowas_downloader import download_pdf
 
     mock_resp = MagicMock()
@@ -575,6 +569,7 @@ def test_download_pdf_calls_raise_for_status(tmp_path: Path) -> None:
 def test_make_client_returns_httpx_client() -> None:
     """_make_client가 httpx.Client를 반환해야 한다."""
     import httpx
+
     from pipeline.collectors.kowas_downloader import _make_client
 
     client = _make_client()

@@ -1,4 +1,5 @@
 """예측 서비스 — ML 모듈과 Backend 연동."""
+
 from __future__ import annotations
 
 import logging
@@ -26,8 +27,11 @@ async def get_risk_prediction(
             resp = await client.get(
                 f"{ML_SERVICE_URL}/predict/risk",
                 params={
-                    "l1": l1, "l2": l2, "l3": l3,
-                    "temperature": temperature, "humidity": humidity,
+                    "l1": l1,
+                    "l2": l2,
+                    "l3": l3,
+                    "temperature": temperature,
+                    "humidity": humidity,
                     "region": region,
                 },
             )

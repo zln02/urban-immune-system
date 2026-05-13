@@ -4,6 +4,7 @@ TFT attention 기반 XAI 엔드포인트 동작 검증.
 - tft_metrics.json 실제 파일 기반 (또는 mock) 결과 일치
 - feature_importance 내림차순 정렬 확인
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -14,9 +15,7 @@ import pytest
 from backend.app.api.predictions import _load_tft_metrics, get_prediction_explain
 
 # 실제 tft_metrics.json 경로
-_METRICS_PATH = (
-    Path(__file__).parent.parent / "ml" / "outputs" / "tft_metrics.json"
-)
+_METRICS_PATH = Path(__file__).parent.parent / "ml" / "outputs" / "tft_metrics.json"
 
 # 테스트용 최소 metrics fixture
 _MOCK_METRICS: dict = {
@@ -38,9 +37,7 @@ _MOCK_METRICS: dict = {
             "l2_wastewater",
             "l3_search",
         ],
-        "mean_encoder_variable_importance": [
-            [0.152, 0.269, 0.092, 0.023, 0.062, 0.086, 0.224, 0.093]
-        ],
+        "mean_encoder_variable_importance": [[0.152, 0.269, 0.092, 0.023, 0.062, 0.086, 0.224, 0.093]],
         "mean_attention_per_encoder_step": [0.0417, 0.0416, 0.0416],
     },
 }
@@ -58,6 +55,7 @@ def test_load_tft_metrics_real_file() -> None:
 def test_load_tft_metrics_file_missing(tmp_path: Path) -> None:
     """파일이 없을 때 빈 dict 를 반환해야 한다 (예외 발생 금지)."""
     from backend.app.api import predictions as pred_module
+
     original = pred_module._TFT_METRICS_PATH
     pred_module._TFT_METRICS_PATH = tmp_path / "nonexistent.json"
     try:
@@ -75,9 +73,7 @@ async def test_explain_feature_importance_sorted_desc() -> None:
 
     fi = response["feature_importance"]
     importances = [item["importance"] for item in fi]
-    assert importances == sorted(importances, reverse=True), (
-        f"feature_importance 정렬 오류: {importances}"
-    )
+    assert importances == sorted(importances, reverse=True), f"feature_importance 정렬 오류: {importances}"
 
 
 @pytest.mark.asyncio
@@ -113,13 +109,17 @@ async def test_explain_required_keys() -> None:
         response = await get_prediction_explain(region="서울특별시")
 
     required = {
-        "region", "model", "model_version", "best_val_loss",
-        "feature_importance", "attention_per_encoder_step",
-        "encoder_variable_names", "config", "interpretation",
+        "region",
+        "model",
+        "model_version",
+        "best_val_loss",
+        "feature_importance",
+        "attention_per_encoder_step",
+        "encoder_variable_names",
+        "config",
+        "interpretation",
     }
-    assert required.issubset(response.keys()), (
-        f"누락된 키: {required - response.keys()}"
-    )
+    assert required.issubset(response.keys()), f"누락된 키: {required - response.keys()}"
 
 
 @pytest.mark.asyncio

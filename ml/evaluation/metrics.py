@@ -7,6 +7,7 @@
 - ml/xgboost/model.evaluate 에서 추가 평가
 - tests/test_eval_metrics.py 회귀 검증
 """
+
 from __future__ import annotations
 
 import math
@@ -143,8 +144,7 @@ def aggregate_regional_metrics(per_region: dict[str, dict[str, float]]) -> dict[
         vals = [
             m[k]
             for m in per_region.values()
-            if m.get(k) is not None
-            and not (isinstance(m[k], float) and math.isnan(m[k]))
+            if m.get(k) is not None and not (isinstance(m[k], float) and math.isnan(m[k]))
         ]
         if vals:
             out[f"mean_{k}"] = round(float(np.mean(vals)), 4)

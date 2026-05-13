@@ -12,6 +12,7 @@ CLI 예시:
   python -m ml.reproduce_validation
   python -m ml.reproduce_validation --skip-real
 """
+
 from __future__ import annotations
 
 import argparse
@@ -110,10 +111,11 @@ def _run_synthetic_hardened() -> dict[str, Any]:
     logger.info("[2/3] synthetic-hardened 합성 데이터 walk-forward CV (선행 예측 task)")
     df = generate_synthetic_data(n_weeks=104, seed=42)
     n_alert = int(df[HARDENED_ALERT_COL].sum())
-    logger.info("hardened 합성 데이터: %d주 / 미래 경보 양성 %d주 (%.1f%%)",
-                len(df), n_alert, n_alert / len(df) * 100)
+    logger.info("hardened 합성 데이터: %d주 / 미래 경보 양성 %d주 (%.1f%%)", len(df), n_alert, n_alert / len(df) * 100)
     result = train(
-        df, n_splits=5, gap=4,
+        df,
+        n_splits=5,
+        gap=4,
         target_col=HARDENED_TARGET_COL,
         alert_col=HARDENED_ALERT_COL,
         alert_threshold=HARDENED_ALERT_THRESHOLD,
@@ -180,9 +182,13 @@ def _fetch_real_dataset(region: str = "서울특별시") -> pd.DataFrame | None:
 
     df_long = pd.DataFrame(rows)
     df_wide = df_long.pivot(index="week", columns="layer", values="value")
-    df_wide = df_wide.rename(columns={
-        "otc": "l1_otc", "wastewater": "l2_wastewater", "search": "l3_search",
-    })
+    df_wide = df_wide.rename(
+        columns={
+            "otc": "l1_otc",
+            "wastewater": "l2_wastewater",
+            "search": "l3_search",
+        }
+    )
     # 3계층 모두 존재하는 주만 사용
     df_wide = df_wide.dropna(subset=["l1_otc", "l2_wastewater", "l3_search"])
     if df_wide.empty:
@@ -191,9 +197,7 @@ def _fetch_real_dataset(region: str = "서울특별시") -> pd.DataFrame | None:
     df_wide["temperature"] = 15.0
     df_wide["humidity"] = 60.0
     df_wide["composite_score"] = (
-        0.35 * df_wide["l1_otc"]
-        + 0.40 * df_wide["l2_wastewater"]
-        + 0.25 * df_wide["l3_search"]
+        0.35 * df_wide["l1_otc"] + 0.40 * df_wide["l2_wastewater"] + 0.25 * df_wide["l3_search"]
     )
     df_wide["alert_label"] = (df_wide["composite_score"] > ALERT_THRESHOLD).astype(int)
     return df_wide

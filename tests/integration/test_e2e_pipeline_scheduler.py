@@ -2,6 +2,7 @@
 
 scheduler 모듈을 import해서 실제 실행 없이 job 등록 상태만 확인.
 """
+
 from __future__ import annotations
 
 from apscheduler.triggers.cron import CronTrigger
@@ -13,9 +14,7 @@ def test_scheduler_has_enough_jobs():
     from pipeline.collectors import scheduler as sched_mod
 
     jobs = sched_mod.scheduler.get_jobs()
-    assert len(jobs) >= 3, (
-        f"APScheduler에 등록된 job이 {len(jobs)}개 — 최소 3개 필요"
-    )
+    assert len(jobs) >= 3, f"APScheduler에 등록된 job이 {len(jobs)}개 — 최소 3개 필요"
 
 
 def test_scheduler_jobs_have_cron_triggers():
@@ -47,6 +46,4 @@ def test_otc_job_cron_day_of_week():
     assert isinstance(trigger, CronTrigger)
     # CronTrigger 필드에서 day_of_week 확인
     fields = {f.name: str(f) for f in trigger.fields}
-    assert "mon" in fields.get("day_of_week", ""), (
-        f"otc job day_of_week 이 'mon' 아님: {fields.get('day_of_week')}"
-    )
+    assert "mon" in fields.get("day_of_week", ""), f"otc job day_of_week 이 'mon' 아님: {fields.get('day_of_week')}"

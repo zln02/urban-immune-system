@@ -3,21 +3,22 @@
 main() 함수의 --dry-run, 정상 실행, 실패 경로 등
 실제 임베딩/Qdrant 없이 mock으로 검증한다.
 """
+
 from __future__ import annotations
 
-import sys
 from unittest.mock import MagicMock, patch
 
 import pytest
-
 
 # ──────────────────────────────────────────────────────────────────────────────
 # SEED_DOCS 임포트 경로
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 def test_seed_docs_import() -> None:
     """SEED_DOCS가 리스트로 임포트된다."""
     from ml.rag.seed_docs import SEED_DOCS
+
     assert isinstance(SEED_DOCS, list)
     assert len(SEED_DOCS) >= 10
 
@@ -25,6 +26,7 @@ def test_seed_docs_import() -> None:
 def test_seed_docs_ids_sequential_from_1() -> None:
     """id는 1부터 순차 증가해야 한다."""
     from ml.rag.seed_docs import SEED_DOCS
+
     ids = [d["id"] for d in SEED_DOCS]
     assert ids == list(range(1, len(SEED_DOCS) + 1))
 
@@ -32,6 +34,7 @@ def test_seed_docs_ids_sequential_from_1() -> None:
 def test_seed_docs_all_have_year() -> None:
     """모든 문서에 metadata.year(int)가 있어야 한다."""
     from ml.rag.seed_docs import SEED_DOCS
+
     for doc in SEED_DOCS:
         year = doc.get("metadata", {}).get("year")
         assert isinstance(year, int), f"id={doc['id']} year 없거나 int 아님: {year!r}"
@@ -40,6 +43,7 @@ def test_seed_docs_all_have_year() -> None:
 # ──────────────────────────────────────────────────────────────────────────────
 # main() --dry-run
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 def test_main_dry_run(capsys: pytest.CaptureFixture) -> None:
     """--dry-run 플래그: 임베딩 없이 문서 목록 출력 후 0 반환."""
@@ -61,13 +65,14 @@ def test_main_dry_run_prints_all_docs(capsys: pytest.CaptureFixture) -> None:
         main()
 
     captured = capsys.readouterr()
-    lines = [l for l in captured.out.strip().splitlines() if l.startswith("#")]
+    lines = [ln for ln in captured.out.strip().splitlines() if ln.startswith("#")]
     assert len(lines) == len(SEED_DOCS)
 
 
 # ──────────────────────────────────────────────────────────────────────────────
 # main() 정상 실행 (mock VDB)
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 def _make_mock_vdb(add_n: int = 20) -> MagicMock:
     """EpidemiologyVectorDB mock 반환."""
@@ -126,6 +131,7 @@ def test_main_normal_run_calls_search() -> None:
 # ──────────────────────────────────────────────────────────────────────────────
 # main() 실패 경로
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 def test_main_returns_1_when_client_none() -> None:
     """VDB client=None: 반환값 1 (임베딩 불가)."""

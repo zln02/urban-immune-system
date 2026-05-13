@@ -1,4 +1,5 @@
 """alert_reports 및 risk_scores DB 조회/저장 서비스."""
+
 from __future__ import annotations
 
 import json
@@ -70,15 +71,9 @@ async def save_alert_report(data: dict, db: AsyncSession) -> int:
             "model_used": data.get("model_used"),
             "triggered_by": data.get("triggered_by", "system_scheduler"),
             "trigger_source": data.get("trigger_source"),
-            "feature_values": (
-                json.dumps(feature_values, ensure_ascii=False) if feature_values is not None else None
-            ),
-            "rag_sources": (
-                json.dumps(rag_sources, ensure_ascii=False) if rag_sources is not None else None
-            ),
-            "model_metadata": (
-                json.dumps(model_metadata, ensure_ascii=False) if model_metadata is not None else None
-            ),
+            "feature_values": (json.dumps(feature_values, ensure_ascii=False) if feature_values is not None else None),
+            "rag_sources": (json.dumps(rag_sources, ensure_ascii=False) if rag_sources is not None else None),
+            "model_metadata": (json.dumps(model_metadata, ensure_ascii=False) if model_metadata is not None else None),
         },
     )
     await db.commit()

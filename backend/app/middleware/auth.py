@@ -4,6 +4,7 @@ development 환경에서는 api_keys 가 비어 있으면 통과 (로컬 개발 
 production 환경에서는 settings.api_keys 가 반드시 1개 이상 설정되어야 하며
 모든 요청은 X-API-Key 헤더에 등록된 키를 보내야 한다.
 """
+
 from __future__ import annotations
 
 import hmac
@@ -16,12 +17,14 @@ from starlette.responses import JSONResponse, Response
 
 class APIKeyAuthMiddleware(BaseHTTPMiddleware):
     # /health, /docs, /openapi.json, /redoc 는 공개 (모니터링·문서)
-    PUBLIC_PATHS: frozenset[str] = frozenset({
-        "/health",
-        "/docs",
-        "/openapi.json",
-        "/redoc",
-    })
+    PUBLIC_PATHS: frozenset[str] = frozenset(
+        {
+            "/health",
+            "/docs",
+            "/openapi.json",
+            "/redoc",
+        }
+    )
 
     def __init__(
         self,
@@ -35,9 +38,7 @@ class APIKeyAuthMiddleware(BaseHTTPMiddleware):
         self._is_production = environment.lower() == "production"
         self._header = header_name
 
-    async def dispatch(
-        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
         path = request.url.path
         if path in self.PUBLIC_PATHS or path.startswith("/docs") or path.startswith("/redoc"):
             return await call_next(request)

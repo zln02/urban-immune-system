@@ -1,8 +1,10 @@
 """backend/app/tasks.py 단위 테스트."""
+
 from __future__ import annotations
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 
 @pytest.mark.asyncio
@@ -18,17 +20,21 @@ async def test_generate_report_task_success() -> None:
     mock_ctx_mgr.__aenter__ = AsyncMock(return_value=mock_session)
     mock_ctx_mgr.__aexit__ = AsyncMock(return_value=False)
 
-    with patch(
-        "backend.app.services.prediction_service.generate_alert_report_http",
-        new_callable=AsyncMock,
-        return_value=mock_report,
-    ) as mock_gen, patch(
-        "backend.app.database.async_session",
-        return_value=mock_ctx_mgr,
-    ), patch(
-        "backend.app.services.alert_service.save_alert_report",
-        new_callable=AsyncMock,
-    ) as mock_save:
+    with (
+        patch(
+            "backend.app.services.prediction_service.generate_alert_report_http",
+            new_callable=AsyncMock,
+            return_value=mock_report,
+        ) as mock_gen,
+        patch(
+            "backend.app.database.async_session",
+            return_value=mock_ctx_mgr,
+        ),
+        patch(
+            "backend.app.services.alert_service.save_alert_report",
+            new_callable=AsyncMock,
+        ) as mock_save,
+    ):
         from backend.app.tasks import generate_report_task
 
         # taskiq 브로커 kicker wrapper를 우회하여 내부 함수 직접 호출
@@ -42,11 +48,14 @@ async def test_generate_report_task_success() -> None:
 @pytest.mark.asyncio
 async def test_generate_report_task_exception_logged() -> None:
     """generate_report_task 예외 발생 시 로그만 남기고 전파 안함."""
-    with patch(
-        "backend.app.services.prediction_service.generate_alert_report_http",
-        new_callable=AsyncMock,
-        side_effect=RuntimeError("ML 서비스 다운"),
-    ), patch("backend.app.tasks.logger") as mock_logger:
+    with (
+        patch(
+            "backend.app.services.prediction_service.generate_alert_report_http",
+            new_callable=AsyncMock,
+            side_effect=RuntimeError("ML 서비스 다운"),
+        ),
+        patch("backend.app.tasks.logger") as mock_logger,
+    ):
         from backend.app.tasks import generate_report_task
 
         inner_fn = generate_report_task.original_func
