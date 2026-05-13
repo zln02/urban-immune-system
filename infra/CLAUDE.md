@@ -57,6 +57,34 @@ develop (PR merge) ─→ main (PR merge, 박정빈 또는 박진영 승인)
 - p95 < 500ms (조달청 공공 SW 기준), 가동률 99% 목표
 - 에러 로그 → Loki (또는 GCP Logging)
 
+## systemd 운영 가드 (2026-05-13 사고 후 추가)
+
+> 사고 요약: uis-backend.service ExecStart 경로 수정 후 `daemon-reload` 누락 →
+> systemd가 옛 ExecStart 캐시로 실행 → 16,063번 실패 루프 → 재부팅 시 Docker 미기동으로 재발.
+
+### 필수 절차
+- systemd unit 파일 수정 후 반드시 `sudo systemctl daemon-reload`
+- Docker에 의존하는 서비스는 **반드시** `uis-docker.service`를 `After=` / `Wants=`에 명시
+- `Restart=on-failure` 서비스에는 모두 `restart-limit.conf` 적용:
+  ```ini
+  [Unit]
+  StartLimitBurst=5
+  StartLimitIntervalSec=120
+  [Service]
+  RestartSec=10
+  ```
+- `infra/systemd/` 파일을 수정했으면 실제 `/etc/systemd/system/`에도 동일하게 반영 후 `daemon-reload`
+
+### 부팅 자동시작 체크리스트
+- [ ] `uis-docker.service` — timescaledb + qdrant (enabled ✅)
+- [ ] `uis-backend.service` — After=uis-docker (enabled ✅)
+- [ ] `uis-scheduler.service` — enabled ✅
+- [ ] `unattended-upgrades Automatic-Reboot "false"` — 수동 재부팅 통제 ✅
+
+### 금지 사항
+- `unattended-upgrades` `Automatic-Reboot "true"` 설정 금지 (예고 없는 재부팅으로 DB 유실)
+- Docker 컨테이너에 `restart: always` 단독 의존 금지 — systemd unit으로 감싸야 부팅 순서 보장
+
 ## 권장 스킬
 - `/legal-review` 인프라 변경의 ISMS-P 영향
 - `/security-review` k8s/systemd 변경 시
