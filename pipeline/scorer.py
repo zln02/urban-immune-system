@@ -101,24 +101,54 @@ class RiskScoreRow:
 # 경보 레벨 계산
 # ---------------------------------------------------------------------------
 
+def _get_layer_threshold(region: str | None = None) -> float:
+    """지역별 Gate B layer threshold 를 반환한다.
+
+    regional_layer_thresholds 에 명시된 지역은 해당 threshold 사용,
+    그 외는 default_layer_threshold(30.0) 사용.
+
+    Args:
+        region: 지역명. None 이면 default 반환.
+
+    Returns:
+        해당 지역의 Gate B layer threshold
+    """
+    if region is None:
+        return _CROSS_VALIDATION_LAYER_THRESHOLD
+    try:
+        from backend.app.config import settings
+        return settings.regional_layer_thresholds.get(
+            region, settings.default_layer_threshold
+        )
+    except Exception as exc:
+        logger.warning("regional threshold 로드 실패, 기본값 30.0 사용: %s", exc)
+        return _CROSS_VALIDATION_LAYER_THRESHOLD
+
+
 def determine_alert_level(
     composite: float,
     l1: float | None,
     l2: float | None,
     l3: float | None,
+    region: str | None = None,
 ) -> str:
     """composite_score 와 계층별 값으로 경보 레벨을 결정한다.
 
     게이트 B — 2계층 교차검증 강제:
       YELLOW 이상 발령은 L1/L2/L3 중 _CROSS_VALIDATION_MIN_LAYERS(2)개 이상이
-      _CROSS_VALIDATION_LAYER_THRESHOLD(30.0) 이상일 때만 가능.
-      단독 계층만 30+ 이면 GREEN 다운그레이드.
+      layer_threshold 이상일 때만 가능.
+      단독 계층만 threshold+ 이면 GREEN 다운그레이드.
+
+      region 이 주어지면 regional_layer_thresholds 에서 지역별 threshold 를 조회.
+      약신호 지역(충청북도·대구광역시·경상북도)은 threshold=15.0 사용.
+      그 외 지역은 default threshold=30.0 사용.
 
     Args:
         composite: 가중합 점수 (0-100)
         l1: OTC 정규화 점수 (None = 데이터 없음)
         l2: 하수도 정규화 점수 (None = 데이터 없음)
         l3: 검색트렌드 정규화 점수 (None = 데이터 없음)
+        region: 지역명 (선택). 지역별 threshold 적용에 사용.
 
     Returns:
         'GREEN' | 'YELLOW' | 'ORANGE' | 'RED'
@@ -137,17 +167,21 @@ def determine_alert_level(
     if raw_level == "GREEN":
         return "GREEN"
 
+    # 지역별 threshold 조회 (약신호 지역은 낮은 threshold 적용)
+    layer_threshold = _get_layer_threshold(region)
+
     # 게이트 B: _CROSS_VALIDATION_MIN_LAYERS 개 이상 계층이
-    # _CROSS_VALIDATION_LAYER_THRESHOLD 이상이어야 YELLOW+ 발령
+    # layer_threshold 이상이어야 YELLOW+ 발령
     above_threshold = sum(
         1 for v in (l1, l2, l3)
-        if v is not None and v >= _CROSS_VALIDATION_LAYER_THRESHOLD
+        if v is not None and v >= layer_threshold
     )
     if above_threshold < _CROSS_VALIDATION_MIN_LAYERS:
         logger.info(
-            "게이트B 차단 (%.1f+ 계층 %d개 < %d개) — %s → GREEN 다운그레이드 "
+            "게이트B 차단 region=%s (%.1f+ 계층 %d개 < %d개) — %s → GREEN 다운그레이드 "
             "(l1=%.1f l2=%.1f l3=%.1f composite=%.1f)",
-            _CROSS_VALIDATION_LAYER_THRESHOLD,
+            region or "unknown",
+            layer_threshold,
             above_threshold,
             _CROSS_VALIDATION_MIN_LAYERS,
             raw_level,
@@ -313,7 +347,7 @@ async def compute_risk_scores_for_region(
     safe_l3 = l3 if l3 is not None else 0.0
 
     composite = round(w1 * safe_l1 + w2 * safe_l2 + w3 * safe_l3, 4)
-    alert_level = determine_alert_level(composite, l1, l2, l3)
+    alert_level = determine_alert_level(composite, l1, l2, l3, region=region)
 
     score_time = datetime(
         target_date.year,

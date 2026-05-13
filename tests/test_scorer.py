@@ -28,6 +28,7 @@ import pytest
 from pipeline.scorer import (
     RiskScoreRow,
     _fetch_latest_signals,
+    _get_layer_threshold,
     _load_weights,
     _normalize_dsn,
     _upsert_risk_score,
@@ -600,3 +601,112 @@ async def test_fetch_latest_signals_with_data() -> None:
     assert result["wastewater"] == 42.0
     assert result["search"] == 30.0
     assert result["latest_time"] == t
+
+
+# ---------------------------------------------------------------------------
+# Case 22: 지역별 Gate B threshold — Regional Tiered Threshold (feature/gate-b-regional-tuning)
+# ---------------------------------------------------------------------------
+
+def test_regional_threshold_chungbuk_pass() -> None:
+    """충청북도 threshold=15: 점수 20인 계층 2개 → gate pass (YELLOW 발령)."""
+    # l1=20, l2=20 → 둘 다 ≥15 → 2계층 통과
+    # composite = 0.35*20 + 0.40*20 + 0.25*5 = 7+8+1.25 = 16.25 → GREEN 범위
+    # YELLOW 범위가 되려면 composite≥30 필요 → l1=40, l2=40, l3=5
+    # composite=0.35*40+0.40*40+0.25*5=14+16+1.25=31.25 → YELLOW 범위
+    # threshold=15: l1=40≥15, l2=40≥15 → 2개 → YELLOW
+    with patch("pipeline.scorer._get_layer_threshold", return_value=15.0):
+        composite = 0.35 * 40.0 + 0.40 * 40.0 + 0.25 * 5.0
+        level = determine_alert_level(composite=composite, l1=40.0, l2=40.0, l3=5.0, region="충청북도")
+    assert level == "YELLOW", f"충북 threshold=15, l1=40 l2=40 → YELLOW 기대, 실제={level}"
+
+
+def test_regional_threshold_seoul_fail() -> None:
+    """서울 threshold=30: 점수 20인 계층 → gate fail (GREEN 강제)."""
+    # l1=20, l2=20 → 둘 다 <30 → 0계층 통과 → GREEN 강제
+    # composite=0.35*20+0.40*20+0.25*20=7+8+5=20 → GREEN 범위라서 이미 GREEN
+    # composite≥30 이어야 gate 검사 진행. l1=20, l2=20, l3=60
+    # composite=0.35*20+0.40*20+0.25*60=7+8+15=30 → YELLOW 범위
+    # threshold=30: l1=20<30, l2=20<30, l3=60≥30 → 1개 → GREEN 강제
+    with patch("pipeline.scorer._get_layer_threshold", return_value=30.0):
+        composite = 0.35 * 20.0 + 0.40 * 20.0 + 0.25 * 60.0
+        assert composite >= 30
+        level = determine_alert_level(composite=composite, l1=20.0, l2=20.0, l3=60.0, region="서울특별시")
+    assert level == "GREEN", f"서울 threshold=30, l1=20 l2=20 l3=60 → GREEN 기대, 실제={level}"
+
+
+def test_regional_threshold_daegu_pass() -> None:
+    """대구광역시 threshold=15: 점수 16인 계층 2개 → gate pass."""
+    # l1=16, l2=16 → 둘 다 ≥15
+    # composite=0.35*16+0.40*16+0.25*5=5.6+6.4+1.25=13.25 → GREEN 범위
+    # composite≥30 필요: l1=50, l2=50, l3=5
+    # composite=0.35*50+0.40*50+0.25*5=17.5+20+1.25=38.75 → YELLOW 범위
+    # threshold=15: l1=50≥15, l2=50≥15 → 2개 → YELLOW
+    with patch("pipeline.scorer._get_layer_threshold", return_value=15.0):
+        composite = 0.35 * 50.0 + 0.40 * 50.0 + 0.25 * 5.0
+        level = determine_alert_level(composite=composite, l1=50.0, l2=50.0, l3=5.0, region="대구광역시")
+    assert level == "YELLOW", f"대구 threshold=15, l1=50 l2=50 → YELLOW 기대, 실제={level}"
+
+
+def test_regional_threshold_gyeongbuk_fail_below_threshold() -> None:
+    """경상북도 threshold=15: 점수 14인 계층 → gate fail (threshold 미만)."""
+    # l1=14, l2=14 → 둘 다 <15 → 0계층
+    # composite≥30: l1=14, l2=14, l3=80
+    # composite=0.35*14+0.40*14+0.25*80=4.9+5.6+20=30.5 → YELLOW 범위
+    # threshold=15: l1=14<15, l2=14<15, l3=80≥15 → 1개 → GREEN 강제
+    with patch("pipeline.scorer._get_layer_threshold", return_value=15.0):
+        composite = 0.35 * 14.0 + 0.40 * 14.0 + 0.25 * 80.0
+        assert composite >= 30
+        level = determine_alert_level(composite=composite, l1=14.0, l2=14.0, l3=80.0, region="경상북도")
+    assert level == "GREEN", f"경북 threshold=15, l1=14 l2=14 <15 → GREEN 기대, 실제={level}"
+
+
+def test_regional_threshold_seoul_boundary_30_pass() -> None:
+    """서울 threshold=30: 점수 정확히 30인 계층 2개 → gate pass (경계값)."""
+    # l1=30, l2=30 → 둘 다 ≥30(경계 포함)
+    # composite=0.35*30+0.40*30+0.25*5=10.5+12+1.25=23.75 → GREEN
+    # composite≥30: l1=30, l2=30, l3=30
+    # composite=0.35*30+0.40*30+0.25*30=10.5+12+7.5=30 → YELLOW 범위
+    with patch("pipeline.scorer._get_layer_threshold", return_value=30.0):
+        composite = 0.35 * 30.0 + 0.40 * 30.0 + 0.25 * 30.0
+        assert composite == 30.0
+        level = determine_alert_level(composite=composite, l1=30.0, l2=30.0, l3=30.0, region="서울특별시")
+    assert level == "YELLOW", f"서울 threshold=30 경계값: 3계층 모두 30 → YELLOW 기대, 실제={level}"
+
+
+def test_regional_same_score_chungbuk_pass_seoul_fail() -> None:
+    """동일 점수 20으로 충청북도(threshold=15) → YELLOW, 서울(threshold=30) → GREEN 비교."""
+    # composite≥30 필요: l1=20, l2=20, l3=60
+    # composite=0.35*20+0.40*20+0.25*60=7+8+15=30 → YELLOW 범위
+    # 충북 threshold=15: l1=20≥15, l2=20≥15 → 2개 → YELLOW
+    # 서울 threshold=30: l1=20<30, l2=20<30, l3=60≥30 → 1개 → GREEN
+    composite = 0.35 * 20.0 + 0.40 * 20.0 + 0.25 * 60.0
+    assert composite >= 30
+
+    with patch("pipeline.scorer._get_layer_threshold", return_value=15.0):
+        level_chungbuk = determine_alert_level(composite=composite, l1=20.0, l2=20.0, l3=60.0, region="충청북도")
+
+    with patch("pipeline.scorer._get_layer_threshold", return_value=30.0):
+        level_seoul = determine_alert_level(composite=composite, l1=20.0, l2=20.0, l3=60.0, region="서울특별시")
+
+    assert level_chungbuk == "YELLOW", f"충북 threshold=15 → YELLOW 기대, 실제={level_chungbuk}"
+    assert level_seoul == "GREEN", f"서울 threshold=30 → GREEN 기대, 실제={level_seoul}"
+
+
+def test_get_layer_threshold_weak_regions() -> None:
+    """_get_layer_threshold: 약신호 3지역은 낮은 threshold, 그 외는 30.0 반환."""
+    from unittest.mock import MagicMock
+    mock_settings = MagicMock()
+    mock_settings.regional_layer_thresholds = {
+        "충청북도": 12.0,
+        "대구광역시": 12.0,
+        "경상북도": 12.0,
+    }
+    mock_settings.default_layer_threshold = 30.0
+
+    # settings는 _get_layer_threshold 내부에서 'from backend.app.config import settings'로 로드
+    with patch("backend.app.config.settings", mock_settings):
+        assert _get_layer_threshold("충청북도") == 12.0
+        assert _get_layer_threshold("대구광역시") == 12.0
+        assert _get_layer_threshold("경상북도") == 12.0
+        assert _get_layer_threshold("서울특별시") == 30.0
+        assert _get_layer_threshold("부산광역시") == 30.0
