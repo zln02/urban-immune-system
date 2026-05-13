@@ -8,6 +8,7 @@
 - /health 와 SSE 스트림(/api/v1/alerts/stream, /api/v1/chat/*) 는 면제
   (SSE 는 단일 장기 연결이므로 RPS 산정에 부적합)
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -75,9 +76,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 return True
             return False
 
-    async def dispatch(
-        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
         path = request.url.path
         if any(path.startswith(p) for p in self.EXEMPT_PREFIXES):
             return await call_next(request)

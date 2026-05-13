@@ -14,6 +14,7 @@ CLI:
   python -m pipeline.collectors.naver_backfill
   python -m pipeline.collectors.naver_backfill --weeks 26 --layers search
 """
+
 from __future__ import annotations
 
 import argparse
@@ -40,10 +41,23 @@ OTC_PARAM_NAME = "감기약"
 
 # KOWAS와 동일한 17개 시·도 풀네임 — kowas_parser.SIDO_ORDER 와 정확히 일치해야 함
 SIDO_ALL = [
-    "서울특별시", "부산광역시", "대구광역시", "인천광역시", "광주광역시",
-    "대전광역시", "울산광역시", "세종특별자치시", "경기도", "강원특별자치도",
-    "충청북도", "충청남도", "전라북도", "전라남도", "경상북도",
-    "경상남도", "제주특별자치도",
+    "서울특별시",
+    "부산광역시",
+    "대구광역시",
+    "인천광역시",
+    "광주광역시",
+    "대전광역시",
+    "울산광역시",
+    "세종특별자치시",
+    "경기도",
+    "강원특별자치도",
+    "충청북도",
+    "충청남도",
+    "전라북도",
+    "전라남도",
+    "경상북도",
+    "경상남도",
+    "제주특별자치도",
 ]
 
 
@@ -118,8 +132,12 @@ async def backfill_layer(
             value = max(0.0, min(100.0, float(raw_v)))
             try:
                 await insert_signal(
-                    region=region, layer=layer, value=value,
-                    raw_value=raw_v, source=source, ts=ts,
+                    region=region,
+                    layer=layer,
+                    value=value,
+                    raw_value=raw_v,
+                    source=source,
+                    ts=ts,
                 )
                 inserted += 1
             except Exception as exc:
@@ -154,7 +172,10 @@ async def run_backfill(
                 ser = fetch_search_series(client, start, end)
                 logger.info("Search %d주 수집 → %d 지역 복제 적재", len(ser), len(region_list))
                 counts["search"] = await backfill_layer(
-                    "search", ser, "naver_datalab", region_list,
+                    "search",
+                    ser,
+                    "naver_datalab",
+                    region_list,
                 )
                 logger.info("search 적재 %d건", counts["search"])
             except Exception as exc:
@@ -169,7 +190,10 @@ async def run_backfill(
                 # 두 source 가 섞이면 한 region 시계열에 다른 정규화 스케일이 끼어들어 등락 왜곡.
                 # 멱등 DELETE 가 (layer, source) 기준이라 backfill·신규 collector 모두 일관 정리됨.
                 counts["otc"] = await backfill_layer(
-                    "otc", ser, "naver_shopping_insight", region_list,
+                    "otc",
+                    ser,
+                    "naver_shopping_insight",
+                    region_list,
                 )
                 logger.info("otc 적재 %d건", counts["otc"])
             except Exception as exc:
@@ -183,13 +207,12 @@ async def main() -> int:
     parser = argparse.ArgumentParser(description="Naver OTC/Search 시계열 백필")
     parser.add_argument("--weeks", type=int, default=56, help="백필 주차 수 (기본 1년+여유)")
     parser.add_argument("--layers", choices=["both", "otc", "search"], default="both")
-    parser.add_argument("--regions", choices=["all", "single"], default="all",
-                        help="all=17개 시·도 복제, single=서울만")
+    parser.add_argument(
+        "--regions", choices=["all", "single"], default="all", help="all=17개 시·도 복제, single=서울만"
+    )
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.INFO,
-                        format="%(asctime)s [%(levelname)s] %(message)s",
-                        datefmt="%H:%M:%S")
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", datefmt="%H:%M:%S")
 
     await run_backfill(weeks=args.weeks, layers=args.layers, regions=args.regions)
     return 0

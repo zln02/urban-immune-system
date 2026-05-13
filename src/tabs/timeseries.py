@@ -1,4 +1,5 @@
 """시계열 탭."""
+
 from __future__ import annotations
 
 import logging

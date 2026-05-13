@@ -4,6 +4,7 @@ FastAPI dependency_overrides 패턴으로 실제 DB 연결 없이
 GET /api/v1/signals/latest, GET /api/v1/signals/timeseries 양 라우트의
 정상·빈 데이터·DB 에러(503) 경로를 커버한다.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -13,10 +14,10 @@ import pytest
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.testclient import TestClient
 
-
 # ---------------------------------------------------------------------------
 # 헬퍼: 가짜 AsyncSession
 # ---------------------------------------------------------------------------
+
 
 class _FakeMapping(dict):
     """dict-like row 객체."""
@@ -54,6 +55,7 @@ def _make_error_session(exc: Exception) -> AsyncMock:
 # 픽스처: broker mock + TestClient 팩토리
 # ---------------------------------------------------------------------------
 
+
 def _make_client(mock_session: AsyncMock) -> TestClient:
     """DB 의존성을 override 한 TestClient 반환."""
     from backend.app.database import get_db
@@ -69,6 +71,7 @@ def _make_client(mock_session: AsyncMock) -> TestClient:
 
 def _clear_overrides() -> None:
     from backend.app.main import app
+
     app.dependency_overrides.clear()
 
 
@@ -76,18 +79,21 @@ def _clear_overrides() -> None:
 # GET /api/v1/signals/latest
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture(autouse=True)
 def patch_broker():
     """broker startup/shutdown 을 테스트 전 구간에서 mock 처리."""
-    with patch("backend.app.tasks.broker.startup", new_callable=AsyncMock), \
-         patch("backend.app.tasks.broker.shutdown", new_callable=AsyncMock):
+    with (
+        patch("backend.app.tasks.broker.startup", new_callable=AsyncMock),
+        patch("backend.app.tasks.broker.shutdown", new_callable=AsyncMock),
+    ):
         yield
 
 
 def test_get_latest_signals_normal():
     """정상 데이터 반환 시 200 + data 배열 + count 확인."""
     rows = [
-        {"layer": "otc",        "region": "서울특별시", "value": 55.0, "time": "2026-04-01T00:00:00"},
+        {"layer": "otc", "region": "서울특별시", "value": 55.0, "time": "2026-04-01T00:00:00"},
         {"layer": "wastewater", "region": "서울특별시", "value": 70.0, "time": "2026-04-01T00:00:00"},
     ]
     session = _make_session(rows)
@@ -168,6 +174,7 @@ def test_get_latest_signals_data_fields():
 # GET /api/v1/signals/timeseries — 유효성 검증 (쿼리 파라미터)
 # ---------------------------------------------------------------------------
 
+
 def test_timeseries_missing_layer_returns_422():
     """layer 파라미터 누락 시 422 Unprocessable Entity."""
     session = _make_session([])
@@ -232,6 +239,7 @@ def test_timeseries_days_above_max_returns_422():
 # GET /api/v1/signals/timeseries — 정상·빈 데이터·에러 경로
 # ---------------------------------------------------------------------------
 
+
 def test_timeseries_otc_normal():
     """layer=otc, 정상 데이터 → 200 + 응답 스키마 확인."""
     rows = [
@@ -241,9 +249,7 @@ def test_timeseries_otc_normal():
     session = _make_session(rows)
     client = _make_client(session)
     try:
-        resp = client.get(
-            "/api/v1/signals/timeseries?layer=otc&region=서울특별시&days=90&pathogen=influenza"
-        )
+        resp = client.get("/api/v1/signals/timeseries?layer=otc&region=서울특별시&days=90&pathogen=influenza")
     finally:
         _clear_overrides()
 
@@ -261,9 +267,7 @@ def test_timeseries_wastewater_normal():
     session = _make_session(rows)
     client = _make_client(session)
     try:
-        resp = client.get(
-            "/api/v1/signals/timeseries?layer=wastewater&region=부산광역시&days=30&pathogen=covid"
-        )
+        resp = client.get("/api/v1/signals/timeseries?layer=wastewater&region=부산광역시&days=30&pathogen=covid")
     finally:
         _clear_overrides()
 
@@ -280,9 +284,7 @@ def test_timeseries_search_normal():
     session = _make_session(rows)
     client = _make_client(session)
     try:
-        resp = client.get(
-            "/api/v1/signals/timeseries?layer=search&region=대구광역시&days=60&pathogen=norovirus"
-        )
+        resp = client.get("/api/v1/signals/timeseries?layer=search&region=대구광역시&days=60&pathogen=norovirus")
     finally:
         _clear_overrides()
 
@@ -301,9 +303,7 @@ def test_timeseries_composite_normal():
     session = _make_session(rows)
     client = _make_client(session)
     try:
-        resp = client.get(
-            "/api/v1/signals/timeseries?layer=composite&region=서울특별시&days=90&pathogen=influenza"
-        )
+        resp = client.get("/api/v1/signals/timeseries?layer=composite&region=서울특별시&days=90&pathogen=influenza")
     finally:
         _clear_overrides()
 
@@ -318,9 +318,7 @@ def test_timeseries_empty_data():
     session = _make_session([])
     client = _make_client(session)
     try:
-        resp = client.get(
-            "/api/v1/signals/timeseries?layer=otc&region=제주특별자치도&days=7&pathogen=influenza"
-        )
+        resp = client.get("/api/v1/signals/timeseries?layer=otc&region=제주특별자치도&days=7&pathogen=influenza")
     finally:
         _clear_overrides()
 
@@ -333,9 +331,7 @@ def test_timeseries_db_error_returns_503():
     session = _make_error_session(SQLAlchemyError("connection lost"))
     client = _make_client(session)
     try:
-        resp = client.get(
-            "/api/v1/signals/timeseries?layer=otc&region=서울특별시&days=30&pathogen=influenza"
-        )
+        resp = client.get("/api/v1/signals/timeseries?layer=otc&region=서울특별시&days=30&pathogen=influenza")
     finally:
         _clear_overrides()
 
@@ -348,9 +344,7 @@ def test_timeseries_timeout_returns_503():
     session = _make_error_session(asyncio.TimeoutError())
     client = _make_client(session)
     try:
-        resp = client.get(
-            "/api/v1/signals/timeseries?layer=wastewater&region=서울특별시&days=30&pathogen=influenza"
-        )
+        resp = client.get("/api/v1/signals/timeseries?layer=wastewater&region=서울특별시&days=30&pathogen=influenza")
     finally:
         _clear_overrides()
 
@@ -362,9 +356,7 @@ def test_timeseries_composite_db_error_returns_503():
     session = _make_error_session(SQLAlchemyError("timeout"))
     client = _make_client(session)
     try:
-        resp = client.get(
-            "/api/v1/signals/timeseries?layer=composite&region=서울특별시&days=90&pathogen=influenza"
-        )
+        resp = client.get("/api/v1/signals/timeseries?layer=composite&region=서울특별시&days=90&pathogen=influenza")
     finally:
         _clear_overrides()
 

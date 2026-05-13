@@ -8,7 +8,7 @@ def test_k8s_deployments_define_container_security_context() -> None:
         assert "runAsNonRoot: true" in content
         assert "allowPrivilegeEscalation: false" in content
         assert "readOnlyRootFilesystem: true" in content
-        assert "drop: [\"ALL\"]" in content
+        assert 'drop: ["ALL"]' in content
 
 
 def test_k8s_services_define_health_probes_for_http_apps() -> None:

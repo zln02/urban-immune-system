@@ -1,4 +1,5 @@
 """Qdrant 벡터DB — 역학 논문·가이드 임베딩 관리."""
+
 from __future__ import annotations
 
 import logging

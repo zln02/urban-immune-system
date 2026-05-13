@@ -1,4 +1,5 @@
 """Taskiq 비동기 작업 브로커 및 태스크 정의."""
+
 from __future__ import annotations
 
 import logging

@@ -10,6 +10,7 @@
 TimescaleDB layer_signals 테이블에 직접 INSERT한다.
 (발표 데모 단순화 옵션: cron + DB INSERT, Kafka Consumer 불필요)
 """
+
 # ruff: noqa: E402  -- load_dotenv() 가 먼저 환경변수를 채운 뒤에 collector 모듈을 import 해야 함
 import logging
 
@@ -63,11 +64,13 @@ scheduler.add_job(
 )
 scheduler.add_job(collect_weather, CronTrigger(minute=0), id="weather")
 
+
 # 매주 수요일 11:00 — L1(월09:00)·L2(화10:00)·L3(월09:05) 수집 완료 이후
 # 3계층 앙상블 점수 계산 → risk_scores INSERT
 def _run_weekly_scoring_sync() -> None:
     """BlockingScheduler에서 asyncio 코루틴을 실행하는 동기 래퍼."""
     asyncio.run(run_weekly_scoring())
+
 
 scheduler.add_job(
     _run_weekly_scoring_sync,
@@ -76,11 +79,13 @@ scheduler.add_job(
     name="3계층 앙상블 점수 계산",
 )
 
+
 # 매일 12:00 — risk_scores 기반 Claude 경보 리포트 배치 생성
 # YELLOW/ORANGE/RED 경보 지역만 처리 (GREEN 스킵, 비용 절감)
 def _run_nightly_reports_sync() -> None:
     """BlockingScheduler에서 asyncio 코루틴을 실행하는 동기 래퍼."""
     asyncio.run(run_nightly_reports())
+
 
 scheduler.add_job(
     _run_nightly_reports_sync,

@@ -1,9 +1,8 @@
 """alert_service.py 단위 테스트 (8개) — AsyncMock DB 기반."""
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock
-
-import pytest
 
 from backend.app.services.alert_service import (
     get_latest_alert,
@@ -11,10 +10,10 @@ from backend.app.services.alert_service import (
     save_alert_report,
 )
 
-
 # ---------------------------------------------------------------------------
 # 헬퍼
 # ---------------------------------------------------------------------------
+
 
 def _make_mock_db(fetchone_return=None, mappings_first_return=None) -> AsyncMock:
     """SQLAlchemy AsyncSession mock 생성.
@@ -40,6 +39,7 @@ def _make_mock_db(fetchone_return=None, mappings_first_return=None) -> AsyncMock
 # ---------------------------------------------------------------------------
 # get_latest_alert
 # ---------------------------------------------------------------------------
+
 
 async def test_get_latest_alert_found() -> None:
     """row 존재 → dict 반환."""
@@ -76,6 +76,7 @@ async def test_get_latest_alert_not_found() -> None:
 # get_latest_risk_score
 # ---------------------------------------------------------------------------
 
+
 async def test_get_latest_risk_score_found() -> None:
     """row 존재 → dict 반환."""
     row_data = {
@@ -106,6 +107,7 @@ async def test_get_latest_risk_score_not_found() -> None:
 # ---------------------------------------------------------------------------
 # save_alert_report
 # ---------------------------------------------------------------------------
+
 
 async def test_save_alert_report_with_dicts() -> None:
     """feature_values, rag_sources, model_metadata 모두 dict → insert 호출."""

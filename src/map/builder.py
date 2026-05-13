@@ -29,7 +29,7 @@ def build_pulse_marker(level: int, cfg: dict[str, str], is_selected: bool) -> fo
             --pulse-size:{size}px;
             --core-size:{core_size}px;
             --pulse-speed:{pulse_speed};
-            --pulse-color:{cfg['color']};
+            --pulse-color:{cfg["color"]};
             --pulse-fill:{pulse_fill};
             --pulse-shadow:{pulse_shadow};
          ">

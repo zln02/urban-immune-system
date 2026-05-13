@@ -5,6 +5,7 @@
 - 존재하지 않는 report_id → 404
 - JSONB 컬럼이 NULL 인 행도 빈 객체/빈 배열로 정상 응답
 """
+
 from __future__ import annotations
 
 import json
@@ -41,15 +42,19 @@ _FULL_ROW = {
     "triggered_by": "system_scheduler",
     "trigger_source": "apscheduler_weekly",
     "created_at": datetime(2026, 4, 26, 12, 0, 0, tzinfo=timezone.utc),
-    "feature_values": json.dumps({
-        "l1_otc": 35.2,
-        "l2_wastewater": 42.1,
-        "l3_search": 28.9,
-        "composite": 36.7,
-    }),
-    "rag_sources": json.dumps([
-        {"topic": "multi_signal_cross_validation", "score": 0.45, "source": "ECDC 2024"},
-    ]),
+    "feature_values": json.dumps(
+        {
+            "l1_otc": 35.2,
+            "l2_wastewater": 42.1,
+            "l3_search": 28.9,
+            "composite": 36.7,
+        }
+    ),
+    "rag_sources": json.dumps(
+        [
+            {"topic": "multi_signal_cross_validation", "score": 0.45, "source": "ECDC 2024"},
+        ]
+    ),
     "model_metadata": json.dumps({"model": "TFT", "version": "tft_synth_v2"}),
 }
 
@@ -75,13 +80,17 @@ async def test_explain_existing_report_all_keys() -> None:
     response = await explain_alert_report(report_id=42, db=db)
 
     required = {
-        "report_id", "region", "alert_level", "summary",
-        "decision_factors", "feature_values", "rag_citations",
-        "model_metadata", "audit",
+        "report_id",
+        "region",
+        "alert_level",
+        "summary",
+        "decision_factors",
+        "feature_values",
+        "rag_citations",
+        "model_metadata",
+        "audit",
     }
-    assert required.issubset(response.keys()), (
-        f"누락된 키: {required - response.keys()}"
-    )
+    assert required.issubset(response.keys()), f"누락된 키: {required - response.keys()}"
 
 
 @pytest.mark.asyncio

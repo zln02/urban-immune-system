@@ -3,12 +3,12 @@
 CPU 고정, 최소 에폭(1~2), 소형 데이터(input_dim=4, 50샘플)로 빠르게 실행.
 학습(fit) 경로도 커버하되 에폭 수를 최소화해 CI 시간을 절감한다.
 """
+
 from __future__ import annotations
 
-import pytest
 import numpy as np
+import pytest
 import torch
-
 
 # ──────────────────────────────────────────────────────────────────────────────
 # 공통 픽스처
@@ -38,6 +38,7 @@ def fitted_detector(normal_data: np.ndarray):
 # ──────────────────────────────────────────────────────────────────────────────
 # SignalAutoencoder
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 class TestSignalAutoencoder:
     def test_init_default(self) -> None:
@@ -107,6 +108,7 @@ class TestSignalAutoencoder:
 # AnomalyDetector — 초기화
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 class TestAnomalyDetectorInit:
     def test_init_default(self) -> None:
         """기본 input_dim=4, threshold_percentile=95.0 초기화."""
@@ -135,6 +137,7 @@ class TestAnomalyDetectorInit:
 # AnomalyDetector — fit()
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 class TestAnomalyDetectorFit:
     def test_fit_sets_threshold(self, normal_data: np.ndarray) -> None:
         """fit 완료 후 threshold가 float으로 설정된다."""
@@ -152,7 +155,7 @@ class TestAnomalyDetectorFit:
         det = AnomalyDetector(input_dim=INPUT_DIM)
         losses = det.fit(normal_data, epochs=3)
         assert len(losses) == 3
-        assert all(isinstance(l, float) for l in losses)
+        assert all(isinstance(loss, float) for loss in losses)
 
     def test_fit_losses_are_positive(self, normal_data: np.ndarray) -> None:
         """손실값은 모두 양수이다."""
@@ -160,7 +163,7 @@ class TestAnomalyDetectorFit:
 
         det = AnomalyDetector(input_dim=INPUT_DIM)
         losses = det.fit(normal_data, epochs=2)
-        assert all(l > 0 for l in losses)
+        assert all(loss > 0 for loss in losses)
 
     def test_fit_99th_percentile_threshold(self, normal_data: np.ndarray) -> None:
         """threshold_percentile=99 적용: threshold가 95p보다 크거나 같다."""
@@ -184,6 +187,7 @@ class TestAnomalyDetectorFit:
 # ──────────────────────────────────────────────────────────────────────────────
 # AnomalyDetector — predict()
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 class TestAnomalyDetectorPredict:
     def test_predict_requires_fit_first(self, normal_data: np.ndarray) -> None:
@@ -228,9 +232,7 @@ class TestAnomalyDetectorPredict:
 
     def test_predict_anomaly_detected_with_spike(self, fitted_detector) -> None:
         """정상 범위를 크게 벗어난 데이터(spike)는 이상으로 탐지될 가능성이 높다."""
-        from ml.anomaly.autoencoder import AnomalyDetector
 
-        rng = np.random.default_rng(42)
         # 완전히 다른 분포: 매우 큰 값
         spike_data = np.full((5, INPUT_DIM), 100.0, dtype="float32")
 

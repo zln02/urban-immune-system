@@ -4,6 +4,7 @@ Kafka Consumer 없이 layer_signals 테이블에 직접 비동기 INSERT한다.
 발표 데모 단순화 옵션 (pipeline/CLAUDE.md 참조):
   cron + DB INSERT 방식으로 Kafka 파이프라인을 대체.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -94,7 +95,10 @@ async def insert_signal(
     except Exception as exc:
         logger.error(
             "layer_signals INSERT 실패 (layer=%s pathogen=%s region=%s): %s",
-            layer, pathogen, region, exc,
+            layer,
+            pathogen,
+            region,
+            exc,
         )
         raise
 
@@ -124,8 +128,7 @@ async def delete_signal_range(
         )
     deleted = int(result.split()[-1]) if result else 0
     if deleted:
-        logger.info("멱등성 DELETE: layer=%s source=%s ≥%s → %d행 제거",
-                    layer, source, start_ts.date(), deleted)
+        logger.info("멱등성 DELETE: layer=%s source=%s ≥%s → %d행 제거", layer, source, start_ts.date(), deleted)
     return deleted
 
 

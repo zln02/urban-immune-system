@@ -7,6 +7,7 @@ ml/serve.py FastAPI 엔드포인트 커버리지 테스트.
 - 실제 모델 로딩 없이 mock 처리 → CI 속도 유지
 - 각 엔드포인트의 정상/비정상 경로 모두 커버
 """
+
 from __future__ import annotations
 
 import json
@@ -16,18 +17,20 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
-
 # ---------------------------------------------------------------------------
 # fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture()
 def client():
     """ml.serve 모듈 레벨 글로벌 변수 초기화 후 TestClient 반환."""
     import ml.serve as srv
+
     srv._xgb_model = None
     srv._tft_model = None
     from ml.serve import app
+
     return TestClient(app, raise_server_exceptions=False)
 
 
@@ -43,6 +46,7 @@ def mock_xgb_model():
 def mock_tft_model():
     """TFT 모델 Mock (predict 호출 시 tensor-like 반환)."""
     import torch
+
     m = MagicMock()
     # 3 step 예측값 텐서 반환
     m.predict.return_value = torch.tensor([[45.0, 50.0, 60.0]])
@@ -52,6 +56,7 @@ def mock_tft_model():
 # ---------------------------------------------------------------------------
 # 1. GET /health
 # ---------------------------------------------------------------------------
+
 
 class TestHealth:
     def test_health_ok(self, client):
@@ -66,6 +71,7 @@ class TestHealth:
 # ---------------------------------------------------------------------------
 # 2. GET /predict/risk — XGBoost 엔드포인트
 # ---------------------------------------------------------------------------
+
 
 class TestPredictRisk:
     def test_risk_model_loaded(self, client, mock_xgb_model):
@@ -124,10 +130,10 @@ class TestPredictRisk:
     def test_risk_model_not_loaded_fallback(self, client):
         """xgb 모델 로드 실패 → model_not_loaded 상태"""
         import ml.serve as srv
+
         srv._xgb_model = None
         # load_model → None 반환 mock
-        with patch("ml.serve._xgb_model", None), \
-             patch("ml.xgboost.model.load_model", return_value=None):
+        with patch("ml.serve._xgb_model", None), patch("ml.xgboost.model.load_model", return_value=None):
             resp = client.get("/predict/risk?l1=50&l2=50&l3=50")
         assert resp.status_code == 200
         data = resp.json()
@@ -150,6 +156,7 @@ class TestPredictRisk:
 # 3. POST /predict/tft-7d, /tft-14d, /tft-21d
 # ---------------------------------------------------------------------------
 
+
 class TestPredictTft:
     def _mock_tft_predictions(self, mock_tft_model, horizon_days: int) -> list[float]:
         """_make_tft_predictions 결과 mock용 헬퍼."""
@@ -160,6 +167,7 @@ class TestPredictTft:
     def test_tft_7d_503_when_no_model(self, client):
         """TFT 모델 없으면 503"""
         import ml.serve as srv
+
         srv._tft_model = None
         with patch("ml.serve._load_tft", return_value=None):
             resp = client.post("/predict/tft-7d", json={"region": "서울특별시", "horizon_weeks": 7})
@@ -180,9 +188,11 @@ class TestPredictTft:
 
     def test_tft_7d_ok(self, client, mock_tft_model):
         """tft-7d 정상 경로: 1 step 예측"""
-        with patch("ml.serve._load_tft", return_value=mock_tft_model), \
-             patch("ml.serve._make_tft_predictions", return_value=[45.0]), \
-             patch("ml.serve._tft_attention_top3", return_value=["검색트렌드", "하수기반감시", "OTC약국판매"]):
+        with (
+            patch("ml.serve._load_tft", return_value=mock_tft_model),
+            patch("ml.serve._make_tft_predictions", return_value=[45.0]),
+            patch("ml.serve._tft_attention_top3", return_value=["검색트렌드", "하수기반감시", "OTC약국판매"]),
+        ):
             resp = client.post("/predict/tft-7d", json={"region": "서울특별시", "horizon_weeks": 7})
         assert resp.status_code == 200
         data = resp.json()
@@ -194,9 +204,11 @@ class TestPredictTft:
 
     def test_tft_14d_ok(self, client, mock_tft_model):
         """tft-14d 정상 경로: 2 step 예측"""
-        with patch("ml.serve._load_tft", return_value=mock_tft_model), \
-             patch("ml.serve._make_tft_predictions", return_value=[45.0, 50.0]), \
-             patch("ml.serve._tft_attention_top3", return_value=["검색트렌드", "하수기반감시", "OTC약국판매"]):
+        with (
+            patch("ml.serve._load_tft", return_value=mock_tft_model),
+            patch("ml.serve._make_tft_predictions", return_value=[45.0, 50.0]),
+            patch("ml.serve._tft_attention_top3", return_value=["검색트렌드", "하수기반감시", "OTC약국판매"]),
+        ):
             resp = client.post("/predict/tft-14d", json={"region": "부산광역시"})
         assert resp.status_code == 200
         data = resp.json()
@@ -205,9 +217,11 @@ class TestPredictTft:
 
     def test_tft_21d_ok(self, client, mock_tft_model):
         """tft-21d 정상 경로: 3 step 예측"""
-        with patch("ml.serve._load_tft", return_value=mock_tft_model), \
-             patch("ml.serve._make_tft_predictions", return_value=[45.0, 50.0, 60.0]), \
-             patch("ml.serve._tft_attention_top3", return_value=["검색트렌드", "하수기반감시", "OTC약국판매"]):
+        with (
+            patch("ml.serve._load_tft", return_value=mock_tft_model),
+            patch("ml.serve._make_tft_predictions", return_value=[45.0, 50.0, 60.0]),
+            patch("ml.serve._tft_attention_top3", return_value=["검색트렌드", "하수기반감시", "OTC약국판매"]),
+        ):
             resp = client.post("/predict/tft-21d", json={"region": "대구광역시"})
         assert resp.status_code == 200
         data = resp.json()
@@ -226,10 +240,12 @@ class TestPredictTft:
 # 4. _load_tft — 내부 로직
 # ---------------------------------------------------------------------------
 
+
 class TestLoadTft:
     def test_returns_none_when_no_checkpoint(self, tmp_path, monkeypatch):
         """체크포인트 없으면 None 반환"""
         import ml.serve as srv
+
         srv._tft_model = None  # 캐시 초기화
         # 체크포인트 경로를 tmp_path 내 존재하지 않는 경로로 교체
         monkeypatch.setattr(srv, "_TFT_CKPT_REAL", tmp_path / "tft_real" / "tft_best.ckpt")
@@ -240,6 +256,7 @@ class TestLoadTft:
     def test_returns_cached_model_on_second_call(self, mock_tft_model):
         """_tft_model 이미 있으면 재로드 없이 반환"""
         import ml.serve as srv
+
         srv._tft_model = mock_tft_model
         result = srv._load_tft()
         assert result is mock_tft_model
@@ -249,6 +266,7 @@ class TestLoadTft:
     def test_load_tft_exception_returns_none(self, tmp_path, monkeypatch):
         """TemporalFusionTransformer.load_from_checkpoint 예외 발생 시 None"""
         import ml.serve as srv
+
         srv._tft_model = None
         # 가짜 체크포인트 파일 생성
         ckpt_dir = tmp_path / "tft_synth"
@@ -259,8 +277,10 @@ class TestLoadTft:
         monkeypatch.setattr(srv, "_TFT_CKPT_REAL", tmp_path / "tft_real" / "tft_best.ckpt")
         monkeypatch.setattr(srv, "_TFT_CKPT_SYNTH", fake_ckpt)
 
-        with patch("pytorch_forecasting.TemporalFusionTransformer.load_from_checkpoint",
-                   side_effect=RuntimeError("corrupt checkpoint")):
+        with patch(
+            "pytorch_forecasting.TemporalFusionTransformer.load_from_checkpoint",
+            side_effect=RuntimeError("corrupt checkpoint"),
+        ):
             result = srv._load_tft()
         assert result is None
         srv._tft_model = None  # 정리
@@ -270,10 +290,12 @@ class TestLoadTft:
 # 5. _tft_attention_top3 — 내부 로직
 # ---------------------------------------------------------------------------
 
+
 class TestTftAttentionTop3:
     def test_fallback_when_no_metrics_file(self, tmp_path, monkeypatch):
         """metrics 파일 없으면 기본값 3개 반환"""
         import ml.serve as srv
+
         # OUTPUT 경로를 빈 tmp_path로 교체 (파일 없음)
         with patch("pathlib.Path.exists", return_value=False):
             result = srv._tft_attention_top3(MagicMock())
@@ -290,7 +312,14 @@ class TestTftAttentionTop3:
                 "mean_encoder_variable_importance": [
                     # encoder_var_order: encoder_length, confirmed_future_center,
                     # confirmed_future_scale, l1_otc, l2_wastewater, l3_search, temperature, humidity
-                    0.05, 0.05, 0.05, 0.30, 0.25, 0.20, 0.10, 0.05
+                    0.05,
+                    0.05,
+                    0.05,
+                    0.30,
+                    0.25,
+                    0.20,
+                    0.10,
+                    0.05,
                 ]
             }
         }
@@ -302,12 +331,13 @@ class TestTftAttentionTop3:
         orig_parent = Path(srv.__file__).parent
 
         def fake_exists(self):
-            return (self.parent == outputs_dir and
-                    self.name in ("tft_real_metrics.json", "tft_metrics.json"))
+            return self.parent == outputs_dir and self.name in ("tft_real_metrics.json", "tft_metrics.json")
 
         # __file__ 기준 경로를 tmp_path로 우회
-        with patch.object(Path, "exists", lambda self: self == metrics_file or self.parent == orig_parent), \
-             patch("ml.serve.Path", wraps=Path) as mock_path:
+        with (
+            patch.object(Path, "exists", lambda self: self == metrics_file or self.parent == orig_parent),
+            patch("ml.serve.Path", wraps=Path),
+        ):
             # 직접 경로를 수동으로 patch
             with patch("builtins.open", side_effect=lambda *a, **kw: open(*a, **kw)):
                 pass  # 실제 파일 시스템 사용
@@ -324,8 +354,11 @@ class TestTftAttentionTop3:
     def test_attention_exception_returns_default(self):
         """json 파싱 예외 발생 시 기본값 반환"""
         import ml.serve as srv
-        with patch("pathlib.Path.exists", return_value=True), \
-             patch("pathlib.Path.read_text", side_effect=ValueError("bad json")):
+
+        with (
+            patch("pathlib.Path.exists", return_value=True),
+            patch("pathlib.Path.read_text", side_effect=ValueError("bad json")),
+        ):
             result = srv._tft_attention_top3(MagicMock())
         assert result == ["검색트렌드", "하수기반감시", "OTC약국판매"]
 
@@ -334,15 +367,19 @@ class TestTftAttentionTop3:
 # 6. _make_tft_predictions — 내부 로직
 # ---------------------------------------------------------------------------
 
+
 class TestMakeTftPredictions:
     def test_horizon_7_returns_1_step(self, mock_tft_model):
         """horizon_days=7 → steps=1"""
         import torch
+
         mock_tft_model.predict.return_value = torch.tensor([[50.0, 55.0, 60.0]])
 
-        with patch("ml.tft.train_synth._make_dataframe") as mock_df, \
-             patch("ml.tft.train_synth._build_dataset") as mock_ds, \
-             patch("pytorch_forecasting.TimeSeriesDataSet.from_dataset") as mock_from_ds:
+        with (
+            patch("ml.tft.train_synth._make_dataframe") as mock_df,
+            patch("ml.tft.train_synth._build_dataset") as mock_ds,
+            patch("pytorch_forecasting.TimeSeriesDataSet.from_dataset") as mock_from_ds,
+        ):
             mock_df.return_value = _make_fake_df()
             train_ds_mock = MagicMock()
             mock_ds.return_value = train_ds_mock
@@ -353,6 +390,7 @@ class TestMakeTftPredictions:
             val_ds_mock.to_dataloader.return_value = loader_mock
 
             from ml.serve import _make_tft_predictions
+
             result = _make_tft_predictions(mock_tft_model, "서울특별시", 7)
 
         assert len(result) == 1
@@ -361,11 +399,14 @@ class TestMakeTftPredictions:
     def test_horizon_21_returns_3_steps(self, mock_tft_model):
         """horizon_days=21 → steps=3"""
         import torch
+
         mock_tft_model.predict.return_value = torch.tensor([[50.0, 55.0, 60.0]])
 
-        with patch("ml.tft.train_synth._make_dataframe") as mock_df, \
-             patch("ml.tft.train_synth._build_dataset") as mock_ds, \
-             patch("pytorch_forecasting.TimeSeriesDataSet.from_dataset") as mock_from_ds:
+        with (
+            patch("ml.tft.train_synth._make_dataframe") as mock_df,
+            patch("ml.tft.train_synth._build_dataset") as mock_ds,
+            patch("pytorch_forecasting.TimeSeriesDataSet.from_dataset") as mock_from_ds,
+        ):
             mock_df.return_value = _make_fake_df()
             mock_ds.return_value = MagicMock()
             val_ds_mock = MagicMock()
@@ -373,6 +414,7 @@ class TestMakeTftPredictions:
             val_ds_mock.to_dataloader.return_value = MagicMock()
 
             from ml.serve import _make_tft_predictions
+
             result = _make_tft_predictions(mock_tft_model, "서울특별시", 21)
 
         assert len(result) == 3
@@ -380,11 +422,14 @@ class TestMakeTftPredictions:
     def test_predictions_clipped_0_100(self, mock_tft_model):
         """예측값 0-100 클리핑 확인"""
         import torch
+
         mock_tft_model.predict.return_value = torch.tensor([[-50.0, 150.0, 60.0]])
 
-        with patch("ml.tft.train_synth._make_dataframe") as mock_df, \
-             patch("ml.tft.train_synth._build_dataset") as mock_ds, \
-             patch("pytorch_forecasting.TimeSeriesDataSet.from_dataset") as mock_from_ds:
+        with (
+            patch("ml.tft.train_synth._make_dataframe") as mock_df,
+            patch("ml.tft.train_synth._build_dataset") as mock_ds,
+            patch("pytorch_forecasting.TimeSeriesDataSet.from_dataset") as mock_from_ds,
+        ):
             mock_df.return_value = _make_fake_df()
             mock_ds.return_value = MagicMock()
             val_ds_mock = MagicMock()
@@ -392,6 +437,7 @@ class TestMakeTftPredictions:
             val_ds_mock.to_dataloader.return_value = MagicMock()
 
             from ml.serve import _make_tft_predictions
+
             result = _make_tft_predictions(mock_tft_model, "서울특별시", 21)
 
         for v in result:
@@ -401,6 +447,7 @@ class TestMakeTftPredictions:
 # ---------------------------------------------------------------------------
 # 7. 요청 스키마 검증
 # ---------------------------------------------------------------------------
+
 
 class TestRequestSchema:
     def test_tft_invalid_region_type(self, client):
@@ -432,20 +479,24 @@ class TestRequestSchema:
 # 헬퍼
 # ---------------------------------------------------------------------------
 
+
 def _make_fake_df():
     """_make_tft_predictions 내부에서 사용하는 fake DataFrame."""
-    import pandas as pd
     import numpy as np
+    import pandas as pd
+
     n = 104
-    df = pd.DataFrame({
-        "time_idx": range(n),
-        "region": ["서울특별시"] * n,
-        "l1_otc": np.random.default_rng(42).uniform(10, 90, n),
-        "l2_wastewater": np.random.default_rng(43).uniform(10, 90, n),
-        "l3_search": np.random.default_rng(44).uniform(10, 90, n),
-        "temperature": [15.0] * n,
-        "confirmed_future": np.random.default_rng(45).uniform(0, 100, n),
-    })
+    df = pd.DataFrame(
+        {
+            "time_idx": range(n),
+            "region": ["서울특별시"] * n,
+            "l1_otc": np.random.default_rng(42).uniform(10, 90, n),
+            "l2_wastewater": np.random.default_rng(43).uniform(10, 90, n),
+            "l3_search": np.random.default_rng(44).uniform(10, 90, n),
+            "temperature": [15.0] * n,
+            "confirmed_future": np.random.default_rng(45).uniform(0, 100, n),
+        }
+    )
     df.attrs["max_time_idx"] = n - 1
     # time_idx max 속성을 DataFrame에서 접근 가능하게
     df["time_idx"] = df["time_idx"].astype(int)
