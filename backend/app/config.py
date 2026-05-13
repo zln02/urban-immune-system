@@ -29,7 +29,7 @@ class Settings(BaseSettings):
 
     # 지역별 Gate B layer threshold (캘리브레이션 파라미터)
     # 알고리즘 변경 없음 — 약신호 지역의 과도 차단 완화 목적
-    # 기본값: 14개 강한 지역 30.0 / 약한 3지역(충청북도·대구광역시·경상북도) 15.0
+    # 기본값: 14개 강한 지역 30.0 / 약한 3지역(충청북도·대구광역시·경상북도) 12.0
     regional_layer_thresholds: dict[str, float] = Field(
         default={
             "충청북도": 12.0,
@@ -41,6 +41,21 @@ class Settings(BaseSettings):
     default_layer_threshold: float = Field(
         default=30.0,
         description="명시되지 않은 지역의 Gate B threshold",
+    )
+
+    # 지역별 YELLOW 경보 composite 임계값 (calibration parameter)
+    # 충북: composite ≥ 20, 대구/경북: composite ≥ 25, 나머지 14지역: 30 (기본값)
+    regional_composite_thresholds: dict[str, float] = Field(
+        default={
+            "충청북도": 20.0,
+            "대구광역시": 25.0,
+            "경상북도": 25.0,
+        },
+        description="지역별 YELLOW 진입 composite 임계값 (기본값 30.0)",
+    )
+    default_composite_threshold: float = Field(
+        default=30.0,
+        description="명시되지 않은 지역의 composite YELLOW 임계값",
     )
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=False, extra="ignore")
