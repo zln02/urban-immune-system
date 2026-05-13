@@ -5,6 +5,7 @@
   2. 체크포인트 존재 시 200 + anomaly_scores 17개 반환
   3. reconstruction_error > threshold 케이스 → status="anomaly"
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -19,12 +20,14 @@ import torch
 # 헬퍼: mock AsyncSession (risk_scores / layer_signals 빈 결과 반환)
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 def _make_empty_session() -> AsyncMock:
     """risk_scores 및 layer_signals 둘 다 빈 행 반환하는 mock session."""
 
     class _FakeResult:
         def mappings(self):
             return self
+
         def all(self):
             return []
 
@@ -37,21 +40,26 @@ def _make_empty_session() -> AsyncMock:
 # 케이스 1 — 체크포인트 없으면 503
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_anomaly_503_when_no_checkpoint(tmp_path: Path) -> None:
     """체크포인트 디렉토리가 비어있으면 503 HTTPException 반환."""
     from fastapi import HTTPException
 
     # 체크포인트 없는 빈 디렉토리로 패치
-    with patch(
-        "backend.app.api.predictions._CKPT_DIR",
-        tmp_path / "autoencoder",
-    ), patch(
-        "backend.app.api.predictions._AUTOENCODER_CACHE",
-        None,  # 미시도 상태로 초기화
+    with (
+        patch(
+            "backend.app.api.predictions._CKPT_DIR",
+            tmp_path / "autoencoder",
+        ),
+        patch(
+            "backend.app.api.predictions._AUTOENCODER_CACHE",
+            None,  # 미시도 상태로 초기화
+        ),
     ):
         # 전역 캐시를 None으로 강제 리셋
         import backend.app.api.predictions as pred_module
+
         pred_module._AUTOENCODER_CACHE = None
 
         from backend.app.api.predictions import get_anomaly_scores
@@ -66,9 +74,11 @@ async def test_anomaly_503_when_no_checkpoint(tmp_path: Path) -> None:
 # 케이스 2 — 체크포인트 존재 시 200 + 17개 지역
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 def _make_fake_cache() -> dict[str, Any]:
     """실제 SignalAutoencoder 인스턴스를 사용하는 fake cache (학습 없이 초기화된 가중치)."""
     from ml.anomaly.autoencoder import SignalAutoencoder
+
     model = SignalAutoencoder(input_dim=4)
     model.eval()
     return {
@@ -118,6 +128,7 @@ async def test_anomaly_200_returns_17_regions() -> None:
 # 케이스 3 — reconstruction_error > threshold → status="anomaly"
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_anomaly_status_when_error_exceeds_threshold() -> None:
     """model이 큰 reconstruction_error를 반환할 때 status='anomaly' 확인."""
@@ -127,6 +138,7 @@ async def test_anomaly_status_when_error_exceeds_threshold() -> None:
     class _HighErrorModel:
         def eval(self):
             return self
+
         def reconstruction_error(self, tensor: torch.Tensor) -> torch.Tensor:
             # 모든 샘플에 대해 threshold * 2.0 반환
             return torch.full((tensor.shape[0],), 0.10)  # threshold=0.05 의 2배
@@ -150,9 +162,7 @@ async def test_anomaly_status_when_error_exceeds_threshold() -> None:
         scores = result["anomaly_scores"]
         # 모든 지역이 anomaly 상태여야 함 (error 0.10 > threshold 0.05)
         for s in scores:
-            assert s["status"] == "anomaly", (
-                f"{s['region']} status={s['status']}, error={s['reconstruction_error']}"
-            )
+            assert s["status"] == "anomaly", f"{s['region']} status={s['status']}, error={s['reconstruction_error']}"
         # score = min(0.10 / 0.05 * 50, 100) = 100
         for s in scores:
             assert s["score"] == 100.0

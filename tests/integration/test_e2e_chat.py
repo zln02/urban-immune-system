@@ -2,6 +2,7 @@
 
 Anthropic API 호출은 unittest.mock.patch로 차단 — 실제 API 키 불필요.
 """
+
 from __future__ import annotations
 
 import json
@@ -56,7 +57,7 @@ class TestChatAsk:
             lines = [line for line in raw.split("\n") if line.startswith("data: ")]
             assert len(lines) >= 1
             # 첫 data line이 유효한 JSON인지 확인 (DONE 제외)
-            first_data = lines[0][len("data: "):]
+            first_data = lines[0][len("data: ") :]
             if first_data != "[DONE]":
                 parsed = json.loads(first_data)
                 assert "text" in parsed or "error" in parsed
@@ -126,7 +127,7 @@ class TestChatAsk:
 
             error_lines = [line for line in raw.split("\n") if '"error"' in line]
             assert len(error_lines) >= 1
-            parsed = json.loads(error_lines[0][len("data: "):])
+            parsed = json.loads(error_lines[0][len("data: ") :])
             assert "error" in parsed
 
     def test_history_passed_to_llm(self):

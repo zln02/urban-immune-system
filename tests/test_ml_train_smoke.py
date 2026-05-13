@@ -3,6 +3,7 @@
 실 훈련을 실행하지 않고 모듈 import·argparse 파싱만 검증한다.
 @pytest.mark.slow 테스트는 CI에서 `pytest -m "not slow"` 로 제외한다.
 """
+
 from __future__ import annotations
 
 import importlib.util
@@ -12,7 +13,6 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-
 
 # ---------------------------------------------------------------------------
 # Import 가능 여부 (의존성 존재 확인)

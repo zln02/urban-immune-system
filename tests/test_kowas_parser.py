@@ -1,4 +1,5 @@
 """pipeline/collectors/kowas_parser.py 단위 테스트."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -37,10 +38,23 @@ def test_sido_order_all_regions() -> None:
     from pipeline.collectors.kowas_parser import SIDO_ORDER
 
     expected = [
-        "서울특별시", "부산광역시", "대구광역시", "인천광역시", "광주광역시",
-        "대전광역시", "울산광역시", "세종특별자치시", "경기도", "강원특별자치도",
-        "충청북도", "충청남도", "전라북도", "전라남도", "경상북도",
-        "경상남도", "제주특별자치도",
+        "서울특별시",
+        "부산광역시",
+        "대구광역시",
+        "인천광역시",
+        "광주광역시",
+        "대전광역시",
+        "울산광역시",
+        "세종특별자치시",
+        "경기도",
+        "강원특별자치도",
+        "충청북도",
+        "충청남도",
+        "전라북도",
+        "전라남도",
+        "경상북도",
+        "경상남도",
+        "제주특별자치도",
     ]
     assert SIDO_ORDER == expected
 
@@ -272,7 +286,7 @@ def test_extract_chart_image_crops_correctly() -> None:
     """_extract_chart_image가 PDF 좌표를 DPI 스케일로 변환해 크롭하는지 검증."""
     from pipeline.collectors.kowas_parser import _extract_chart_image
 
-    dpi = 72  # scale = 1.0 (단순화를 위해)
+    # dpi=72 → scale = 1.0 (단순화를 위해)
     width, height = 500, 600
     full_img = Image.new("RGB", (width, height), color=(128, 128, 128))
 
@@ -352,8 +366,8 @@ def test_detect_chart_boxes_sorted_top_then_left() -> None:
     # 두 행, 각 행에 2개 차트
     mock_page.images = [
         {"x0": 300, "top": 200, "x1": 560, "bottom": 320},  # row2, right
-        {"x0": 50,  "top": 100, "x1": 310, "bottom": 220},  # row1, left
-        {"x0": 50,  "top": 200, "x1": 310, "bottom": 320},  # row2, left
+        {"x0": 50, "top": 100, "x1": 310, "bottom": 220},  # row1, left
+        {"x0": 50, "top": 200, "x1": 310, "bottom": 320},  # row2, left
         {"x0": 300, "top": 100, "x1": 560, "bottom": 220},  # row1, right
     ]
 
@@ -417,16 +431,13 @@ def test_parse_chart_zero_height_bars() -> None:
 # ---------------------------------------------------------------------------
 def test_parse_pathogen_pages_normal(tmp_path: Path) -> None:
     """pdfplumber mock으로 parse_pathogen_pages 정상 경로를 검증."""
-    from pipeline.collectors.kowas_parser import parse_pathogen_pages, WeeklyReading
+    from pipeline.collectors.kowas_parser import WeeklyReading, parse_pathogen_pages
 
     # 10개 박스 (page1) + 7개 박스 (page2) = 17개 시·도
     def _make_mock_page(n_charts: int) -> MagicMock:
         page = MagicMock()
         # 각 차트용 박스 (충분히 큰 이미지)
-        page.images = [
-            {"x0": i * 260.0, "top": 0.0, "x1": i * 260.0 + 234.0, "bottom": 120.0}
-            for i in range(n_charts)
-        ]
+        page.images = [{"x0": i * 260.0, "top": 0.0, "x1": i * 260.0 + 234.0, "bottom": 120.0} for i in range(n_charts)]
         # page.to_image() → original (흰 이미지)
         mock_pil = MagicMock()
         mock_pil.original = Image.new("RGB", (2600, 800), color=(255, 255, 255))
@@ -438,7 +449,7 @@ def test_parse_pathogen_pages_normal(tmp_path: Path) -> None:
         MagicMock(),  # page 0 (unused for covid)
         MagicMock(),  # page 1
         _make_mock_page(10),  # page 2 — covid 1-10번
-        _make_mock_page(7),   # page 3 — covid 11-17번
+        _make_mock_page(7),  # page 3 — covid 11-17번
     ]
 
     pdf_path = tmp_path / "fake.pdf"
@@ -466,10 +477,7 @@ def test_parse_pathogen_pages_insufficient_charts(tmp_path: Path) -> None:
 
     def _make_mock_page(n_charts: int) -> MagicMock:
         page = MagicMock()
-        page.images = [
-            {"x0": i * 260.0, "top": 0.0, "x1": i * 260.0 + 234.0, "bottom": 120.0}
-            for i in range(n_charts)
-        ]
+        page.images = [{"x0": i * 260.0, "top": 0.0, "x1": i * 260.0 + 234.0, "bottom": 120.0} for i in range(n_charts)]
         mock_pil = MagicMock()
         mock_pil.original = Image.new("RGB", (2600, 800), color=(255, 255, 255))
         page.to_image.return_value = mock_pil
@@ -479,8 +487,8 @@ def test_parse_pathogen_pages_insufficient_charts(tmp_path: Path) -> None:
     mock_pdf.pages = [
         MagicMock(),
         MagicMock(),
-        _make_mock_page(5),   # 10 기대 → 5만 있음
-        _make_mock_page(3),   # 7 기대 → 3만 있음
+        _make_mock_page(5),  # 10 기대 → 5만 있음
+        _make_mock_page(3),  # 7 기대 → 3만 있음
     ]
 
     pdf_path = tmp_path / "fake_incomplete.pdf"
@@ -503,10 +511,7 @@ def test_parse_report_all_pathogens(tmp_path: Path) -> None:
 
     def _make_mock_page(n_charts: int) -> MagicMock:
         page = MagicMock()
-        page.images = [
-            {"x0": i * 260.0, "top": 0.0, "x1": i * 260.0 + 234.0, "bottom": 120.0}
-            for i in range(n_charts)
-        ]
+        page.images = [{"x0": i * 260.0, "top": 0.0, "x1": i * 260.0 + 234.0, "bottom": 120.0} for i in range(n_charts)]
         mock_pil = MagicMock()
         mock_pil.original = Image.new("RGB", (2600, 800), color=(255, 255, 255))
         page.to_image.return_value = mock_pil
@@ -515,14 +520,14 @@ def test_parse_report_all_pathogens(tmp_path: Path) -> None:
     # 8페이지 (0-indexed): 2,3=covid / 4,5=influenza / 6,7=norovirus
     mock_pdf = MagicMock()
     mock_pdf.pages = [
-        MagicMock(),          # page 0
-        MagicMock(),          # page 1
+        MagicMock(),  # page 0
+        MagicMock(),  # page 1
         _make_mock_page(10),  # page 2
-        _make_mock_page(7),   # page 3
+        _make_mock_page(7),  # page 3
         _make_mock_page(10),  # page 4
-        _make_mock_page(7),   # page 5
+        _make_mock_page(7),  # page 5
         _make_mock_page(10),  # page 6
-        _make_mock_page(7),   # page 7
+        _make_mock_page(7),  # page 7
     ]
 
     pdf_path = tmp_path / "full.pdf"
@@ -546,10 +551,7 @@ def test_parse_report_single_pathogen(tmp_path: Path) -> None:
 
     def _make_mock_page(n_charts: int) -> MagicMock:
         page = MagicMock()
-        page.images = [
-            {"x0": i * 260.0, "top": 0.0, "x1": i * 260.0 + 234.0, "bottom": 120.0}
-            for i in range(n_charts)
-        ]
+        page.images = [{"x0": i * 260.0, "top": 0.0, "x1": i * 260.0 + 234.0, "bottom": 120.0} for i in range(n_charts)]
         mock_pil = MagicMock()
         mock_pil.original = Image.new("RGB", (2600, 800), color=(255, 255, 255))
         page.to_image.return_value = mock_pil
@@ -562,7 +564,7 @@ def test_parse_report_single_pathogen(tmp_path: Path) -> None:
         MagicMock(),
         MagicMock(),
         _make_mock_page(10),  # page 4 — influenza 1-10
-        _make_mock_page(7),   # page 5 — influenza 11-17
+        _make_mock_page(7),  # page 5 — influenza 11-17
         MagicMock(),
         MagicMock(),
     ]

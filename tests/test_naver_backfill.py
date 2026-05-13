@@ -16,6 +16,7 @@
 13. run_backfill — regions='single' → 서울만 적재
 14. fetch_search_series — 빈 data 응답 처리
 """
+
 from __future__ import annotations
 
 from datetime import date, timedelta
@@ -29,8 +30,7 @@ def _make_search_resp(weeks: int = 4) -> dict:
     """DataLab 검색 API 정상 응답 픽스처."""
     start = date(2026, 3, 1)
     data = [
-        {"period": (start + timedelta(weeks=i)).strftime("%Y-%m-%d"), "ratio": float(50 + i * 5)}
-        for i in range(weeks)
+        {"period": (start + timedelta(weeks=i)).strftime("%Y-%m-%d"), "ratio": float(50 + i * 5)} for i in range(weeks)
     ]
     return {"results": [{"data": data}]}
 
@@ -39,8 +39,7 @@ def _make_shopping_resp(weeks: int = 4) -> dict:
     """쇼핑인사이트 API 정상 응답 픽스처."""
     start = date(2026, 3, 1)
     data = [
-        {"period": (start + timedelta(weeks=i)).strftime("%Y-%m-%d"), "ratio": float(40 + i * 4)}
-        for i in range(weeks)
+        {"period": (start + timedelta(weeks=i)).strftime("%Y-%m-%d"), "ratio": float(40 + i * 4)} for i in range(weeks)
     ]
     return {"results": [{"data": data}]}
 
@@ -58,8 +57,10 @@ class FakeResp:
 
 class RateLimitResp:
     """429 Too Many Requests 시뮬레이션."""
+
     def raise_for_status(self) -> None:
         import httpx
+
         raise httpx.HTTPStatusError(
             "429 Too Many Requests",
             request=MagicMock(),
@@ -99,7 +100,6 @@ def test_client_created_with_env(monkeypatch: pytest.MonkeyPatch):
 # ─────────────────────── Case 3: fetch_search_series 정상 응답 ─────────────
 def test_fetch_search_series_normal(monkeypatch: pytest.MonkeyPatch):
     """DataLab 검색 API 정상 응답 mock → (date, ratio) 튜플 리스트 반환."""
-    import httpx
     monkeypatch.setenv("NAVER_CLIENT_ID", "test-id")
     monkeypatch.setenv("NAVER_CLIENT_SECRET", "test-secret")
 
@@ -145,6 +145,7 @@ def test_fetch_shopping_series_normal(monkeypatch: pytest.MonkeyPatch):
 def test_fetch_search_series_rate_limit(monkeypatch: pytest.MonkeyPatch):
     """API 429 응답 시 HTTPStatusError 전파 — run_backfill에서 catch해야 함."""
     import httpx
+
     monkeypatch.setenv("NAVER_CLIENT_ID", "test-id")
     monkeypatch.setenv("NAVER_CLIENT_SECRET", "test-secret")
 
@@ -164,10 +165,7 @@ async def test_backfill_layer_normal_inserts(monkeypatch: pytest.MonkeyPatch):
     """backfill_layer가 series × regions 수만큼 insert_signal을 호출하는지 검증."""
     from pipeline.collectors import naver_backfill
 
-    series = [
-        (date(2026, 3, 1) + timedelta(weeks=i), float(50 + i * 5))
-        for i in range(4)
-    ]
+    series = [(date(2026, 3, 1) + timedelta(weeks=i), float(50 + i * 5)) for i in range(4)]
     regions = ["서울특별시", "경기도", "부산광역시"]
 
     insert_calls: list[dict] = []
@@ -236,8 +234,7 @@ async def test_backfill_layer_no_zero_collapse(monkeypatch: pytest.MonkeyPatch):
     series = [
         (date(2026, 4, 27) - timedelta(weeks=56 - i), float(v))
         for i, v in enumerate(
-            [50] * 5 + [80, 95, 100, 90, 70, 50, 30, 20, 15, 10, 8, 6, 5, 4, 3, 2, 1.5, 1.2, 1.0]
-            + [0.98] * 32
+            [50] * 5 + [80, 95, 100, 90, 70, 50, 30, 20, 15, 10, 8, 6, 5, 4, 3, 2, 1.5, 1.2, 1.0] + [0.98] * 32
         )
     ]
     assert series[-1][1] == pytest.approx(0.98)
@@ -262,8 +259,7 @@ async def test_backfill_layer_no_zero_collapse(monkeypatch: pytest.MonkeyPatch):
 
     last = captured[-1]
     assert last["value"] == pytest.approx(0.98, abs=1e-6), (
-        f"zero-collapse 재발: raw=0.98인데 value={last['value']}. "
-        "backfill_layer가 raw 그대로 사용해야 함."
+        f"zero-collapse 재발: raw=0.98인데 value={last['value']}. backfill_layer가 raw 그대로 사용해야 함."
     )
     assert last["raw_value"] == pytest.approx(0.98, abs=1e-6)
 
@@ -277,9 +273,7 @@ def test_otc_source_label_unified():
     text = src.read_text(encoding="utf-8")
 
     otc_block = text.split('layers in ("both", "otc")')[1].split("return counts")[0]
-    assert '"naver_shopping_insight"' in otc_block, (
-        "OTC backfill source가 'naver_shopping_insight'로 통일돼야 함"
-    )
+    assert '"naver_shopping_insight"' in otc_block, "OTC backfill source가 'naver_shopping_insight'로 통일돼야 함"
 
 
 # ─────────────────────── Case 10: run_backfill both 레이어 ────────────────
@@ -389,7 +383,7 @@ async def test_run_backfill_single_region(monkeypatch: pytest.MonkeyPatch):
         patch.object(naver_backfill, "fetch_search_series", return_value=search_series),
         patch.object(naver_backfill, "backfill_layer", new=fake_backfill_layer),
     ):
-        result = await naver_backfill.run_backfill(weeks=4, layers="search", regions="single")
+        await naver_backfill.run_backfill(weeks=4, layers="search", regions="single")
 
     assert len(captured_regions) == 1
     assert captured_regions[0] == ["서울특별시"]

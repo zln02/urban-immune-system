@@ -8,6 +8,7 @@
 
 실행: python -m tests.benchmark_xgboost
 """
+
 from __future__ import annotations
 
 import json
@@ -67,8 +68,10 @@ def run_benchmark() -> dict:
     results["cv_scores"] = train_result["cv_scores"]
 
     if "cv_mean_f1" in train_result:
-        print(f"\n    CV 평균 — F1={train_result['cv_mean_f1']:.3f}, "
-              f"MAE={train_result['cv_mean_mae']:.2f}, AUC={train_result['cv_mean_auc']:.3f}")
+        print(
+            f"\n    CV 평균 — F1={train_result['cv_mean_f1']:.3f}, "
+            f"MAE={train_result['cv_mean_mae']:.2f}, AUC={train_result['cv_mean_auc']:.3f}"
+        )
         results["cv_mean_f1"] = train_result["cv_mean_f1"]
         results["cv_mean_mae"] = train_result["cv_mean_mae"]
         results["cv_mean_auc"] = train_result["cv_mean_auc"]

@@ -3,6 +3,7 @@
 요청 IP·메서드·경로·상태코드·처리시간(ms) 을 구조화 로그로 기록한다.
 민감 헤더(Authorization·X-API-Key·Cookie) 는 절대 로그에 남기지 않는다.
 """
+
 from __future__ import annotations
 
 import logging
@@ -32,9 +33,7 @@ class AuditLogMiddleware(BaseHTTPMiddleware):
             return request.client.host
         return "-"
 
-    async def dispatch(
-        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
         request_id = request.headers.get("x-request-id") or uuid.uuid4().hex[:12]
         start = time.perf_counter()
         status = 500

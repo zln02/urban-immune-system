@@ -1,8 +1,10 @@
 """backend/app/middleware/auth.py 단위 테스트."""
+
 from __future__ import annotations
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 from backend.app.middleware.auth import APIKeyAuthMiddleware
 
@@ -20,7 +22,11 @@ def _make_request(path: str, api_key: str | None = None) -> MagicMock:
     req = MagicMock()
     req.url.path = path
     if api_key is not None:
-        req.headers = {APIKeyAuthMiddleware.__dict__["_header"] if "_header" in APIKeyAuthMiddleware.__dict__ else "X-API-Key": api_key}
+        req.headers = {
+            APIKeyAuthMiddleware.__dict__["_header"]
+            if "_header" in APIKeyAuthMiddleware.__dict__
+            else "X-API-Key": api_key
+        }
         req.headers.get = lambda h, default="": api_key if h == "X-API-Key" else default
     else:
         req.headers.get = lambda h, default="": default
@@ -34,7 +40,7 @@ async def test_public_path_passes_without_key() -> None:
     call_next = AsyncMock(return_value=MagicMock(status_code=200))
 
     req = _make_request("/health")
-    resp = await mw.dispatch(req, call_next)
+    await mw.dispatch(req, call_next)
     call_next.assert_called_once_with(req)
 
 
@@ -45,7 +51,7 @@ async def test_docs_path_passes() -> None:
     call_next = AsyncMock(return_value=MagicMock(status_code=200))
 
     req = _make_request("/docs/something")
-    resp = await mw.dispatch(req, call_next)
+    await mw.dispatch(req, call_next)
     call_next.assert_called_once_with(req)
 
 
@@ -56,7 +62,7 @@ async def test_development_no_keys_passes() -> None:
     call_next = AsyncMock(return_value=MagicMock(status_code=200))
 
     req = _make_request("/api/v1/alerts")
-    resp = await mw.dispatch(req, call_next)
+    await mw.dispatch(req, call_next)
     call_next.assert_called_once_with(req)
 
 
@@ -68,7 +74,7 @@ async def test_valid_key_passes() -> None:
 
     req = _make_request("/api/v1/signals")
     req.headers.get = lambda h, default="": "my-secret" if h == "X-API-Key" else default
-    resp = await mw.dispatch(req, call_next)
+    await mw.dispatch(req, call_next)
     call_next.assert_called_once_with(req)
 
 
@@ -106,6 +112,7 @@ async def test_missing_key_returns_401() -> None:
 # ---------------------------------------------------------------------------
 # search_collector deprecated 동작 확인
 # ---------------------------------------------------------------------------
+
 
 def test_collect_search_weekly_raises_runtime_error() -> None:
     """deprecated collect_search_weekly 호출 시 RuntimeError 발생."""

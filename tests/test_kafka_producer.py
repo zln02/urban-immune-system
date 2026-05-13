@@ -1,4 +1,5 @@
 """pipeline/collectors/kafka_producer.py 단위 테스트."""
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
@@ -10,6 +11,7 @@ import pytest
 def _reset_producer():
     """각 테스트 전후 싱글톤 프로듀서 초기화."""
     import pipeline.collectors.kafka_producer as kp
+
     kp._producer = None
     yield
     kp._producer = None

@@ -6,10 +6,10 @@ ml/reproduce_validation.py 커버리지 테스트.
 - 실제 ML 훈련(train()) 은 mock 처리 → CI 시간 절약
 - argparse, stage 함수들, JSON 출력 구조, seed 재현성에 집중
 """
+
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock, patch
@@ -24,12 +24,24 @@ FAKE_TRAIN_RESULT: dict[str, Any] = {
     "cv_scores": [
         {"fold": 1, "mae": 10.0, "f1": 0.6, "precision": 0.7, "recall": 0.5, "auc_roc": 0.8},
         {"fold": 2, "mae": 9.0, "f1": 0.7, "precision": 0.8, "recall": 0.6, "auc_roc": 0.85},
-        {"fold": 3, "mae": float("nan"), "f1": float("nan"), "precision": float("nan"),
-         "recall": float("nan"), "auc_roc": float("nan")},
+        {
+            "fold": 3,
+            "mae": float("nan"),
+            "f1": float("nan"),
+            "precision": float("nan"),
+            "recall": float("nan"),
+            "auc_roc": float("nan"),
+        },
     ],
     "final_eval": {
-        "mae": 5.0, "f1": 0.75, "precision": 0.8, "recall": 0.7, "auc_roc": 0.9,
-        "target_col": "confirmed_future", "alert_col": "alert_future", "alert_threshold": 70.0,
+        "mae": 5.0,
+        "f1": 0.75,
+        "precision": 0.8,
+        "recall": 0.7,
+        "auc_roc": 0.9,
+        "target_col": "confirmed_future",
+        "alert_col": "alert_future",
+        "alert_threshold": 70.0,
     },
 }
 
@@ -38,12 +50,15 @@ FAKE_TRAIN_RESULT: dict[str, Any] = {
 # 1. argparse 파싱
 # ---------------------------------------------------------------------------
 
+
 class TestParseArgs:
     def test_defaults(self):
         """기본 인자: skip-real=False, region=서울특별시"""
         with patch("sys.argv", ["reproduce_validation.py"]):
-            from ml.reproduce_validation import main  # noqa: F401 — side-effect free import
             import argparse
+
+            from ml.reproduce_validation import main  # noqa: F401 — side-effect free import
+
             # parse_args 는 main() 내부에 inline 되어 있으므로 직접 재구성
             parser = argparse.ArgumentParser()
             parser.add_argument("--skip-real", action="store_true")
@@ -56,6 +71,7 @@ class TestParseArgs:
     def test_skip_real_flag(self):
         """--skip-real 플래그 인식"""
         import argparse
+
         parser = argparse.ArgumentParser()
         parser.add_argument("--skip-real", action="store_true")
         parser.add_argument("--region", default="서울특별시")
@@ -67,6 +83,7 @@ class TestParseArgs:
     def test_custom_output(self, tmp_path):
         """--output 커스텀 경로 인식"""
         import argparse
+
         out = tmp_path / "out.json"
         parser = argparse.ArgumentParser()
         parser.add_argument("--skip-real", action="store_true")
@@ -80,12 +97,14 @@ class TestParseArgs:
 # 2. _summary_from_train_result
 # ---------------------------------------------------------------------------
 
+
 class TestSummaryFromTrainResult:
     def test_normal_cv(self):
         from ml.reproduce_validation import _summary_from_train_result
+
         s = _summary_from_train_result(FAKE_TRAIN_RESULT)
         assert s["n_folds_total"] == 3
-        assert s["n_folds_valid"] == 2   # fold3 는 NaN
+        assert s["n_folds_valid"] == 2  # fold3 는 NaN
         assert abs(s["cv_mean_f1"] - 0.65) < 1e-9
         assert abs(s["cv_mean_precision"] - 0.75) < 1e-9
         assert abs(s["cv_mean_recall"] - 0.55) < 1e-9
@@ -94,10 +113,17 @@ class TestSummaryFromTrainResult:
     def test_all_nan_f1(self):
         """모든 fold 가 NaN → cv_mean_f1 = None"""
         from ml.reproduce_validation import _summary_from_train_result
+
         result = {
             "cv_scores": [
-                {"fold": 1, "mae": 5.0, "f1": float("nan"), "precision": float("nan"),
-                 "recall": float("nan"), "auc_roc": float("nan")},
+                {
+                    "fold": 1,
+                    "mae": 5.0,
+                    "f1": float("nan"),
+                    "precision": float("nan"),
+                    "recall": float("nan"),
+                    "auc_roc": float("nan"),
+                },
             ],
             "final_eval": {},
         }
@@ -109,6 +135,7 @@ class TestSummaryFromTrainResult:
     def test_empty_cv_scores(self):
         """cv_scores 없을 때 안전 처리"""
         from ml.reproduce_validation import _summary_from_train_result
+
         s = _summary_from_train_result({"cv_scores": [], "final_eval": {}})
         assert s["n_folds_total"] == 0
         assert s["cv_mean_f1"] is None
@@ -117,12 +144,25 @@ class TestSummaryFromTrainResult:
     def test_mae_always_present(self):
         """MAE 는 NaN 필터 없이 모든 fold 평균"""
         from ml.reproduce_validation import _summary_from_train_result
+
         result = {
             "cv_scores": [
-                {"fold": 1, "mae": 4.0, "f1": float("nan"), "precision": float("nan"),
-                 "recall": float("nan"), "auc_roc": float("nan")},
-                {"fold": 2, "mae": 6.0, "f1": float("nan"), "precision": float("nan"),
-                 "recall": float("nan"), "auc_roc": float("nan")},
+                {
+                    "fold": 1,
+                    "mae": 4.0,
+                    "f1": float("nan"),
+                    "precision": float("nan"),
+                    "recall": float("nan"),
+                    "auc_roc": float("nan"),
+                },
+                {
+                    "fold": 2,
+                    "mae": 6.0,
+                    "f1": float("nan"),
+                    "precision": float("nan"),
+                    "recall": float("nan"),
+                    "auc_roc": float("nan"),
+                },
             ],
             "final_eval": {},
         }
@@ -134,10 +174,12 @@ class TestSummaryFromTrainResult:
 # 3. _run_synthetic_hardened (train mock)
 # ---------------------------------------------------------------------------
 
+
 class TestRunSyntheticHardened:
     @patch("ml.reproduce_validation.train", return_value=FAKE_TRAIN_RESULT)
     def test_returns_expected_keys(self, mock_train):
         from ml.reproduce_validation import _run_synthetic_hardened
+
         result = _run_synthetic_hardened()
         assert result["data_source"] == "synthetic_hardened"
         assert result["data_seed"] == 42
@@ -148,13 +190,15 @@ class TestRunSyntheticHardened:
 
     @patch("ml.reproduce_validation.train", return_value=FAKE_TRAIN_RESULT)
     def test_feature_cols_present(self, mock_train):
-        from ml.reproduce_validation import _run_synthetic_hardened, FEATURE_COLS
+        from ml.reproduce_validation import FEATURE_COLS, _run_synthetic_hardened
+
         result = _run_synthetic_hardened()
         assert result["feature_cols"] == FEATURE_COLS
 
     @patch("ml.reproduce_validation.train", return_value=FAKE_TRAIN_RESULT)
     def test_alert_threshold(self, mock_train):
-        from ml.reproduce_validation import _run_synthetic_hardened, HARDENED_ALERT_THRESHOLD
+        from ml.reproduce_validation import HARDENED_ALERT_THRESHOLD, _run_synthetic_hardened
+
         result = _run_synthetic_hardened()
         assert result["alert_threshold"] == HARDENED_ALERT_THRESHOLD
 
@@ -163,10 +207,12 @@ class TestRunSyntheticHardened:
 # 4. seed 재현성
 # ---------------------------------------------------------------------------
 
+
 class TestSeedReproducibility:
     def test_same_seed_same_data(self):
         """seed=42 두 번 → 동일 데이터프레임"""
         from ml.xgboost.model import generate_synthetic_data
+
         df1 = generate_synthetic_data(n_weeks=50, seed=42)
         df2 = generate_synthetic_data(n_weeks=50, seed=42)
         assert list(df1.columns) == list(df2.columns)
@@ -176,13 +222,15 @@ class TestSeedReproducibility:
     def test_different_seed_different_data(self):
         """다른 seed → 다른 데이터"""
         from ml.xgboost.model import generate_synthetic_data
+
         df1 = generate_synthetic_data(n_weeks=50, seed=42)
         df2 = generate_synthetic_data(n_weeks=50, seed=99)
         assert not np.allclose(df1["l1_otc"].values, df2["l1_otc"].values)
 
     def test_hardened_alert_col_present(self):
         """generate_synthetic_data 결과에 HARDENED_ALERT_COL 포함"""
-        from ml.xgboost.model import generate_synthetic_data, HARDENED_ALERT_COL
+        from ml.xgboost.model import HARDENED_ALERT_COL, generate_synthetic_data
+
         df = generate_synthetic_data(n_weeks=30, seed=7)
         assert HARDENED_ALERT_COL in df.columns
         assert set(df[HARDENED_ALERT_COL].unique()).issubset({0, 1})
@@ -192,11 +240,13 @@ class TestSeedReproducibility:
 # 5. _fetch_real_dataset — DB 없을 때 None 반환
 # ---------------------------------------------------------------------------
 
+
 class TestFetchRealDataset:
     def test_no_database_url_returns_none(self, monkeypatch):
         """DATABASE_URL 미설정 → None"""
         monkeypatch.setenv("DATABASE_URL", "")
         from ml.reproduce_validation import _fetch_real_dataset
+
         result = _fetch_real_dataset()
         assert result is None
 
@@ -204,6 +254,7 @@ class TestFetchRealDataset:
         """changeme 포함 URL → None"""
         monkeypatch.setenv("DATABASE_URL", "postgresql://user:changeme@localhost/db")
         from ml.reproduce_validation import _fetch_real_dataset
+
         result = _fetch_real_dataset()
         assert result is None
 
@@ -212,11 +263,13 @@ class TestFetchRealDataset:
 # 6. _run_real — DB 없을 때 skipped 상태
 # ---------------------------------------------------------------------------
 
+
 class TestRunReal:
     def test_skipped_when_no_data(self, monkeypatch):
         """DB 없어서 _fetch_real_dataset → None 시 skipped 반환"""
         monkeypatch.setenv("DATABASE_URL", "")
         from ml.reproduce_validation import _run_real
+
         result = _run_real("서울특별시")
         assert result["status"] == "skipped"
         assert result["data_source"] == "real"
@@ -224,12 +277,13 @@ class TestRunReal:
 
     def test_skipped_when_insufficient_rows(self, monkeypatch):
         """row 수 < 30 이면 skipped"""
-        import pandas as pd
         monkeypatch.setenv("DATABASE_URL", "")
         from ml.xgboost.model import generate_synthetic_data
+
         tiny_df = generate_synthetic_data(n_weeks=10, seed=1)
         with patch("ml.reproduce_validation._fetch_real_dataset", return_value=tiny_df):
             from ml.reproduce_validation import _run_real
+
             result = _run_real("제주특별자치도")
             assert result["status"] == "skipped"
             assert result["n_weeks_3layer_intersection"] == 10
@@ -239,10 +293,12 @@ class TestRunReal:
 # 7. _load_realistic_stage — 파일 없을 때 missing
 # ---------------------------------------------------------------------------
 
+
 class TestLoadRealisticStage:
     def test_missing_backtest_file(self, tmp_path, monkeypatch):
         """BACKTEST_17_PATH 없으면 status=missing"""
         import ml.reproduce_validation as rv
+
         orig = rv.BACKTEST_17_PATH
         monkeypatch.setattr(rv, "BACKTEST_17_PATH", tmp_path / "nonexistent.json")
         result = rv._load_realistic_stage()
@@ -256,6 +312,7 @@ class TestLoadRealisticStage:
         if not real_path.exists():
             pytest.skip("analysis/outputs/backtest_17regions.json 없음")
         import ml.reproduce_validation as rv
+
         result = rv._load_realistic_stage()
         assert result["status"] == "ok"
         assert "cv_mean_f1" in result
@@ -268,6 +325,7 @@ class TestLoadRealisticStage:
         if not real_bt.exists() or not real_lt.exists():
             pytest.skip("analysis/outputs 파일 없음")
         import ml.reproduce_validation as rv
+
         result = rv._load_realistic_stage()
         assert result["status"] == "ok"
         assert "lead_time_weeks" in result
@@ -277,6 +335,7 @@ class TestLoadRealisticStage:
 # ---------------------------------------------------------------------------
 # 8. validation.json 구조 검증 (기존 파일)
 # ---------------------------------------------------------------------------
+
 
 class TestExistingValidationJson:
     def test_json_structure(self):
@@ -314,18 +373,25 @@ class TestExistingValidationJson:
 # 9. main() 통합 — skip-real + mock train
 # ---------------------------------------------------------------------------
 
+
 class TestMainIntegration:
     @patch("ml.reproduce_validation.train", return_value=FAKE_TRAIN_RESULT)
     def test_main_writes_json(self, mock_train, tmp_path):
         """main() 실행 시 output JSON 파일 생성 + stages 포함"""
         out_file = tmp_path / "result.json"
-        with patch("sys.argv", [
-            "reproduce_validation.py",
-            "--skip-real",
-            "--output", str(out_file),
-        ]):
-            from ml import reproduce_validation
+        with patch(
+            "sys.argv",
+            [
+                "reproduce_validation.py",
+                "--skip-real",
+                "--output",
+                str(out_file),
+            ],
+        ):
             import importlib
+
+            from ml import reproduce_validation
+
             importlib.reload(reproduce_validation)
             reproduce_validation.main()
 
@@ -333,20 +399,26 @@ class TestMainIntegration:
         d = json.loads(out_file.read_text(encoding="utf-8"))
         assert "stages" in d
         assert "synthetic_hardened" in d["stages"]
-        assert "real" not in d["stages"]   # skip-real → real 스테이지 없어야 함
+        assert "real" not in d["stages"]  # skip-real → real 스테이지 없어야 함
         assert "generated_at" in d
 
     @patch("ml.reproduce_validation.train", return_value=FAKE_TRAIN_RESULT)
     def test_main_returns_zero(self, mock_train, tmp_path, capsys):
         """정상 실행 시 return code 0"""
         out_file = tmp_path / "out.json"
-        with patch("sys.argv", [
-            "reproduce_validation.py",
-            "--skip-real",
-            "--output", str(out_file),
-        ]):
-            from ml import reproduce_validation
+        with patch(
+            "sys.argv",
+            [
+                "reproduce_validation.py",
+                "--skip-real",
+                "--output",
+                str(out_file),
+            ],
+        ):
             import importlib
+
+            from ml import reproduce_validation
+
             importlib.reload(reproduce_validation)
             ret = reproduce_validation.main()
         assert ret == 0
@@ -356,12 +428,18 @@ class TestMainIntegration:
         """skip-real 없음 + DB 미설정 → real=skipped, JSON 저장"""
         monkeypatch.setenv("DATABASE_URL", "")
         out_file = tmp_path / "result_real.json"
-        with patch("sys.argv", [
-            "reproduce_validation.py",
-            "--output", str(out_file),
-        ]):
+        with patch(
+            "sys.argv",
+            [
+                "reproduce_validation.py",
+                "--output",
+                str(out_file),
+            ],
+        ):
             import importlib
+
             from ml import reproduce_validation
+
             importlib.reload(reproduce_validation)
             ret = reproduce_validation.main()
         assert ret == 0
@@ -372,15 +450,19 @@ class TestMainIntegration:
 
     def test_main_synthetic_hardened_exception_captured(self, tmp_path):
         """synthetic_hardened 예외 발생 시 stages에 error 기록 (직접 함수 호출)"""
-        import ml.reproduce_validation as rv
         import importlib
+
+        import ml.reproduce_validation as rv
+
         importlib.reload(rv)
 
         out_file = tmp_path / "err.json"
-        with patch.object(rv, "_run_synthetic_hardened", side_effect=RuntimeError("훈련 실패")), \
-             patch.object(rv, "_run_real", return_value={"status": "skipped", "data_source": "real", "reason": "skip"}), \
-             patch.object(rv, "_load_realistic_stage", return_value={"status": "missing", "reason": "skip"}), \
-             patch("sys.argv", ["reproduce_validation.py", "--skip-real", "--output", str(out_file)]):
+        with (
+            patch.object(rv, "_run_synthetic_hardened", side_effect=RuntimeError("훈련 실패")),
+            patch.object(rv, "_run_real", return_value={"status": "skipped", "data_source": "real", "reason": "skip"}),
+            patch.object(rv, "_load_realistic_stage", return_value={"status": "missing", "reason": "skip"}),
+            patch("sys.argv", ["reproduce_validation.py", "--skip-real", "--output", str(out_file)]),
+        ):
             ret = rv.main()
         assert ret == 0
         d = json.loads(out_file.read_text(encoding="utf-8"))
@@ -391,14 +473,32 @@ class TestMainIntegration:
     @patch("ml.reproduce_validation.train", return_value=FAKE_TRAIN_RESULT)
     def test_main_realistic_exception_captured(self, mock_train, tmp_path):
         """_load_realistic_stage 예외 발생 시 stages에 error 기록"""
-        import ml.reproduce_validation as rv
         import importlib
+
+        import ml.reproduce_validation as rv
+
         importlib.reload(rv)
 
         out_file = tmp_path / "rs_err.json"
-        with patch.object(rv, "_run_synthetic_hardened", return_value={"data_source": "synthetic_hardened", "data_seed": 42, "n_weeks": 104, "n_alert_positive": 10, "alert_threshold": 70.0, "lead_weeks": 2, "feature_cols": [], "task": "t", **{k: v for k, v in FAKE_TRAIN_RESULT.items()}}), \
-             patch.object(rv, "_load_realistic_stage", side_effect=ValueError("파일 손상")), \
-             patch("sys.argv", ["reproduce_validation.py", "--skip-real", "--output", str(out_file)]):
+        with (
+            patch.object(
+                rv,
+                "_run_synthetic_hardened",
+                return_value={
+                    "data_source": "synthetic_hardened",
+                    "data_seed": 42,
+                    "n_weeks": 104,
+                    "n_alert_positive": 10,
+                    "alert_threshold": 70.0,
+                    "lead_weeks": 2,
+                    "feature_cols": [],
+                    "task": "t",
+                    **{k: v for k, v in FAKE_TRAIN_RESULT.items()},
+                },
+            ),
+            patch.object(rv, "_load_realistic_stage", side_effect=ValueError("파일 손상")),
+            patch("sys.argv", ["reproduce_validation.py", "--skip-real", "--output", str(out_file)]),
+        ):
             ret = rv.main()
         assert ret == 0
         d = json.loads(out_file.read_text(encoding="utf-8"))
@@ -409,8 +509,10 @@ class TestMainIntegration:
     @patch("ml.reproduce_validation.train", return_value=FAKE_TRAIN_RESULT)
     def test_main_print_summary_with_realistic_ok(self, mock_train, tmp_path, capsys):
         """realistic stage가 ok일 때 발표용 요약 출력 확인 (line 301, 316)"""
-        import ml.reproduce_validation as rv
         import importlib
+
+        import ml.reproduce_validation as rv
+
         importlib.reload(rv)
 
         out_file = tmp_path / "print_test.json"
@@ -423,8 +525,10 @@ class TestMainIntegration:
             "n_regions": 17,
             "lead_time_weeks": {"composite": 6.47},
         }
-        with patch.object(rv, "_load_realistic_stage", return_value=realistic_ok), \
-             patch("sys.argv", ["reproduce_validation.py", "--skip-real", "--output", str(out_file)]):
+        with (
+            patch.object(rv, "_load_realistic_stage", return_value=realistic_ok),
+            patch("sys.argv", ["reproduce_validation.py", "--skip-real", "--output", str(out_file)]),
+        ):
             rv.main()
         captured = capsys.readouterr()
         assert "realistic_17regions" in captured.out
@@ -436,7 +540,6 @@ class TestMainIntegration:
         monkeypatch.setenv("DATABASE_URL", "")
         out_file = tmp_path / "print_real.json"
         # cv_mean_auc_roc 포함한 fake result
-        fake_with_auc = {**FAKE_TRAIN_RESULT}
         real_ok_result = {
             "data_source": "real",
             "region": "서울특별시",
@@ -457,12 +560,21 @@ class TestMainIntegration:
             "fold_scores": [],
             "final_eval": {},
         }
-        with patch("sys.argv", [
-            "reproduce_validation.py",
-            "--output", str(out_file),
-        ]), patch("ml.reproduce_validation._run_real", return_value=real_ok_result):
+        with (
+            patch(
+                "sys.argv",
+                [
+                    "reproduce_validation.py",
+                    "--output",
+                    str(out_file),
+                ],
+            ),
+            patch("ml.reproduce_validation._run_real", return_value=real_ok_result),
+        ):
             import importlib
+
             from ml import reproduce_validation
+
             importlib.reload(reproduce_validation)
             reproduce_validation.main()
         captured = capsys.readouterr()
@@ -473,12 +585,14 @@ class TestMainIntegration:
 # 10. _fetch_real_dataset — psycopg2 mock 경로
 # ---------------------------------------------------------------------------
 
+
 class TestFetchRealDatasetMocked:
     def test_db_connection_failure_returns_none(self, monkeypatch):
         """psycopg2.connect 예외 → None 반환 (line 174-176)"""
         monkeypatch.setenv("DATABASE_URL", "postgresql://user:pass@localhost/db")
         with patch("psycopg2.connect", side_effect=Exception("연결 실패")):
             from ml.reproduce_validation import _fetch_real_dataset
+
             result = _fetch_real_dataset()
         assert result is None
 
@@ -495,13 +609,15 @@ class TestFetchRealDatasetMocked:
         mock_conn.cursor.return_value = mock_cursor
         with patch("psycopg2.connect", return_value=mock_conn):
             from ml.reproduce_validation import _fetch_real_dataset
+
             result = _fetch_real_dataset()
         assert result is None
 
     def test_valid_rows_returns_dataframe(self, monkeypatch):
         """정상 DB rows → DataFrame 반환 (line 181-199)"""
+
         import pandas as pd
-        from datetime import date
+
         monkeypatch.setenv("DATABASE_URL", "postgresql://user:pass@localhost/db")
 
         # 충분한 행 생성 (3계층 * 여러 주)
@@ -522,6 +638,7 @@ class TestFetchRealDatasetMocked:
 
         with patch("psycopg2.connect", return_value=mock_conn):
             from ml.reproduce_validation import _fetch_real_dataset
+
             result = _fetch_real_dataset()
 
         assert result is not None
@@ -536,29 +653,36 @@ class TestFetchRealDatasetMocked:
 # 11. _run_real 성공 경로 (line 216-221)
 # ---------------------------------------------------------------------------
 
+
 class TestRunRealSuccess:
     @patch("ml.reproduce_validation.train", return_value=FAKE_TRAIN_RESULT)
     def test_run_real_ok_with_sufficient_data(self, mock_train, monkeypatch):
         """데이터 30행 이상 → status=ok"""
-        import pandas as pd
         import numpy as np
+        import pandas as pd
+
         monkeypatch.setenv("DATABASE_URL", "")
         # 30행 이상인 fake DataFrame
         n = 50
         weeks = pd.date_range("2023-01-01", periods=n, freq="W")
-        df = pd.DataFrame({
-            "l1_otc": np.random.default_rng(1).uniform(10, 90, n),
-            "l2_wastewater": np.random.default_rng(2).uniform(10, 90, n),
-            "l3_search": np.random.default_rng(3).uniform(10, 90, n),
-            "temperature": [15.0] * n,
-            "humidity": [60.0] * n,
-            "composite_score": np.random.default_rng(4).uniform(10, 90, n),
-        }, index=weeks)
+        df = pd.DataFrame(
+            {
+                "l1_otc": np.random.default_rng(1).uniform(10, 90, n),
+                "l2_wastewater": np.random.default_rng(2).uniform(10, 90, n),
+                "l3_search": np.random.default_rng(3).uniform(10, 90, n),
+                "temperature": [15.0] * n,
+                "humidity": [60.0] * n,
+                "composite_score": np.random.default_rng(4).uniform(10, 90, n),
+            },
+            index=weeks,
+        )
         from ml.xgboost.model import ALERT_COL, ALERT_THRESHOLD
+
         df[ALERT_COL] = (df["composite_score"] > ALERT_THRESHOLD).astype(int)
 
         with patch("ml.reproduce_validation._fetch_real_dataset", return_value=df):
             from ml.reproduce_validation import _run_real
+
             result = _run_real("서울특별시")
 
         assert result["status"] == "ok"
@@ -573,10 +697,12 @@ class TestRunRealSuccess:
 # 12. _load_realistic_stage — lead_time 없는 경우 (line 251-252)
 # ---------------------------------------------------------------------------
 
+
 class TestLoadRealisticStageNoLeadTime:
     def test_reads_backtest_without_lead_time(self, tmp_path, monkeypatch):
         """BACKTEST_17_PATH 존재 + LEAD_TIME_PATH 없음 → lead_time 키 없어도 ok"""
         import ml.reproduce_validation as rv
+
         backtest_data = {
             "summary": {
                 "ok_regions": 17,
@@ -609,10 +735,12 @@ class TestLoadRealisticStageNoLeadTime:
 # 13. argparse 추가 조합
 # ---------------------------------------------------------------------------
 
+
 class TestParseArgsExtra:
     def test_region_custom_value(self):
         """--region 인자 커스텀 값"""
         import argparse
+
         parser = argparse.ArgumentParser()
         parser.add_argument("--skip-real", action="store_true")
         parser.add_argument("--region", default="서울특별시")
@@ -624,6 +752,7 @@ class TestParseArgsExtra:
     def test_all_args_combined(self, tmp_path):
         """모든 인자 동시 지정"""
         import argparse
+
         out = tmp_path / "combined.json"
         parser = argparse.ArgumentParser()
         parser.add_argument("--skip-real", action="store_true")

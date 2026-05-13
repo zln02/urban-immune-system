@@ -1,4 +1,5 @@
 """ml/xgboost/model.py 단위 테스트."""
+
 from __future__ import annotations
 
 import numpy as np
@@ -55,6 +56,7 @@ def test_evaluate_returns_all_metrics() -> None:
     train(df, n_splits=3, gap=2)
 
     from ml.xgboost.model import load_model
+
     model = load_model()
     assert model is not None
 

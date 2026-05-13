@@ -19,6 +19,7 @@ CLI:
   - ml/checkpoints/tft_real/tft_best.ckpt
   - ml/outputs/tft_real_metrics.json
 """
+
 from __future__ import annotations
 
 import argparse
@@ -54,8 +55,8 @@ FEATURE_COLS = ["l1_otc", "l2_wastewater", "l3_search", "temperature"]
 # 실데이터 전용 시퀀스 설정 (D-5 안정화)
 # 26주 데이터로는 train_synth 의 (24, 3) 이면 region당 시퀀스 ~1개 → 학습 불가능.
 # (12, 2) 로 줄여서 region당 13 시퀀스 확보 (17 region × 13 = 221 시퀀스).
-MAX_ENCODER = 12       # 12주 과거 입력 (synth 24 → real 12)
-MAX_PREDICTION = 2     # 1/2주 후 예측 = 7/14일 (synth 3 → real 2)
+MAX_ENCODER = 12  # 12주 과거 입력 (synth 24 → real 12)
+MAX_PREDICTION = 2  # 1/2주 후 예측 = 7/14일 (synth 3 → real 2)
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +96,10 @@ def _attention_summary_real(model, dataset) -> dict | None:
         "encoder_length",
         "confirmed_future_center",
         "confirmed_future_scale",
-        "l1_otc", "l2_wastewater", "l3_search", "temperature",
+        "l1_otc",
+        "l2_wastewater",
+        "l3_search",
+        "temperature",
     ]
     _LABEL_KR = {
         "l1_otc": "OTC약국판매",
@@ -120,12 +124,14 @@ def _attention_summary_real(model, dataset) -> dict | None:
         var_t = torch.as_tensor(out["encoder_variables"]).float()
         per_step = attn_t.mean(dim=(0, 2, 3)).tolist() if attn_t.ndim == 4 else attn_t.mean().tolist()
         per_variable = var_t.mean(dim=(0, 1)).tolist() if var_t.ndim >= 3 else var_t.mean().tolist()
-        importance_values = per_variable[0] if (
-            isinstance(per_variable, list) and per_variable and isinstance(per_variable[0], list)
-        ) else per_variable
+        importance_values = (
+            per_variable[0]
+            if (isinstance(per_variable, list) and per_variable and isinstance(per_variable[0], list))
+            else per_variable
+        )
         feature_pairs = [
             (var, importance_values[i])
-            for i, var in enumerate(_ENCODER_VAR_ORDER[:len(importance_values)])
+            for i, var in enumerate(_ENCODER_VAR_ORDER[: len(importance_values)])
             if var in _FEATURE_VARS
         ]
         feature_pairs.sort(key=lambda x: x[1], reverse=True)
@@ -181,12 +187,14 @@ async def _fetch_layer_signals(db_url: str, pathogen: str = "influenza") -> pd.D
     # layer 별 wide pivot
     pivot = df.pivot_table(index=["time", "region"], columns="layer", values="value", aggfunc="mean")
     pivot = pivot.reset_index()
-    pivot = pivot.rename(columns={
-        "otc": "l1_otc",
-        "wastewater": "l2_wastewater",
-        "search": "l3_search",
-        "weather": "temperature",  # AUX weather → temperature 컬럼 매핑 (현재 weather_collector는 단일 metric)
-    })
+    pivot = pivot.rename(
+        columns={
+            "otc": "l1_otc",
+            "wastewater": "l2_wastewater",
+            "search": "l3_search",
+            "weather": "temperature",  # AUX weather → temperature 컬럼 매핑 (현재 weather_collector는 단일 metric)
+        }
+    )
     # 누락 컬럼 보강 (기상 미수집 지역) — humidity 제거 (DB 미적재로 attention 왜곡)
     for col in FEATURE_COLS:
         if col not in pivot.columns:
@@ -223,12 +231,12 @@ def _build_dataframe_from_db(pathogen: str = "influenza", min_weeks: int = 20) -
 
     if raw.empty:
         raise RuntimeError(
-            f"학습 가능한 region 없음 (min_weeks={min_weeks}주 미만). "
-            "더 많은 데이터를 수집한 뒤 재시도하세요."
+            f"학습 가능한 region 없음 (min_weeks={min_weeks}주 미만). 더 많은 데이터를 수집한 뒤 재시도하세요."
         )
 
-    logger.info("학습 DataFrame: %d행 × %d region (각 평균 %d주)",
-                len(raw), raw["region"].nunique(), int(counts[valid].mean()))
+    logger.info(
+        "학습 DataFrame: %d행 × %d region (각 평균 %d주)", len(raw), raw["region"].nunique(), int(counts[valid].mean())
+    )
     return raw[[TIME_IDX_COL, GROUP_COL, *FEATURE_COLS, TARGET_COL]]
 
 
@@ -270,11 +278,11 @@ def main() -> int:
 
     model = TemporalFusionTransformer.from_dataset(
         train_ds,
-        learning_rate=5e-4,        # D-5 안정화: 1e-3 → 5e-4 (수렴 속도 ↓, 안정성 ↑)
-        hidden_size=32,            # 48 → 32 (capacity 축소, 26주 데이터에 적합)
+        learning_rate=5e-4,  # D-5 안정화: 1e-3 → 5e-4 (수렴 속도 ↓, 안정성 ↑)
+        hidden_size=32,  # 48 → 32 (capacity 축소, 26주 데이터에 적합)
         attention_head_size=4,
-        dropout=0.25,              # 0.15 → 0.25 (정규화 강화)
-        hidden_continuous_size=12, # 16 → 12 (capacity 동조)
+        dropout=0.25,  # 0.15 → 0.25 (정규화 강화)
+        hidden_continuous_size=12,  # 16 → 12 (capacity 동조)
         output_size=7,
         loss=QuantileLoss(),
         log_interval=0,
@@ -297,10 +305,11 @@ def main() -> int:
         monitor="val_loss",
         patience=10,
         mode="min",
-        min_delta=0.05,        # 0.001 → 0.05: noise 무시, 진짜 개선만 인정
+        min_delta=0.05,  # 0.001 → 0.05: noise 무시, 진짜 개선만 인정
     )
     # SWA: 후반 epoch 가중치 평균화로 generalization 개선 (작은 데이터셋에서 효과 큼)
     from lightning.pytorch.callbacks import StochasticWeightAveraging
+
     swa_cb = StochasticWeightAveraging(swa_lrs=2.5e-4, swa_epoch_start=0.6)
 
     trainer = pl.Trainer(
@@ -311,7 +320,7 @@ def main() -> int:
         logger=csv_logger,
         enable_progress_bar=False,
         enable_model_summary=False,
-        deterministic=True,        # 재현성 (seed_everything 와 함께)
+        deterministic=True,  # 재현성 (seed_everything 와 함께)
     )
 
     logger.info("TFT 실데이터 학습 시작 (epochs=%d · batch=%d)", args.epochs, args.batch_size)
@@ -323,12 +332,14 @@ def main() -> int:
     if loss_csv.exists():
         m = pd.read_csv(loss_csv)
         for _, r in m.iterrows():
-            loss_curve.append({
-                "epoch": int(r["epoch"]) if not pd.isna(r.get("epoch")) else None,
-                "step": int(r["step"]) if not pd.isna(r.get("step")) else None,
-                "train_loss": float(r["train_loss_step"]) if not pd.isna(r.get("train_loss_step")) else None,
-                "val_loss": float(r["val_loss"]) if not pd.isna(r.get("val_loss")) else None,
-            })
+            loss_curve.append(
+                {
+                    "epoch": int(r["epoch"]) if not pd.isna(r.get("epoch")) else None,
+                    "step": int(r["step"]) if not pd.isna(r.get("step")) else None,
+                    "train_loss": float(r["train_loss_step"]) if not pd.isna(r.get("train_loss_step")) else None,
+                    "val_loss": float(r["val_loss"]) if not pd.isna(r.get("val_loss")) else None,
+                }
+            )
 
     # 검증 예측
     pred = model.predict(val_loader, mode="prediction")

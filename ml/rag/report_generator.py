@@ -6,6 +6,7 @@
 
 출력 구조: 9개 섹션 강제 (KDCA 주간 감염병 보고서 표준 포맷 기반)
 """
+
 from __future__ import annotations
 
 import logging
