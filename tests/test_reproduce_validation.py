@@ -350,3 +350,286 @@ class TestMainIntegration:
             importlib.reload(reproduce_validation)
             ret = reproduce_validation.main()
         assert ret == 0
+
+    @patch("ml.reproduce_validation.train", return_value=FAKE_TRAIN_RESULT)
+    def test_main_with_real_stage_skipped_due_to_no_db(self, mock_train, tmp_path, monkeypatch):
+        """skip-real 없음 + DB 미설정 → real=skipped, JSON 저장"""
+        monkeypatch.setenv("DATABASE_URL", "")
+        out_file = tmp_path / "result_real.json"
+        with patch("sys.argv", [
+            "reproduce_validation.py",
+            "--output", str(out_file),
+        ]):
+            import importlib
+            from ml import reproduce_validation
+            importlib.reload(reproduce_validation)
+            ret = reproduce_validation.main()
+        assert ret == 0
+        assert out_file.exists()
+        d = json.loads(out_file.read_text(encoding="utf-8"))
+        assert "real" in d["stages"]
+        assert d["stages"]["real"]["status"] == "skipped"
+
+    def test_main_synthetic_hardened_exception_captured(self, tmp_path):
+        """synthetic_hardened 예외 발생 시 stages에 error 기록 (직접 함수 호출)"""
+        import ml.reproduce_validation as rv
+        import importlib
+        importlib.reload(rv)
+
+        out_file = tmp_path / "err.json"
+        with patch.object(rv, "_run_synthetic_hardened", side_effect=RuntimeError("훈련 실패")), \
+             patch.object(rv, "_run_real", return_value={"status": "skipped", "data_source": "real", "reason": "skip"}), \
+             patch.object(rv, "_load_realistic_stage", return_value={"status": "missing", "reason": "skip"}), \
+             patch("sys.argv", ["reproduce_validation.py", "--skip-real", "--output", str(out_file)]):
+            ret = rv.main()
+        assert ret == 0
+        d = json.loads(out_file.read_text(encoding="utf-8"))
+        sh = d["stages"]["synthetic_hardened"]
+        assert sh["status"] == "error"
+        assert "훈련 실패" in sh["error"]
+
+    @patch("ml.reproduce_validation.train", return_value=FAKE_TRAIN_RESULT)
+    def test_main_realistic_exception_captured(self, mock_train, tmp_path):
+        """_load_realistic_stage 예외 발생 시 stages에 error 기록"""
+        import ml.reproduce_validation as rv
+        import importlib
+        importlib.reload(rv)
+
+        out_file = tmp_path / "rs_err.json"
+        with patch.object(rv, "_run_synthetic_hardened", return_value={"data_source": "synthetic_hardened", "data_seed": 42, "n_weeks": 104, "n_alert_positive": 10, "alert_threshold": 70.0, "lead_weeks": 2, "feature_cols": [], "task": "t", **{k: v for k, v in FAKE_TRAIN_RESULT.items()}}), \
+             patch.object(rv, "_load_realistic_stage", side_effect=ValueError("파일 손상")), \
+             patch("sys.argv", ["reproduce_validation.py", "--skip-real", "--output", str(out_file)]):
+            ret = rv.main()
+        assert ret == 0
+        d = json.loads(out_file.read_text(encoding="utf-8"))
+        rs = d["stages"]["realistic"]
+        assert rs["status"] == "error"
+        assert "파일 손상" in rs["error"]
+
+    @patch("ml.reproduce_validation.train", return_value=FAKE_TRAIN_RESULT)
+    def test_main_print_summary_with_realistic_ok(self, mock_train, tmp_path, capsys):
+        """realistic stage가 ok일 때 발표용 요약 출력 확인 (line 301, 316)"""
+        import ml.reproduce_validation as rv
+        import importlib
+        importlib.reload(rv)
+
+        out_file = tmp_path / "print_test.json"
+        realistic_ok = {
+            "status": "ok",
+            "cv_mean_f1": 0.621,
+            "cv_mean_precision": 0.700,
+            "cv_mean_recall": 0.838,
+            "cv_mean_far": 0.206,
+            "n_regions": 17,
+            "lead_time_weeks": {"composite": 6.47},
+        }
+        with patch.object(rv, "_load_realistic_stage", return_value=realistic_ok), \
+             patch("sys.argv", ["reproduce_validation.py", "--skip-real", "--output", str(out_file)]):
+            rv.main()
+        captured = capsys.readouterr()
+        assert "realistic_17regions" in captured.out
+        assert "F1=0.621" in captured.out
+
+    @patch("ml.reproduce_validation.train", return_value=FAKE_TRAIN_RESULT)
+    def test_main_print_summary_with_real_ok(self, mock_train, tmp_path, capsys, monkeypatch):
+        """real stage가 ok일 때 발표용 요약 real 출력 (line 301, _print 경로)"""
+        monkeypatch.setenv("DATABASE_URL", "")
+        out_file = tmp_path / "print_real.json"
+        # cv_mean_auc_roc 포함한 fake result
+        fake_with_auc = {**FAKE_TRAIN_RESULT}
+        real_ok_result = {
+            "data_source": "real",
+            "region": "서울특별시",
+            "status": "ok",
+            "n_weeks": 50,
+            "n_alert_positive": 10,
+            "alert_threshold": 50.0,
+            "feature_cols": ["l1_otc"],
+            "first_week": "2024-01-01",
+            "last_week": "2024-12-31",
+            "cv_mean_f1": 0.75,
+            "cv_mean_precision": 0.80,
+            "cv_mean_recall": 0.70,
+            "cv_mean_auc_roc": 0.85,
+            "cv_mean_mae": 5.0,
+            "n_folds_total": 3,
+            "n_folds_valid": 3,
+            "fold_scores": [],
+            "final_eval": {},
+        }
+        with patch("sys.argv", [
+            "reproduce_validation.py",
+            "--output", str(out_file),
+        ]), patch("ml.reproduce_validation._run_real", return_value=real_ok_result):
+            import importlib
+            from ml import reproduce_validation
+            importlib.reload(reproduce_validation)
+            reproduce_validation.main()
+        captured = capsys.readouterr()
+        assert "real" in captured.out
+
+
+# ---------------------------------------------------------------------------
+# 10. _fetch_real_dataset — psycopg2 mock 경로
+# ---------------------------------------------------------------------------
+
+class TestFetchRealDatasetMocked:
+    def test_db_connection_failure_returns_none(self, monkeypatch):
+        """psycopg2.connect 예외 → None 반환 (line 174-176)"""
+        monkeypatch.setenv("DATABASE_URL", "postgresql://user:pass@localhost/db")
+        with patch("psycopg2.connect", side_effect=Exception("연결 실패")):
+            from ml.reproduce_validation import _fetch_real_dataset
+            result = _fetch_real_dataset()
+        assert result is None
+
+    def test_empty_rows_returns_none(self, monkeypatch):
+        """쿼리 결과 빈 rows → None 반환 (line 178-179)"""
+        monkeypatch.setenv("DATABASE_URL", "postgresql://user:pass@localhost/db")
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_cursor.__enter__ = lambda s: s
+        mock_cursor.__exit__ = MagicMock(return_value=False)
+        mock_cursor.fetchall.return_value = []
+        mock_conn.__enter__ = lambda s: s
+        mock_conn.__exit__ = MagicMock(return_value=False)
+        mock_conn.cursor.return_value = mock_cursor
+        with patch("psycopg2.connect", return_value=mock_conn):
+            from ml.reproduce_validation import _fetch_real_dataset
+            result = _fetch_real_dataset()
+        assert result is None
+
+    def test_valid_rows_returns_dataframe(self, monkeypatch):
+        """정상 DB rows → DataFrame 반환 (line 181-199)"""
+        import pandas as pd
+        from datetime import date
+        monkeypatch.setenv("DATABASE_URL", "postgresql://user:pass@localhost/db")
+
+        # 충분한 행 생성 (3계층 * 여러 주)
+        weeks = pd.date_range("2024-01-01", periods=40, freq="W")
+        rows = []
+        for w in weeks:
+            for layer in ("otc", "wastewater", "search"):
+                rows.append({"week": w, "layer": layer, "value": 50.0})
+
+        mock_conn = MagicMock()
+        mock_cursor = MagicMock()
+        mock_cursor.__enter__ = lambda s: s
+        mock_cursor.__exit__ = MagicMock(return_value=False)
+        mock_cursor.fetchall.return_value = rows
+        mock_conn.__enter__ = lambda s: s
+        mock_conn.__exit__ = MagicMock(return_value=False)
+        mock_conn.cursor.return_value = mock_cursor
+
+        with patch("psycopg2.connect", return_value=mock_conn):
+            from ml.reproduce_validation import _fetch_real_dataset
+            result = _fetch_real_dataset()
+
+        assert result is not None
+        assert "l1_otc" in result.columns
+        assert "l2_wastewater" in result.columns
+        assert "l3_search" in result.columns
+        assert "alert_label" in result.columns
+        assert len(result) == 40
+
+
+# ---------------------------------------------------------------------------
+# 11. _run_real 성공 경로 (line 216-221)
+# ---------------------------------------------------------------------------
+
+class TestRunRealSuccess:
+    @patch("ml.reproduce_validation.train", return_value=FAKE_TRAIN_RESULT)
+    def test_run_real_ok_with_sufficient_data(self, mock_train, monkeypatch):
+        """데이터 30행 이상 → status=ok"""
+        import pandas as pd
+        import numpy as np
+        monkeypatch.setenv("DATABASE_URL", "")
+        # 30행 이상인 fake DataFrame
+        n = 50
+        weeks = pd.date_range("2023-01-01", periods=n, freq="W")
+        df = pd.DataFrame({
+            "l1_otc": np.random.default_rng(1).uniform(10, 90, n),
+            "l2_wastewater": np.random.default_rng(2).uniform(10, 90, n),
+            "l3_search": np.random.default_rng(3).uniform(10, 90, n),
+            "temperature": [15.0] * n,
+            "humidity": [60.0] * n,
+            "composite_score": np.random.default_rng(4).uniform(10, 90, n),
+        }, index=weeks)
+        from ml.xgboost.model import ALERT_COL, ALERT_THRESHOLD
+        df[ALERT_COL] = (df["composite_score"] > ALERT_THRESHOLD).astype(int)
+
+        with patch("ml.reproduce_validation._fetch_real_dataset", return_value=df):
+            from ml.reproduce_validation import _run_real
+            result = _run_real("서울특별시")
+
+        assert result["status"] == "ok"
+        assert result["data_source"] == "real"
+        assert result["region"] == "서울특별시"
+        assert result["n_weeks"] == n
+        assert "cv_mean_f1" in result
+        mock_train.assert_called_once()
+
+
+# ---------------------------------------------------------------------------
+# 12. _load_realistic_stage — lead_time 없는 경우 (line 251-252)
+# ---------------------------------------------------------------------------
+
+class TestLoadRealisticStageNoLeadTime:
+    def test_reads_backtest_without_lead_time(self, tmp_path, monkeypatch):
+        """BACKTEST_17_PATH 존재 + LEAD_TIME_PATH 없음 → lead_time 키 없어도 ok"""
+        import ml.reproduce_validation as rv
+        backtest_data = {
+            "summary": {
+                "ok_regions": 17,
+                "mean_f1": 0.882,
+                "mean_precision": 0.949,
+                "mean_recall": 0.837,
+                "mean_far_with_gate": 0.206,
+                "skipped_regions": [],
+            }
+        }
+        # 프로젝트 내부 경로에 임시 파일 생성 (relative_to 우회)
+        outputs_dir = Path(rv.__file__).parent.parent / "analysis" / "outputs"
+        bt_file = outputs_dir / "backtest_test_no_lead.json"
+        bt_file.write_text(json.dumps(backtest_data), encoding="utf-8")
+
+        try:
+            monkeypatch.setattr(rv, "BACKTEST_17_PATH", bt_file)
+            monkeypatch.setattr(rv, "LEAD_TIME_PATH", tmp_path / "nonexistent_lead.json")
+
+            result = rv._load_realistic_stage()
+            assert result["status"] == "ok"
+            assert result["cv_mean_f1"] == 0.882
+            # lead_time 키는 없어야 함
+            assert "lead_time_weeks" not in result
+        finally:
+            bt_file.unlink(missing_ok=True)
+
+
+# ---------------------------------------------------------------------------
+# 13. argparse 추가 조합
+# ---------------------------------------------------------------------------
+
+class TestParseArgsExtra:
+    def test_region_custom_value(self):
+        """--region 인자 커스텀 값"""
+        import argparse
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--skip-real", action="store_true")
+        parser.add_argument("--region", default="서울특별시")
+        parser.add_argument("--output", type=Path, default=Path("/tmp/dummy.json"))
+        args = parser.parse_args(["--region", "제주특별자치도"])
+        assert args.region == "제주특별자치도"
+        assert args.skip_real is False
+
+    def test_all_args_combined(self, tmp_path):
+        """모든 인자 동시 지정"""
+        import argparse
+        out = tmp_path / "combined.json"
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--skip-real", action="store_true")
+        parser.add_argument("--region", default="서울특별시")
+        parser.add_argument("--output", type=Path, default=Path("/tmp/dummy.json"))
+        args = parser.parse_args(["--skip-real", "--region", "인천광역시", "--output", str(out)])
+        assert args.skip_real is True
+        assert args.region == "인천광역시"
+        assert args.output == out

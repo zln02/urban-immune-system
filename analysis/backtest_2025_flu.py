@@ -402,7 +402,8 @@ async def run_backtest(region: str = REGION) -> dict[str, Any]:
 
         composite   = compute_composite(l1, l2, l3)
         # scorer.py determine_alert_level 재사용 (직접 import)
-        alert_level = determine_alert_level(composite, l1, l2, l3)
+        # region 전달 → 지역별 Gate B threshold 적용 (약신호 지역 완화)
+        alert_level = determine_alert_level(composite, l1, l2, l3, region=region)
         confirmed_cnt = confirmed_map.get(iso_week, 0)
 
         if confirmed_cnt > peak_cases:

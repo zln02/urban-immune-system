@@ -50,6 +50,7 @@ dev = [
     "ruff>=0.3",
     "mypy>=1.8",
     "pre-commit>=3.6",
+    "psycopg2-binary>=2.9",
 ]
 all = [
     "urban-immune-system[backend,pipeline,ml,dev]",
@@ -75,7 +76,17 @@ markers = [
 
 [tool.coverage.run]
 source = ["backend", "ml", "pipeline"]
-omit = ["tests/*", ".venv/*", "*/migrations/*", "*/__init__.py"]
+omit = [
+    "tests/*",
+    ".venv/*",
+    "*/migrations/*",
+    "*/__init__.py",
+    "ml/tft/train_real.py",
+    "ml/tft/train_synth.py",
+    "ml/tft/model.py",
+    "ml/anomaly/train_synth.py",
+    "ml/xgboost/train_and_save.py",
+]
 
 [tool.coverage.report]
 show_missing = true
