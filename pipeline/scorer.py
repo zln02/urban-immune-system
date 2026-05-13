@@ -125,6 +125,30 @@ def _get_layer_threshold(region: str | None = None) -> float:
         return _CROSS_VALIDATION_LAYER_THRESHOLD
 
 
+def _get_composite_threshold(region: str | None = None) -> float:
+    """지역별 YELLOW 경보 composite 임계값을 반환한다.
+
+    regional_composite_thresholds 에 명시된 지역은 해당 값 사용,
+    그 외는 default_composite_threshold(30.0) 사용.
+
+    Args:
+        region: 지역명. None 이면 default(30.0) 반환.
+
+    Returns:
+        해당 지역의 composite YELLOW 임계값
+    """
+    if region is None:
+        return 30.0
+    try:
+        from backend.app.config import settings
+        return settings.regional_composite_thresholds.get(
+            region, settings.default_composite_threshold
+        )
+    except Exception as exc:
+        logger.warning("composite threshold 로드 실패, 기본값 30.0 사용: %s", exc)
+        return 30.0
+
+
 def determine_alert_level(
     composite: float,
     l1: float | None,
@@ -139,9 +163,9 @@ def determine_alert_level(
       layer_threshold 이상일 때만 가능.
       단독 계층만 threshold+ 이면 GREEN 다운그레이드.
 
-      region 이 주어지면 regional_layer_thresholds 에서 지역별 threshold 를 조회.
-      약신호 지역(충청북도·대구광역시·경상북도)은 threshold=15.0 사용.
-      그 외 지역은 default threshold=30.0 사용.
+      region 이 주어지면 regional_composite_thresholds 에서 YELLOW 진입 임계값을,
+      regional_layer_thresholds 에서 게이트 B 계층 임계값을 각각 조회.
+      약신호 지역: 충청북도 composite≥20, 대구/경북 composite≥25, 그 외 30.
 
     Args:
         composite: 가중합 점수 (0-100)
@@ -153,12 +177,15 @@ def determine_alert_level(
     Returns:
         'GREEN' | 'YELLOW' | 'ORANGE' | 'RED'
     """
+    # 지역별 YELLOW 진입 composite 임계값 조회
+    yellow_threshold = _get_composite_threshold(region)
+
     # composite 기반 원래 레벨 결정
     if composite >= _RED_THRESHOLD:
         raw_level = "RED"
     elif composite >= 55:
         raw_level = "ORANGE"
-    elif composite >= 30:
+    elif composite >= yellow_threshold:
         raw_level = "YELLOW"
     else:
         raw_level = "GREEN"
