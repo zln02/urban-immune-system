@@ -50,6 +50,7 @@ dev = [
     "ruff>=0.3",
     "mypy>=1.8",
     "pre-commit>=3.6",
+    "psycopg2-binary>=2.9",
 ]
 all = [
     "urban-immune-system[backend,pipeline,ml,dev]",
