@@ -12,6 +12,7 @@
 9. 기온 경계값 정규화: -20°C → 0, 40°C → 100
 10. result dict에 temperature + humidity 모두 포함되는지 검증
 """
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
@@ -44,7 +45,7 @@ def test_collect_weather_normal(monkeypatch: pytest.MonkeyPatch):
                     "item": [
                         {"category": "T1H", "obsrValue": "15.5"},  # 기온
                         {"category": "REH", "obsrValue": "60.0"},  # 습도
-                        {"category": "WSD", "obsrValue": "2.5"},   # 풍속 (무시)
+                        {"category": "WSD", "obsrValue": "2.5"},  # 풍속 (무시)
                     ]
                 }
             }
@@ -57,7 +58,7 @@ def test_collect_weather_normal(monkeypatch: pytest.MonkeyPatch):
 
     with (
         patch("httpx.get", return_value=mock_resp),
-        patch("pipeline.collectors.weather_collector.insert_signal_sync") as mock_insert,
+        patch("pipeline.collectors.weather_collector.insert_signal_sync"),
     ):
         result = collect_weather(region="서울특별시")
 
@@ -98,7 +99,9 @@ def test_collect_weather_temperature_normalization(monkeypatch: pytest.MonkeyPat
     insert_calls: list[dict] = []
 
     def fake_insert_signal_sync(region, layer, value, raw_value=None, source=None):
-        insert_calls.append({"region": region, "layer": layer, "value": value, "raw_value": raw_value, "source": source})
+        insert_calls.append(
+            {"region": region, "layer": layer, "value": value, "raw_value": raw_value, "source": source}
+        )
 
     with (
         patch("httpx.get", return_value=mock_resp),
@@ -160,15 +163,19 @@ def test_collect_weather_calls_insert_with_correct_params(monkeypatch: pytest.Mo
 def test_collect_weather_http_error(monkeypatch: pytest.MonkeyPatch):
     """HTTP 요청 실패 시 None 반환 (예외 처리)."""
     import httpx
+
     monkeypatch.setenv("KMA_API_KEY", "test-key")
 
     from pipeline.collectors.weather_collector import collect_weather
 
-    with patch("httpx.get", side_effect=httpx.HTTPStatusError(
-        "500 Server Error",
-        request=MagicMock(),
-        response=MagicMock(status_code=500),
-    )):
+    with patch(
+        "httpx.get",
+        side_effect=httpx.HTTPStatusError(
+            "500 Server Error",
+            request=MagicMock(),
+            response=MagicMock(status_code=500),
+        ),
+    ):
         result = collect_weather(region="서울특별시")
 
     assert result is None
@@ -177,6 +184,7 @@ def test_collect_weather_http_error(monkeypatch: pytest.MonkeyPatch):
 def test_collect_weather_connection_error(monkeypatch: pytest.MonkeyPatch):
     """연결 오류 시 None 반환."""
     import httpx
+
     monkeypatch.setenv("KMA_API_KEY", "test-key")
 
     from pipeline.collectors.weather_collector import collect_weather
@@ -226,12 +234,15 @@ def test_kma_url_constant():
 
 
 # ─────────────────────── Case 9: 경계값 정규화 검증 ─────────────────────────
-@pytest.mark.parametrize("temp_c, expected_norm", [
-    (-20.0, 0.0),    # 최저 → 0
-    (40.0, 100.0),   # 최고 → 100
-    (0.0, 33.33),    # 0°C → 33.33
-    (20.0, 66.67),   # 20°C → 66.67
-])
+@pytest.mark.parametrize(
+    "temp_c, expected_norm",
+    [
+        (-20.0, 0.0),  # 최저 → 0
+        (40.0, 100.0),  # 최고 → 100
+        (0.0, 33.33),  # 0°C → 33.33
+        (20.0, 66.67),  # 20°C → 66.67
+    ],
+)
 def test_temperature_normalization_formula(temp_c: float, expected_norm: float, monkeypatch: pytest.MonkeyPatch):
     """기온 정규화 공식 (-20~40°C → 0~100) 경계값 및 중간값 검증."""
     monkeypatch.setenv("KMA_API_KEY", "test-key")
@@ -317,7 +328,7 @@ def test_collect_weather_no_temperature_no_insert(monkeypatch: pytest.MonkeyPatc
                 "items": {
                     "item": [
                         {"category": "REH", "obsrValue": "75.0"},  # 습도만
-                        {"category": "WSD", "obsrValue": "3.0"},   # 풍속만
+                        {"category": "WSD", "obsrValue": "3.0"},  # 풍속만
                     ]
                 }
             }

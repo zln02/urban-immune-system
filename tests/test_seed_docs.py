@@ -2,6 +2,7 @@
 
 임베딩 실행 없이 문서 목록의 정합성(길이, id 유니크, 필수 메타데이터)만 검증한다.
 """
+
 from __future__ import annotations
 
 import ast
@@ -58,9 +59,7 @@ def test_seed_docs_required_metadata_fields() -> None:
     for doc in docs:
         metadata = doc.get("metadata", {})
         missing = required - set(metadata.keys())
-        assert not missing, (
-            f"id={doc['id']} metadata 누락 필드: {missing}"
-        )
+        assert not missing, f"id={doc['id']} metadata 누락 필드: {missing}"
 
 
 def test_seed_docs_text_not_empty() -> None:
@@ -75,9 +74,7 @@ def test_seed_docs_metadata_url_starts_with_https() -> None:
     docs = _load_seed_docs()
     for doc in docs:
         url = doc.get("metadata", {}).get("url", "")
-        assert url.startswith("https://"), (
-            f"id={doc['id']} url이 https:// 아님: {url!r}"
-        )
+        assert url.startswith("https://"), f"id={doc['id']} url이 https:// 아님: {url!r}"
 
 
 def test_seed_docs_topic_snake_case() -> None:

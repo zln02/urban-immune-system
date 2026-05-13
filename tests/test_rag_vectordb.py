@@ -3,6 +3,7 @@
 Qdrant client와 SentenceTransformer를 MagicMock으로 완전히 격리.
 실제 네트워크/모델 로드 없이 모든 코드 경로를 커버한다.
 """
+
 from __future__ import annotations
 
 import logging
@@ -13,10 +14,10 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 
-
 # ──────────────────────────────────────────────────────────────────────────────
 # 헬퍼: 가짜 Qdrant 응답 객체
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 def _make_scored_point(score: float, text: str, extra: dict | None = None) -> Any:
     """query_points 응답의 ScoredPoint를 흉내내는 SimpleNamespace."""
@@ -39,6 +40,7 @@ def _make_collections_response(names: list[str]) -> Any:
 # Fixture: mock Qdrant + SentenceTransformer
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 def _make_vdb(collection_exists: bool = True) -> tuple:
     """EpidemiologyVectorDB 인스턴스와 내부 mock 객체를 반환한다."""
     from ml.rag.vectordb import EpidemiologyVectorDB
@@ -50,9 +52,7 @@ def _make_vdb(collection_exists: bool = True) -> tuple:
 
     mock_embedder = MagicMock()
     # encode는 (n_texts, VECTOR_DIM) 형태의 ndarray 반환
-    mock_embedder.encode = MagicMock(
-        side_effect=lambda texts, **kw: np.zeros((len(texts), 384), dtype="float32")
-    )
+    mock_embedder.encode = MagicMock(side_effect=lambda texts, **kw: np.zeros((len(texts), 384), dtype="float32"))
 
     with (
         patch("qdrant_client.QdrantClient", return_value=mock_client),
@@ -66,6 +66,7 @@ def _make_vdb(collection_exists: bool = True) -> tuple:
 # ──────────────────────────────────────────────────────────────────────────────
 # __init__ / _ensure_collection
 # ──────────────────────────────────────────────────────────────────────────────
+
 
 class TestInit:
     def test_init_success(self) -> None:
@@ -89,9 +90,7 @@ class TestInit:
         from ml.rag.vectordb import EpidemiologyVectorDB
 
         mock_embedder = MagicMock()
-        mock_embedder.encode = MagicMock(
-            side_effect=lambda texts, **kw: np.zeros((len(texts), 384), dtype="float32")
-        )
+        mock_embedder.encode = MagicMock(side_effect=lambda texts, **kw: np.zeros((len(texts), 384), dtype="float32"))
 
         with (
             patch("qdrant_client.QdrantClient", side_effect=ConnectionError("refused")),
@@ -126,9 +125,7 @@ class TestInit:
         mock_client = MagicMock()
         mock_client.get_collections.side_effect = RuntimeError("unexpected")
         mock_embedder = MagicMock()
-        mock_embedder.encode = MagicMock(
-            side_effect=lambda texts, **kw: np.zeros((len(texts), 384), dtype="float32")
-        )
+        mock_embedder.encode = MagicMock(side_effect=lambda texts, **kw: np.zeros((len(texts), 384), dtype="float32"))
 
         with (
             patch("qdrant_client.QdrantClient", return_value=mock_client),
@@ -145,14 +142,12 @@ class TestInit:
 # add_documents
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 class TestAddDocuments:
     def test_add_documents_normal(self) -> None:
         """문서 3건 upsert 정상 경로: 반환값 == len(docs)."""
         vdb, mock_client, _ = _make_vdb()
-        docs = [
-            {"id": i, "text": f"텍스트 {i}", "metadata": {"topic": f"topic_{i}"}}
-            for i in range(3)
-        ]
+        docs = [{"id": i, "text": f"텍스트 {i}", "metadata": {"topic": f"topic_{i}"}} for i in range(3)]
         result = vdb.add_documents(docs)
         assert result == 3
         mock_client.upsert.assert_called_once()
@@ -197,14 +192,17 @@ class TestAddDocuments:
 # search
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 class TestSearch:
     def test_search_returns_results(self) -> None:
         """정상 검색: score / text / metadata 포함된 결과 반환."""
         vdb, mock_client, _ = _make_vdb()
-        mock_client.query_points.return_value = _make_query_response([
-            _make_scored_point(0.95, "독감 유행 경고"),
-            _make_scored_point(0.80, "하수 바이오마커"),
-        ])
+        mock_client.query_points.return_value = _make_query_response(
+            [
+                _make_scored_point(0.95, "독감 유행 경고"),
+                _make_scored_point(0.80, "하수 바이오마커"),
+            ]
+        )
 
         results = vdb.search("독감 경보", top_k=5)
         assert len(results) == 2
@@ -236,9 +234,11 @@ class TestSearch:
     def test_search_top_k_1(self) -> None:
         """top_k=1: query_points에 limit=1 전달."""
         vdb, mock_client, _ = _make_vdb()
-        mock_client.query_points.return_value = _make_query_response([
-            _make_scored_point(0.99, "최고 유사 문서"),
-        ])
+        mock_client.query_points.return_value = _make_query_response(
+            [
+                _make_scored_point(0.99, "최고 유사 문서"),
+            ]
+        )
         results = vdb.search("독감", top_k=1)
         assert len(results) == 1
         _, kwargs = mock_client.query_points.call_args
@@ -263,9 +263,11 @@ class TestSearch:
     def test_search_metadata_extra_fields(self) -> None:
         """payload에 topic, source 등 추가 필드가 metadata에 포함된다."""
         vdb, mock_client, _ = _make_vdb()
-        mock_client.query_points.return_value = _make_query_response([
-            _make_scored_point(0.7, "문서 본문", {"topic": "flu", "source": "WHO"}),
-        ])
+        mock_client.query_points.return_value = _make_query_response(
+            [
+                _make_scored_point(0.7, "문서 본문", {"topic": "flu", "source": "WHO"}),
+            ]
+        )
         results = vdb.search("독감")
         assert results[0]["metadata"]["topic"] == "flu"
 

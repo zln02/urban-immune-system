@@ -1,4 +1,5 @@
 """pipeline/collectors/db_writer.py 단위 테스트."""
+
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
@@ -11,6 +12,7 @@ import pytest
 def _reset_pool():
     """각 테스트 전 DB 풀 초기화."""
     import pipeline.collectors.db_writer as dbw
+
     dbw._pool = None
     yield
     dbw._pool = None
@@ -67,5 +69,6 @@ def test_insert_signal_sync_wrapper() -> None:
     """insert_signal_sync가 동기 호출에서 정상 동작하는지 확인."""
     with patch("pipeline.collectors.db_writer.insert_signal", new_callable=AsyncMock) as mock_insert:
         from pipeline.collectors.db_writer import insert_signal_sync
+
         insert_signal_sync("서울특별시", "L2", 45.0, raw_value=1200.0, source="kowas")
         mock_insert.assert_called_once_with("서울특별시", "L2", 45.0, raw_value=1200.0, source="kowas")

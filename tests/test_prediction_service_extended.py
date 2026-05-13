@@ -1,10 +1,10 @@
 """prediction_service.py fallback 로직 확장 테스트 (9개)."""
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
-import pytest
 
 from backend.app.services.prediction_service import (
     generate_alert_report_http,
@@ -12,13 +12,12 @@ from backend.app.services.prediction_service import (
     get_tft_forecast,
 )
 
-
 # ---------------------------------------------------------------------------
 # 헬퍼
 # ---------------------------------------------------------------------------
 
-def _make_mock_client(method: str = "get", response_data: dict | None = None,
-                      side_effect=None) -> AsyncMock:
+
+def _make_mock_client(method: str = "get", response_data: dict | None = None, side_effect=None) -> AsyncMock:
     """httpx.AsyncClient 컨텍스트 매니저 mock 생성."""
     mock_resp = MagicMock()
     mock_resp.json.return_value = response_data or {"result": "ok"}
@@ -38,6 +37,7 @@ def _make_mock_client(method: str = "get", response_data: dict | None = None,
 # ---------------------------------------------------------------------------
 # get_risk_prediction
 # ---------------------------------------------------------------------------
+
 
 async def test_get_risk_prediction_success() -> None:
     """200 응답 → dict 반환 (fallback 없음)."""
@@ -69,9 +69,7 @@ async def test_get_risk_prediction_connect_error() -> None:
 async def test_get_risk_prediction_http_error() -> None:
     """HTTPStatusError → fallback dict 반환."""
     mock_resp = MagicMock()
-    mock_resp.raise_for_status.side_effect = httpx.HTTPStatusError(
-        "500", request=MagicMock(), response=MagicMock()
-    )
+    mock_resp.raise_for_status.side_effect = httpx.HTTPStatusError("500", request=MagicMock(), response=MagicMock())
     mock_client = AsyncMock()
     mock_client.get = AsyncMock(return_value=mock_resp)
     mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -86,6 +84,7 @@ async def test_get_risk_prediction_http_error() -> None:
 # ---------------------------------------------------------------------------
 # get_tft_forecast
 # ---------------------------------------------------------------------------
+
 
 async def test_get_tft_forecast_success() -> None:
     """200 응답 → TFT 예측 dict 반환."""
@@ -108,6 +107,7 @@ async def test_get_tft_forecast_timeout() -> None:
 # ---------------------------------------------------------------------------
 # generate_alert_report_http
 # ---------------------------------------------------------------------------
+
 
 async def test_generate_alert_report_success() -> None:
     """200 POST 응답 → 리포트 dict 반환."""

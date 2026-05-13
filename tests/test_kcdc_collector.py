@@ -16,6 +16,7 @@
 13. API 키 있을 때 API 결과 사용 및 지역 필터링 검증
 14. API 결과 빈 경우 아카이브 fallback 검증
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -99,6 +100,7 @@ def test_region_code_mapping():
 
     # 17개 시·도 전체 포함 확인
     from pipeline.collectors.kcdc_collector import REGIONS_17
+
     assert len(REGIONS_17) == 17, f"17개 시·도여야 함 (got {len(REGIONS_17)})"
     assert "서울특별시" in REGIONS_17
     assert "제주특별자치도" in REGIONS_17
@@ -140,6 +142,7 @@ def test_fallback_to_archive_when_api_key_missing():
     with patch.dict("os.environ", {}, clear=False):
         # DATA_GO_KR_API_KEY 제거
         import os as _os
+
         _os.environ.pop("DATA_GO_KR_API_KEY", None)
         records = collect_weekly_confirmed(disease="influenza", weeks=10, regions=["서울특별시"])
 
@@ -189,6 +192,7 @@ def test_seoul_peak_week_is_2025_w50():
 async def test_api_http_error_returns_none():
     """API 호출 시 4xx/5xx 오류 발생 시 None 반환 (fallback 트리거)."""
     import httpx
+
     from pipeline.collectors.kcdc_collector import _fetch_from_api
 
     with (
@@ -216,6 +220,7 @@ async def test_api_http_error_returns_none():
 async def test_api_connect_error_returns_none():
     """API 연결 오류(네트워크 문제) 시 None 반환."""
     import httpx
+
     from pipeline.collectors.kcdc_collector import _fetch_from_api
 
     with (
@@ -223,9 +228,7 @@ async def test_api_connect_error_returns_none():
         patch("httpx.AsyncClient") as mock_client_cls,
     ):
         mock_client = AsyncMock()
-        mock_client.get = AsyncMock(
-            side_effect=httpx.ConnectError("연결 실패")
-        )
+        mock_client.get = AsyncMock(side_effect=httpx.ConnectError("연결 실패"))
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
         mock_client.__aexit__ = AsyncMock(return_value=False)
         mock_client_cls.return_value = mock_client
@@ -239,6 +242,7 @@ async def test_api_connect_error_returns_none():
 async def test_api_timeout_returns_none():
     """API 타임아웃 시 None 반환."""
     import httpx
+
     from pipeline.collectors.kcdc_collector import _fetch_from_api
 
     with (
@@ -300,7 +304,7 @@ def test_build_archive_records_17_regions():
 
 def test_build_archive_records_region_share_proportional():
     """지역별 확진자 수가 전국 비율(_REGION_SHARE)에 비례하는지 검증."""
-    from pipeline.collectors.kcdc_collector import _NATIONAL_ARCHIVE, _REGION_SHARE, _build_archive_records
+    from pipeline.collectors.kcdc_collector import _build_archive_records
 
     records = _build_archive_records(disease="influenza", weeks=1, regions=["서울특별시", "경기도"])
 

@@ -5,6 +5,7 @@ pytorch_forecasting 라이브러리 사용.
 
 참고: Lim et al. (2021) "Temporal Fusion Transformers for Interpretable Multi-horizon Time Series Forecasting"
 """
+
 from __future__ import annotations
 
 import logging
@@ -22,7 +23,7 @@ MODEL_PATH = MODEL_DIR / "tft_best.ckpt"
 
 # 예측 지평선 (주 단위)
 PREDICTION_HORIZONS = [1, 2, 3]  # 1주=7일, 2주=14일, 3주=21일
-MAX_ENCODER_LENGTH = 24           # 과거 24주 입력
+MAX_ENCODER_LENGTH = 24  # 과거 24주 입력
 
 
 def create_dataset(df: pd.DataFrame) -> TimeSeriesDataSet:
@@ -94,7 +95,7 @@ def predict(model: TemporalFusionTransformer, df: pd.DataFrame) -> dict:
     predictions, x = model.predict(loader, return_x=True, return_attention=True, mode="raw")
 
     return {
-        "forecast_7d": float(predictions.prediction[0, 0, 3]),   # 중앙값
+        "forecast_7d": float(predictions.prediction[0, 0, 3]),  # 중앙값
         "forecast_14d": float(predictions.prediction[0, 1, 3]),
         "forecast_21d": float(predictions.prediction[0, 2, 3]),
         "attention_weights": (

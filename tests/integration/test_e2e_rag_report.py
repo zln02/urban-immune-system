@@ -2,6 +2,7 @@
 
 실제 Anthropic API 호출 없이 unittest.mock.patch로 streaming 응답을 흉내낸다.
 """
+
 from __future__ import annotations
 
 from typing import AsyncIterator
@@ -16,7 +17,7 @@ def _collect_sse_chunks(response_text: str) -> list[str]:
     chunks = []
     for line in response_text.splitlines():
         if line.startswith("data:"):
-            chunks.append(line[len("data:"):].strip())
+            chunks.append(line[len("data:") :].strip())
     return chunks
 
 
@@ -32,6 +33,7 @@ def test_rag_report_stream_first_chunk_received():
 
     Claude API의 _stream_claude 를 monkeypatch로 대체해 실제 요금 발생 방지.
     """
+
     # Mock streaming generator — Claude API 응답 흉내
     async def _mock_stream(*args, **kwargs) -> AsyncIterator[str]:
         yield "서울특별시 "
@@ -45,27 +47,29 @@ def test_rag_report_stream_first_chunk_received():
 
         engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
         async with engine.begin() as conn:
-            await conn.execute(sa_text("""
+            await conn.execute(
+                sa_text("""
                 CREATE TABLE IF NOT EXISTS layer_signals (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     time TEXT DEFAULT CURRENT_TIMESTAMP,
                     layer TEXT, region TEXT, value REAL, source TEXT,
                     pathogen TEXT DEFAULT 'influenza', meta TEXT, raw_value REAL
                 )
-            """))
+            """)
+            )
         factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
         async with factory() as session:
             yield session
         await engine.dispose()
 
-    with patch("backend.app.api.alerts._stream_claude", side_effect=_mock_stream), \
-         patch("backend.app.api.alerts.get_db", return_value=_mock_get_db()), \
-         patch("backend.app.api.alerts._get_vdb", return_value=None), \
-         patch("backend.app.api.alerts._retrieve_rag_context",
-               return_value=("테스트 RAG 컨텍스트", [])), \
-         patch("backend.app.tasks.broker.startup", new_callable=AsyncMock), \
-         patch("backend.app.tasks.broker.shutdown", new_callable=AsyncMock):
-
+    with (
+        patch("backend.app.api.alerts._stream_claude", side_effect=_mock_stream),
+        patch("backend.app.api.alerts.get_db", return_value=_mock_get_db()),
+        patch("backend.app.api.alerts._get_vdb", return_value=None),
+        patch("backend.app.api.alerts._retrieve_rag_context", return_value=("테스트 RAG 컨텍스트", [])),
+        patch("backend.app.tasks.broker.startup", new_callable=AsyncMock),
+        patch("backend.app.tasks.broker.shutdown", new_callable=AsyncMock),
+    ):
         from starlette.testclient import TestClient
 
         from backend.app.main import app
@@ -86,6 +90,7 @@ def test_rag_report_stream_first_chunk_received():
 
 def test_rag_report_stream_anthropic_api_not_called():
     """_stream_claude mock이 실제 Anthropic 클라이언트를 생성하지 않는지 확인."""
+
     async def _mock_stream(*args, **kwargs) -> AsyncIterator[str]:
         yield "테스트 청크"
 
@@ -95,28 +100,30 @@ def test_rag_report_stream_anthropic_api_not_called():
 
         engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
         async with engine.begin() as conn:
-            await conn.execute(sa_text("""
+            await conn.execute(
+                sa_text("""
                 CREATE TABLE IF NOT EXISTS layer_signals (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     time TEXT DEFAULT CURRENT_TIMESTAMP,
                     layer TEXT, region TEXT, value REAL, source TEXT,
                     pathogen TEXT DEFAULT 'influenza', meta TEXT, raw_value REAL
                 )
-            """))
+            """)
+            )
         factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
         async with factory() as session:
             yield session
         await engine.dispose()
 
-    with patch("backend.app.api.alerts._stream_claude", side_effect=_mock_stream), \
-         patch("backend.app.api.alerts.get_db", return_value=_mock_get_db()), \
-         patch("backend.app.api.alerts._get_vdb", return_value=None), \
-         patch("backend.app.api.alerts._retrieve_rag_context",
-               return_value=("컨텍스트", [])), \
-         patch("anthropic.AsyncAnthropic") as mock_anthropic, \
-         patch("backend.app.tasks.broker.startup", new_callable=AsyncMock), \
-         patch("backend.app.tasks.broker.shutdown", new_callable=AsyncMock):
-
+    with (
+        patch("backend.app.api.alerts._stream_claude", side_effect=_mock_stream),
+        patch("backend.app.api.alerts.get_db", return_value=_mock_get_db()),
+        patch("backend.app.api.alerts._get_vdb", return_value=None),
+        patch("backend.app.api.alerts._retrieve_rag_context", return_value=("컨텍스트", [])),
+        patch("anthropic.AsyncAnthropic") as mock_anthropic,
+        patch("backend.app.tasks.broker.startup", new_callable=AsyncMock),
+        patch("backend.app.tasks.broker.shutdown", new_callable=AsyncMock),
+    ):
         from starlette.testclient import TestClient
 
         from backend.app.main import app

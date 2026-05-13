@@ -9,6 +9,7 @@ CLI:
   python -m ml.anomaly.train_synth --epochs 100 --save-checkpoint
   python -m ml.anomaly.train_synth --use-real-data --threshold-pct 99.0 --epochs 100 --save-checkpoint
 """
+
 from __future__ import annotations
 
 import argparse
@@ -38,6 +39,7 @@ def _load_dotenv_once() -> None:
     """프로젝트 루트 .env를 로드한다. 실패해도 조용히 넘어간다."""
     try:
         from dotenv import load_dotenv
+
         load_dotenv(_PROJECT_ROOT / ".env")
     except ImportError:
         pass
@@ -80,6 +82,7 @@ async def _fetch_real_normal_data(min_rows: int = 50) -> tuple[np.ndarray, list[
 
     _load_dotenv_once()
     import os
+
     db_url = os.getenv("DATABASE_URL", "")
     if not db_url:
         raise RuntimeError("DATABASE_URL 환경변수 없음")
@@ -99,9 +102,7 @@ async def _fetch_real_normal_data(min_rows: int = 50) -> tuple[np.ndarray, list[
         """)
 
         if len(risk_rows) < min_rows:
-            raise RuntimeError(
-                f"실데이터 부족 (현재 {len(risk_rows)}행 / 최소 {min_rows}행 필요)"
-            )
+            raise RuntimeError(f"실데이터 부족 (현재 {len(risk_rows)}행 / 최소 {min_rows}행 필요)")
 
         # 2) weather 온도 조회 (region + time 근접 매칭)
         temp_rows = await conn.fetch("""
@@ -148,27 +149,28 @@ async def _fetch_real_normal_data(min_rows: int = 50) -> tuple[np.ndarray, list[
 def main() -> int:
     parser = argparse.ArgumentParser(description="Autoencoder 이상탐지 PoC")
     parser.add_argument("--epochs", type=int, default=50)
-    parser.add_argument("--threshold-pct", type=float, default=99.0,
-                        help="threshold 퍼센타일 (기본 99.0 — 실데이터 모드 권장)")
+    parser.add_argument(
+        "--threshold-pct", type=float, default=99.0, help="threshold 퍼센타일 (기본 99.0 — 실데이터 모드 권장)"
+    )
     parser.add_argument("--output", type=Path, default=OUTPUT_PATH)
-    parser.add_argument("--save-checkpoint", action="store_true",
-                        help="학습 후 ml/checkpoints/autoencoder/ 에 model.pt + meta.json 저장")
+    parser.add_argument(
+        "--save-checkpoint",
+        action="store_true",
+        help="학습 후 ml/checkpoints/autoencoder/ 에 model.pt + meta.json 저장",
+    )
     parser.add_argument("--checkpoint-dir", type=Path, default=CHECKPOINT_DIR)
-    parser.add_argument("--use-real-data", action="store_true",
-                        help="DB risk_scores GREEN 구간 실데이터로 학습 (합성 대신)")
-    parser.add_argument("--min-rows", type=int, default=50,
-                        help="실데이터 최소 행 수 (기본 50)")
+    parser.add_argument(
+        "--use-real-data", action="store_true", help="DB risk_scores GREEN 구간 실데이터로 학습 (합성 대신)"
+    )
+    parser.add_argument("--min-rows", type=int, default=50, help="실데이터 최소 행 수 (기본 50)")
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s",
-                        datefmt="%H:%M:%S")
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", datefmt="%H:%M:%S")
 
     # ── 1) 정상기 학습 데이터 준비 ───────────────────────────────────────────
     if args.use_real_data:
         logger.info("실데이터 모드: DB risk_scores GREEN 구간 로드 중...")
-        X_normal, regions_used = asyncio.run(
-            _fetch_real_normal_data(min_rows=args.min_rows)
-        )
+        X_normal, regions_used = asyncio.run(_fetch_real_normal_data(min_rows=args.min_rows))
         data_source = "real_db"
         n_normal_rows = len(X_normal)
     else:
@@ -184,18 +186,27 @@ def main() -> int:
     # 학습 데이터 통계 출력
     logger.info(
         "학습 데이터 통계 — l1: %.2f±%.2f  l2: %.2f±%.2f  l3: %.2f±%.2f",
-        X_normal[:, 0].mean(), X_normal[:, 0].std(),
-        X_normal[:, 1].mean(), X_normal[:, 1].std(),
-        X_normal[:, 2].mean(), X_normal[:, 2].std(),
+        X_normal[:, 0].mean(),
+        X_normal[:, 0].std(),
+        X_normal[:, 1].mean(),
+        X_normal[:, 1].std(),
+        X_normal[:, 2].mean(),
+        X_normal[:, 2].std(),
     )
 
     # ── 2) 학습 ─────────────────────────────────────────────────────────────
     detector = AnomalyDetector(input_dim=len(FEATURE_COLS), threshold_percentile=args.threshold_pct)
-    logger.info("학습 시작: %d행 × %d 피처, threshold_pct=%.1f",
-                X_normal_n.shape[0], X_normal_n.shape[1], args.threshold_pct)
+    logger.info(
+        "학습 시작: %d행 × %d 피처, threshold_pct=%.1f", X_normal_n.shape[0], X_normal_n.shape[1], args.threshold_pct
+    )
     losses = detector.fit(X_normal_n, epochs=args.epochs, lr=1e-3)
-    logger.info("학습 완료: 시작 loss %.5f → 최종 %.5f, threshold(%.0fpct) %.5f",
-                losses[0], losses[-1], args.threshold_pct, detector.threshold)
+    logger.info(
+        "학습 완료: 시작 loss %.5f → 최종 %.5f, threshold(%.0fpct) %.5f",
+        losses[0],
+        losses[-1],
+        args.threshold_pct,
+        detector.threshold,
+    )
 
     # ── 3) 인공 spike 평가 ──────────────────────────────────────────────────
     X_eval, y_true = _make_anomaly_period(n_weeks=104, seed=42)
@@ -246,7 +257,10 @@ def main() -> int:
             "train_stats": train_stats,
         },
         "evaluation": {
-            "tp": tp, "fp": fp, "fn": fn, "tn": tn,
+            "tp": tp,
+            "fp": fp,
+            "fn": fn,
+            "tn": tn,
             "precision": precision,
             "recall": recall,
             "f1": f1,
@@ -286,22 +300,22 @@ def main() -> int:
     # ── 7) 콘솔 요약 출력 ──────────────────────────────────────────────────
     print("\n=== Autoencoder PoC 요약 ===")
     print(f"  데이터 소스: {data_source}  ({n_normal_rows}행)")
-    print(f"  학습 데이터 통계 — l1={train_stats['l1_mean']:.2f}±{train_stats['l1_std']:.2f}"
-          f"  l2={train_stats['l2_mean']:.2f}±{train_stats['l2_std']:.2f}"
-          f"  l3={train_stats['l3_mean']:.2f}±{train_stats['l3_std']:.2f}")
+    print(
+        f"  학습 데이터 통계 — l1={train_stats['l1_mean']:.2f}±{train_stats['l1_std']:.2f}"
+        f"  l2={train_stats['l2_mean']:.2f}±{train_stats['l2_std']:.2f}"
+        f"  l3={train_stats['l3_mean']:.2f}±{train_stats['l3_std']:.2f}"
+    )
     print(f"  학습 loss: {result['training']['loss_first']:.5f} → {result['training']['loss_last']:.5f}")
     print(f"  threshold({args.threshold_pct:.0f}p): {result['training']['threshold']:.5f}")
     print(f"  spike 5개 vs 정상: TP={tp} FP={fp} FN={fn} TN={tn}")
     print(f"  Precision={precision:.3f}  Recall={recall:.3f}  F1={f1:.3f}")
-    mean_a = result['evaluation']['mean_error_anomaly']
-    mean_n = result['evaluation']['mean_error_normal']
+    mean_a = result["evaluation"]["mean_error_anomaly"]
+    mean_n = result["evaluation"]["mean_error_normal"]
     if mean_a:
-        print(f"  평균 오차 — 정상={mean_n:.4f}  이상={mean_a:.4f}  "
-              f"(분리도 = {mean_a / max(mean_n, 1e-9):.1f}x)")
+        print(f"  평균 오차 — 정상={mean_n:.4f}  이상={mean_a:.4f}  (분리도 = {mean_a / max(mean_n, 1e-9):.1f}x)")
     if real_data_inference is not None:
         rdi = real_data_inference
-        print(f"\n  [17지역 실데이터 추론] anomaly={rdi['anomaly']} "
-              f"warning={rdi['warning']} normal={rdi['normal']}")
+        print(f"\n  [17지역 실데이터 추론] anomaly={rdi['anomaly']} warning={rdi['warning']} normal={rdi['normal']}")
         print(f"  top3 스코어: {rdi['top3_by_error']}")
     return 0
 
@@ -329,27 +343,43 @@ async def _async_infer_17_regions(
 
     _load_dotenv_once()
     import os
+
     db_url = os.getenv("DATABASE_URL", "").replace("postgresql+asyncpg://", "postgresql://")
     if not db_url:
         return {}
 
     KR_REGIONS = [
-        "서울특별시", "경기도", "인천광역시", "강원특별자치도",
-        "충청북도", "충청남도", "대전광역시", "세종특별자치시",
-        "전라북도", "전라남도", "광주광역시",
-        "경상북도", "경상남도", "대구광역시", "울산광역시", "부산광역시",
+        "서울특별시",
+        "경기도",
+        "인천광역시",
+        "강원특별자치도",
+        "충청북도",
+        "충청남도",
+        "대전광역시",
+        "세종특별자치시",
+        "전라북도",
+        "전라남도",
+        "광주광역시",
+        "경상북도",
+        "경상남도",
+        "대구광역시",
+        "울산광역시",
+        "부산광역시",
         "제주특별자치도",
     ]
 
     conn = await asyncpg.connect(db_url)
     try:
-        rows = await conn.fetch("""
+        rows = await conn.fetch(
+            """
             SELECT DISTINCT ON (region)
                 region, l1_score, l2_score, l3_score
             FROM risk_scores
             WHERE region = ANY($1::text[])
             ORDER BY region, time DESC
-        """, KR_REGIONS)
+        """,
+            KR_REGIONS,
+        )
         risk_map = {r["region"]: r for r in rows}
     finally:
         await conn.close()

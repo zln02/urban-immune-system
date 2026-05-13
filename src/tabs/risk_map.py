@@ -1,4 +1,5 @@
 """위험도 지도 탭."""
+
 from __future__ import annotations
 
 import streamlit as st

@@ -1,4 +1,5 @@
 """경보 리포트 API — SSE 스트리밍 + DB 앙상블."""
+
 from __future__ import annotations
 
 import json
@@ -17,6 +18,7 @@ from ..database import get_db
 from ..services.alert_service import get_latest_alert, get_latest_risk_score
 from ..services.report_pdf import build_alert_pdf
 from ..tasks import generate_report_task
+from ._validators import validate_region
 
 router = APIRouter(prefix="/api/v1/alerts", tags=["alerts"])
 logger = logging.getLogger(__name__)
@@ -45,7 +47,11 @@ def _compute_alert_level(score: float) -> str:
 
 
 def _reverify_alert(
-    composite: float, l1: float, l2: float, l3: float, stored: str | None,
+    composite: float,
+    l1: float,
+    l2: float,
+    l3: float,
+    stored: str | None,
 ) -> str:
     """risk_scores row 저장값이 교차검증 규칙과 일치하는지 재검증.
 
@@ -59,14 +65,20 @@ def _reverify_alert(
         logger.warning(
             "risk_scores 저장 라벨(%s)이 교차검증 결과(%s)와 다름 — 재검증 값으로 대체 "
             "(composite=%.2f, l1=%.1f l2=%.1f l3=%.1f, layers_above_30=%d)",
-            stored, final, composite, l1, l2, l3, n_above,
+            stored,
+            final,
+            composite,
+            l1,
+            l2,
+            l3,
+            n_above,
         )
     return final
 
 
 @router.get("/current")
 async def get_current_alert(
-    region: str = Query("서울특별시", min_length=2, max_length=100),
+    region: str = Depends(validate_region),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """현재 경보 레벨: risk_scores 최신 row 기준 + DB 리포트 조회.
@@ -88,7 +100,9 @@ async def get_current_alert(
         alert_level = _reverify_alert(composite, l1, l2, l3, stored_level)
         logger.info(
             "risk_scores 기반 (재검증 적용): region=%s composite=%.2f level=%s",
-            region, composite, alert_level,
+            region,
+            composite,
+            alert_level,
         )
     else:
         # fallback: layer_signals 28일 평균 앙상블
@@ -198,22 +212,30 @@ async def list_region_alerts(
     # risk_scores 기반 경보 — 저장 라벨 재검증 (과거 스키마 오염 방어)
     for rg, v in risk_rows.items():
         final_level = _reverify_alert(
-            v["composite"], v["l1"], v["l2"], v["l3"], v["alert_level"],
+            v["composite"],
+            v["l1"],
+            v["l2"],
+            v["l3"],
+            v["alert_level"],
         )
         logger.info(
             "risk_scores 기반 (재검증): region=%s composite=%.2f level=%s",
-            rg, v["composite"], final_level,
+            rg,
+            v["composite"],
+            final_level,
         )
-        rows.append({
-            "region": rg,
-            "composite": round(v["composite"], 2),
-            "alert_level": final_level,
-            "l1": round(v["l1"], 2),
-            "l2": round(v["l2"], 2),
-            "l3": round(v["l3"], 2),
-            "layers_above_30": sum(1 for x in (v["l1"], v["l2"], v["l3"]) if x >= 30),
-            "latest_time": str(v["latest"]) if v["latest"] else None,
-        })
+        rows.append(
+            {
+                "region": rg,
+                "composite": round(v["composite"], 2),
+                "alert_level": final_level,
+                "l1": round(v["l1"], 2),
+                "l2": round(v["l2"], 2),
+                "l3": round(v["l3"], 2),
+                "layers_above_30": sum(1 for x in (v["l1"], v["l2"], v["l3"]) if x >= 30),
+                "latest_time": str(v["latest"]) if v["latest"] else None,
+            }
+        )
 
     # layer_signals fallback (risk_scores 없는 region)
     for rg, v in pivot.items():
@@ -224,25 +246,29 @@ async def list_region_alerts(
         final_level = raw_level if (raw_level == "GREEN" or n_above >= 2) else "GREEN"
         logger.info(
             "layer_signals fallback: region=%s composite=%.2f level=%s",
-            rg, composite, final_level,
+            rg,
+            composite,
+            final_level,
         )
-        rows.append({
-            "region": rg,
-            "composite": composite,
-            "alert_level": final_level,
-            "l1": round(v["l1"], 2),
-            "l2": round(v["l2"], 2),
-            "l3": round(v["l3"], 2),
-            "layers_above_30": n_above,
-            "latest_time": str(v["latest"]) if v["latest"] else None,
-        })
+        rows.append(
+            {
+                "region": rg,
+                "composite": composite,
+                "alert_level": final_level,
+                "l1": round(v["l1"], 2),
+                "l2": round(v["l2"], 2),
+                "l3": round(v["l3"], 2),
+                "layers_above_30": n_above,
+                "latest_time": str(v["latest"]) if v["latest"] else None,
+            }
+        )
     rows.sort(key=lambda x: x["composite"], reverse=True)
     return {"window_days": days, "count": len(rows), "alerts": rows}
 
 
 @router.post("/generate")
 async def generate_alert_report(
-    region: str = Query("서울특별시", min_length=2, max_length=100),
+    region: str = Depends(validate_region),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """RAG-LLM 경보 리포트 비동기 생성 (Taskiq → Kafka → ML 서비스)."""
@@ -264,7 +290,7 @@ async def generate_alert_report(
 
 @router.get("/stream")
 async def stream_alert_report(
-    region: str = Query("서울특별시", min_length=2, max_length=100),
+    region: str = Depends(validate_region),
     db: AsyncSession = Depends(get_db),
 ) -> StreamingResponse:
     """Claude SSE 스트리밍 경보 리포트 — Qdrant 역학 가이드 RAG 컨텍스트 첨부."""
@@ -280,8 +306,12 @@ async def stream_alert_report(
         }
     else:
         signals = {
-            "l1": "N/A", "l2": "N/A", "l3": "N/A",
-            "composite": "N/A", "alert_level": "GREEN", "time": "N/A",
+            "l1": "N/A",
+            "l2": "N/A",
+            "l3": "N/A",
+            "composite": "N/A",
+            "alert_level": "GREEN",
+            "time": "N/A",
         }
     return StreamingResponse(
         _sse_generator(region, signals),
@@ -318,6 +348,7 @@ def _get_vdb() -> Any | None:
     if _VDB is None:
         try:
             from ml.rag.vectordb import EpidemiologyVectorDB
+
             _VDB = EpidemiologyVectorDB()
         except Exception as exc:
             logger.warning("RAG 벡터DB 초기화 실패 (이후 호출도 빈 컨텍스트 반환): %s", exc)
@@ -335,7 +366,7 @@ def _retrieve_rag_context(region: str, signals: dict) -> tuple[str, list[dict]]:
     if vdb is None:
         return "", []
     query = (
-        f"{region} 인플루엔자 조기경보 경보레벨={signals.get('alert_level','GREEN')} "
+        f"{region} 인플루엔자 조기경보 경보레벨={signals.get('alert_level', 'GREEN')} "
         f"L1={signals.get('l1')} L2={signals.get('l2')} L3={signals.get('l3')}"
     )
     try:
@@ -353,21 +384,23 @@ def _retrieve_rag_context(region: str, signals: dict) -> tuple[str, list[dict]]:
         src = h["metadata"].get("source", "출처 미상")
         topic = h["metadata"].get("topic", "")
         lines.append(f"[{i}] ({topic}) {h['text']}\n— 출처: {src}")
-        citations.append({
-            "rank": i,
-            "topic": topic,
-            "source": src,
-            "url": h["metadata"].get("url"),
-            "score": round(h["score"], 3),
-        })
+        citations.append(
+            {
+                "rank": i,
+                "topic": topic,
+                "source": src,
+                "url": h["metadata"].get("url"),
+                "score": round(h["score"], 3),
+            }
+        )
     return "\n\n".join(lines), citations
 
 
 def _build_prompt(region: str, signals: dict, rag_context: str = "") -> str:
     rag_block = (
-        f"\n{rag_context}\n\n"
-        "위 가이드의 정의·임계값·과거 사례를 인용 번호([1], [2], [3])로 명시해 활용하세요.\n"
-        if rag_context else ""
+        f"\n{rag_context}\n\n위 가이드의 정의·임계값·과거 사례를 인용 번호([1], [2], [3])로 명시해 활용하세요.\n"
+        if rag_context
+        else ""
     )
     return (
         f"지역: {region}\n"
@@ -389,6 +422,7 @@ def _build_prompt(region: str, signals: dict, rag_context: str = "") -> str:
 
 async def _stream_claude(prompt: str) -> AsyncIterator[str]:
     import anthropic
+
     client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key)
     async with client.messages.stream(
         model=settings.llm_model,
@@ -441,8 +475,7 @@ async def explain_alert_report(
     decision_factors: dict = {}
     if isinstance(raw_fv, dict):
         decision_factors = {
-            k: v for k, v in raw_fv.items()
-            if k in ("l1_otc", "l2_wastewater", "l3_search", "composite")
+            k: v for k, v in raw_fv.items() if k in ("l1_otc", "l2_wastewater", "l3_search", "composite")
         }
 
     rag_raw = _jsonb(row.get("rag_sources"), [])
@@ -467,19 +500,18 @@ async def explain_alert_report(
 
 @router.get("/report-pdf")
 async def export_alert_pdf(
-    region: str = Query("서울특별시", min_length=2, max_length=100),
+    region: str = Depends(validate_region),
     db: AsyncSession = Depends(get_db),
 ) -> StreamingResponse:
     """4페이지 PDF 리포트 다운로드 — 표지 + 3계층 시계열 + 분석 + AI 본문."""
     from urllib.parse import quote
+
     pdf_bytes = await build_alert_pdf(region, db)
     fname = f"UIS_alert_{region}_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M')}.pdf"
     return StreamingResponse(
         iter([pdf_bytes]),
         media_type="application/pdf",
         headers={
-            "Content-Disposition": (
-                f"attachment; filename=\"UIS_alert.pdf\"; filename*=UTF-8''{quote(fname)}"
-            ),
+            "Content-Disposition": (f"attachment; filename=\"UIS_alert.pdf\"; filename*=UTF-8''{quote(fname)}"),
         },
     )

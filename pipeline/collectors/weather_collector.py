@@ -3,6 +3,7 @@
 저온·저습 환경이 인플루엔자 확산과 상관관계 있음.
 인과관계는 없지만 TFT 입력 피처로 활용.
 """
+
 from __future__ import annotations
 
 import logging
@@ -47,7 +48,7 @@ def collect_weather(region: str = "서울특별시") -> dict[str, float] | None:
 
         result = {}
         for item in items:
-            if item["category"] == "T1H":   # 기온
+            if item["category"] == "T1H":  # 기온
                 result["temperature"] = float(item["obsrValue"])
             elif item["category"] == "REH":  # 습도
                 result["humidity"] = float(item["obsrValue"])

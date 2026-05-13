@@ -9,6 +9,7 @@
 
 검증: 2026-04-24 기준 156주차까지 정상 다운로드 확인.
 """
+
 from __future__ import annotations
 
 import logging
@@ -39,10 +40,10 @@ DEFAULT_OUTPUT_DIR = Path(__file__).parent.parent / "data" / "kowas"
 class KowasReport:
     """KOWAS 주간보고 메타데이터."""
 
-    bbs_doc_no: str       # 게시글 ID
-    title: str            # 게시글 제목 (예: "2026년 15주차 ...")
-    year: int | None      # 보고 연도
-    week: int | None      # 보고 주차
+    bbs_doc_no: str  # 게시글 ID
+    title: str  # 게시글 제목 (예: "2026년 15주차 ...")
+    year: int | None  # 보고 연도
+    week: int | None  # 보고 주차
 
     @property
     def filename(self) -> str:
@@ -65,9 +66,7 @@ def list_reports(client: httpx.Client, max_pages: int = 16) -> list[KowasReport]
     페이지당 10건 기본. max_pages * 10 건이 상한 (2026-04 기준 156건 → 16페이지면 충분).
     """
     seen: dict[str, KowasReport] = {}
-    title_pattern = re.compile(
-        r"q_bbsDocNo=(\d{17})[^>]*>\s*([^<]*?(?:(\d{4})년\s*(\d{1,2})주차[^<]*?))</a"
-    )
+    title_pattern = re.compile(r"q_bbsDocNo=(\d{17})[^>]*>\s*([^<]*?(?:(\d{4})년\s*(\d{1,2})주차[^<]*?))</a")
     fallback_pattern = re.compile(r"q_bbsDocNo=(\d{17})")
 
     for page in range(1, max_pages + 1):
@@ -143,9 +142,7 @@ def download_pdf(
     )
     resp.raise_for_status()
     if not resp.content.startswith(b"%PDF"):
-        raise RuntimeError(
-            f"PDF 매직바이트 검증 실패 fileSn={file_sn} (응답 {len(resp.content)}B)"
-        )
+        raise RuntimeError(f"PDF 매직바이트 검증 실패 fileSn={file_sn} (응답 {len(resp.content)}B)")
     output_path.write_bytes(resp.content)
     return len(resp.content)
 
@@ -176,16 +173,16 @@ def _download_reports(
                     continue
 
                 # 다중 첨부 시 첫 번째만 (주간보고 본문 PDF) — 부록은 .filename에 _attN 추가
-                referer = (
-                    f"{DETAIL_URL}?q_bbsSn={BBS_SN}"
-                    f"&q_bbsDocNo={report.bbs_doc_no}&q_clsfNo={CLSF_NO}"
-                )
+                referer = f"{DETAIL_URL}?q_bbsSn={BBS_SN}&q_bbsDocNo={report.bbs_doc_no}&q_clsfNo={CLSF_NO}"
                 file_sn, file_id = links[0]
                 size = download_pdf(client, file_sn, file_id, target, referer)
                 stats["downloaded"] += 1
                 logger.info(
                     "[%d/%d] 다운로드 완료 %s (%.1fMB)",
-                    i, total, target.name, size / 1024 / 1024,
+                    i,
+                    total,
+                    target.name,
+                    size / 1024 / 1024,
                 )
 
                 # 부록 첨부 (있는 경우)
@@ -287,10 +284,16 @@ if __name__ == "__main__":
     parser.add_argument("--no-skip", action="store_true", help="기존 파일 무시하고 재다운")
     # --headless / --no-headless: httpx 기반이므로 실제로 브라우저 헤드리스 모드와 무관하지만
     # 미션 CLI 호환성과 향후 Playwright 전환 대비를 위해 플래그로 수용 (현재는 무시)
-    parser.add_argument("--headless", dest="headless", action="store_true", default=True,
-                        help="헤드리스 모드 (기본값, 현재 httpx 기반이므로 무의미)")
-    parser.add_argument("--no-headless", dest="headless", action="store_false",
-                        help="헤드리스 OFF (현재 httpx 기반이므로 무의미)")
+    parser.add_argument(
+        "--headless",
+        dest="headless",
+        action="store_true",
+        default=True,
+        help="헤드리스 모드 (기본값, 현재 httpx 기반이므로 무의미)",
+    )
+    parser.add_argument(
+        "--no-headless", dest="headless", action="store_false", help="헤드리스 OFF (현재 httpx 기반이므로 무의미)"
+    )
     args = parser.parse_args()
 
     if args.weeks is not None:

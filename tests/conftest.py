@@ -4,6 +4,7 @@
 - client     : FastAPI TestClient (lifespan 비활성화)
 - sample_signal_payload : L1/L2/L3 샘플 dict
 """
+
 from __future__ import annotations
 
 import pytest
@@ -26,7 +27,8 @@ async def _create_tables(engine):
     SQLite에서는 CURRENT_TIMESTAMP 사용 (datetime('now') 함수는 DEFAULT에 불가).
     """
     async with engine.begin() as conn:
-        await conn.execute(text("""
+        await conn.execute(
+            text("""
             CREATE TABLE IF NOT EXISTS layer_signals (
                 id      INTEGER PRIMARY KEY AUTOINCREMENT,
                 time    TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -38,8 +40,10 @@ async def _create_tables(engine):
                 pathogen TEXT DEFAULT 'influenza',
                 meta    TEXT
             )
-        """))
-        await conn.execute(text("""
+        """)
+        )
+        await conn.execute(
+            text("""
             CREATE TABLE IF NOT EXISTS risk_scores (
                 id              INTEGER PRIMARY KEY AUTOINCREMENT,
                 time            TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -50,8 +54,10 @@ async def _create_tables(engine):
                 l3_score        REAL,
                 alert_level     TEXT    NOT NULL DEFAULT 'GREEN'
             )
-        """))
-        await conn.execute(text("""
+        """)
+        )
+        await conn.execute(
+            text("""
             CREATE TABLE IF NOT EXISTS alert_reports (
                 id              INTEGER PRIMARY KEY AUTOINCREMENT,
                 time            TEXT    NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -67,7 +73,8 @@ async def _create_tables(engine):
                 model_metadata  TEXT,
                 created_at      TEXT    DEFAULT CURRENT_TIMESTAMP
             )
-        """))
+        """)
+        )
 
 
 @pytest_asyncio.fixture(scope="session")
@@ -93,9 +100,12 @@ def client():
     """동기 TestClient. lifespan broker.startup/shutdown을 mock 처리."""
     from unittest.mock import AsyncMock, patch
 
-    with patch("backend.app.tasks.broker.startup", new_callable=AsyncMock), \
-         patch("backend.app.tasks.broker.shutdown", new_callable=AsyncMock):
+    with (
+        patch("backend.app.tasks.broker.startup", new_callable=AsyncMock),
+        patch("backend.app.tasks.broker.shutdown", new_callable=AsyncMock),
+    ):
         from backend.app.main import app
+
         with TestClient(app, raise_server_exceptions=False) as c:
             yield c
 
@@ -109,7 +119,7 @@ def sample_signal_payload() -> dict:
     return {
         "region": "서울특별시",
         "week_iso": "2026-W17",
-        "l1": {"layer": "otc",        "value": 62.5, "source": "otc_test"},
-        "l2": {"layer": "wastewater",  "value": 71.0, "source": "kowas_test"},
-        "l3": {"layer": "search",      "value": 48.3, "source": "naver_test"},
+        "l1": {"layer": "otc", "value": 62.5, "source": "otc_test"},
+        "l2": {"layer": "wastewater", "value": 71.0, "source": "kowas_test"},
+        "l3": {"layer": "search", "value": 48.3, "source": "naver_test"},
     }

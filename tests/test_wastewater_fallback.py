@@ -5,6 +5,7 @@
 2. 1주 실패: 직전 주는 비어있고 2주 전 row 존재 → 2주 전 데이터로 fallback
 3. 연속 실패: lookback 안에 row 없음 → None 반환
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
@@ -24,7 +25,8 @@ async def fallback_db():
 
     # 테이블 생성
     async with engine.begin() as conn:
-        await conn.execute(text("""
+        await conn.execute(
+            text("""
             CREATE TABLE IF NOT EXISTS layer_signals (
                 id      INTEGER PRIMARY KEY AUTOINCREMENT,
                 time    TEXT    NOT NULL,
@@ -36,7 +38,8 @@ async def fallback_db():
                 pathogen TEXT DEFAULT 'influenza',
                 meta    TEXT
             )
-        """))
+        """)
+        )
 
     yield engine
     await engine.dispose()
@@ -71,9 +74,7 @@ async def test_wastewater_fallback_case1_normal(fallback_session: AsyncSession) 
 
     # Fallback 호출
     week_iso = f"{now.isocalendar()[0]}-W{now.isocalendar()[1]:02d}"
-    fallback_row = await _apply_wastewater_fallback(
-        fallback_session, region, week_iso, lookback_weeks=4
-    )
+    fallback_row = await _apply_wastewater_fallback(fallback_session, region, week_iso, lookback_weeks=4)
 
     # 검증
     assert fallback_row is not None, "fallback row가 None이 되면 안 됨"
@@ -106,9 +107,7 @@ async def test_wastewater_fallback_case2_one_week_gap(fallback_session: AsyncSes
 
     # Fallback 호출
     week_iso = f"{now.isocalendar()[0]}-W{now.isocalendar()[1]:02d}"
-    fallback_row = await _apply_wastewater_fallback(
-        fallback_session, region, week_iso, lookback_weeks=4
-    )
+    fallback_row = await _apply_wastewater_fallback(fallback_session, region, week_iso, lookback_weeks=4)
 
     # 검증: 2주 전 데이터를 fallback으로 사용
     assert fallback_row is not None
@@ -129,9 +128,7 @@ async def test_wastewater_fallback_case3_continuous_failure(fallback_session: As
 
     # Fallback 호출 (lookback_weeks=4)
     week_iso = f"{now.isocalendar()[0]}-W{now.isocalendar()[1]:02d}"
-    fallback_row = await _apply_wastewater_fallback(
-        fallback_session, region, week_iso, lookback_weeks=4
-    )
+    fallback_row = await _apply_wastewater_fallback(fallback_session, region, week_iso, lookback_weeks=4)
 
     # 검증: None 반환 (연속 실패)
     assert fallback_row is None, "조회할 데이터 없으면 None 반환"
