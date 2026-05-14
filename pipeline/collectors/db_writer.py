@@ -147,7 +147,23 @@ def insert_signal_sync(
         value: 정규화 지수 (0-100)
         raw_value: 원시 측정값 (선택)
         source: 데이터 출처 식별자 (선택)
+
+    Notes:
+        asyncio.run()은 매 호출마다 새 이벤트 루프를 생성·폐기한다.
+        _pool 싱글톤은 생성된 루프에 귀속되므로, 루프가 달라지면
+        "Future attached to a different loop" 오류가 발생한다.
+        호출 전 _pool을 None으로 리셋하여 항상 현재 루프에서 새 풀을 생성한다.
     """
+    global _pool
+    # 이전 asyncio.run()이 만든 루프가 닫힌 경우 _pool이 stale해짐.
+    # 새 루프에서 실행되기 전에 싱글톤을 리셋하여 재생성을 강제한다.
+    if _pool is not None:
+        try:
+            pool_loop = _pool._loop  # type: ignore[union-attr]
+            if pool_loop is None or pool_loop.is_closed():
+                _pool = None
+        except Exception:
+            _pool = None
     coro = insert_signal(region, layer, value, raw_value=raw_value, source=source)
     try:
         asyncio.run(coro)
