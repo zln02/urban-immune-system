@@ -24,7 +24,7 @@ Urban Immune System (UIS) 은 시민 비의료 신호 3개(약국 OTC · 하수 
 [수집]                 [스트리밍/저장]            [추론]              [전달]
 pipeline/collectors/   docker-compose:           ml/                 frontend/
  ├ otc_collector  ─┐    ├ Kafka KRaft             ├ xgboost          (Next.js 14.2.3
- ├ wastewater     ─┼─→  │   uis.layer{1,2,3}      │   F1=0.882        App Router)
+ ├ wastewater     ─┼─→  │   uis.layer{1,2,3}      │   F1=0.907        App Router)
  ├ search         ─┘    │   uis.aux.weather       ├ tft (real/synth)   ↑
  └ weather              ├ TimescaleDB             │   Lightning ckpt   │
                         │   layer_signals         ├ anomaly             SSE
