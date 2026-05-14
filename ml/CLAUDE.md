@@ -59,11 +59,11 @@ ANTHROPIC_MODEL=claude-haiku-4-5-20251001  # Haiku 권장
 
 | 지표 | 목표값 | 주기 |
 |------|--------|------|
-| F1-Score | **0.80 이상** (현 baseline 0.882) | 주간 |
-| Recall | **0.85 이상** (현 baseline 0.837 — 미달, 게이트 완화 옵션 검토) | 주간 |
-| Precision | **0.90 이상** (현 baseline 0.949) | 주간 |
-| FAR (오경보율) | **0.30 미만** (현 baseline 0.206 gate ON, 0.602 gate OFF — 게이트 효과 65.8%) | 주간 |
-| MCC | 0.50 이상 (현 baseline 0.595) | 주간 |
+| F1-Score | **0.80 이상** (현 baseline 0.907) | 주간 |
+| Recall | **0.85 이상** (현 baseline 0.882 ✅) | 주간 |
+| Precision | **0.90 이상** (현 baseline 0.940) | 주간 |
+| FAR (오경보율) | **0.30 미만** (현 baseline 0.250 gate ON, 0.602 gate OFF — 게이트 효과 58.5%) | 주간 |
+| MCC | 0.50 이상 (현 baseline 0.610) | 주간 |
 | Balanced Accuracy | 0.75 이상 (현 baseline 0.816) | 주간 |
 | AUPRC | 0.85 이상 (현 baseline 0.973) | 주간 |
 | MAE (예측 오차) | 임계값: `ml/configs/model_config.yaml` 관리 | 주간 |
@@ -108,19 +108,19 @@ pytest tests/test_report_generator.py   # RAG 리포트 (Mock LLM)
 ## 발표 QA 답변 스니펫
 
 **Q: 왜 XGBoost를 주모델로 썼는가?**
-A: 학습 데이터 26주 누적 시점에서 walk-forward CV 5-fold 결과 XGBoost가 안정적 성능(F1=0.882, Precision=0.949, Recall=0.837)을 보여 보수적 채택. TFT는 PoC 학습(79K params) 완료 상태이며 데이터 누적 시 전환 예정.
+A: 학습 데이터 26주 누적 시점에서 walk-forward CV 5-fold 결과 XGBoost가 안정적 성능(F1=0.907, Precision=0.940, Recall=0.882)을 보여 보수적 채택. TFT는 PoC 학습(79K params) 완료 상태이며 데이터 누적 시 전환 예정.
 
 **Q: TFT는 언제 쓰나?**
 A: `/predict/tft-{7,14,21}d` 엔드포인트로 7/14/21일 선행 예측 제공. 현재 합성 데이터 학습 결과(attention top3: 검색량·하수·OTC) 검증된 상태. 실제 데이터 12주 추가 누적 후 프로덕션 전환.
 
-**Q: Recall이 0.837로 목표(0.85) 미달인데?**
-A: 교차검증 게이트(2개 계층 동시 임계초과) 조건이 엄격해 FN이 일부 발생. 다만 직전 baseline 0.768 대비 +0.069 향상. 대신 Precision=0.949, FAR=0.206으로 오경보를 최소화했다 — 보건당국 신뢰 확보 우선. 게이트 임계 완화 시 Recall 0.90 이상 달성 가능하나 FAR 1.5배 상승 trade-off.
+**Q: Recall이 목표(0.85)를 달성했나요?**
+A: 게이트 B 임계를 지역별로 조정(Region-tiered)해 Recall 0.882 달성 — 직전 baseline 0.768 대비 +0.114 향상. FAR=0.250 (gate OFF=0.602, 58.5% 감소). Precision=0.940. FAR 0.30 미만 제약 안에서 Recall 최대화 전략.
 
 **Q: 17개 지역 평균 리드타임이 6.5주라는 근거는?**
 A: `analysis/outputs/backtest_17regions.json` walk-forward 백테스트 결과 17지역 평균 6.47주. 가장 빠른 탐지는 세종(9주), 부산·제주(8주), 서울(7주), 경기·인천 등 12개 지역(6주). 임상 확진 약 1.5개월 전 YELLOW 발령으로 대응 준비시간 확보.
 
-**Q: 합성 데이터 F1 0.967 vs 실제 F1 0.882 갭은?**
+**Q: 합성 데이터 F1 0.967 vs 실제 F1 0.907 갭은?**
 A: 합성 데이터는 이상적 분포 가정, 실제는 지역별 편차 존재. 갭이 있더라도 실제 데이터 기준 목표(0.80) 초과 달성. `ml/outputs/validation.json`에서 상세 수치 확인 가능.
 
 **Q: F1 단독 표기가 아니라 더 엄격한 지표는?**
-A: F1 외에 클래스 불균형에 강한 **MCC(Matthews Correlation Coefficient)·Balanced Accuracy·AUPRC** 도 병기한다. 17지역 평균 **MCC=0.595, Balanced Acc=0.816, AUPRC=0.973** (baseline 0.81 대비 +0.16). MCC 는 4셀(TP/FP/FN/TN) 모두 반영해 F1 의 TN 무시 한계를 보완하고, AUPRC 는 ROC 와 달리 클래스 불균형에서 정직한 지표(Saito & Rehmsmeier 2015 권장). 산출 함수: `ml/evaluation/metrics.py`, 갱신 위치: `analysis/outputs/backtest_17regions.json` summary.
+A: F1 외에 클래스 불균형에 강한 **MCC(Matthews Correlation Coefficient)·Balanced Accuracy·AUPRC** 도 병기한다. 17지역 평균 **MCC=0.610, Balanced Acc=0.816, AUPRC=0.973** (baseline 0.81 대비 +0.16). MCC 는 4셀(TP/FP/FN/TN) 모두 반영해 F1 의 TN 무시 한계를 보완하고, AUPRC 는 ROC 와 달리 클래스 불균형에서 정직한 지표(Saito & Rehmsmeier 2015 권장). 산출 함수: `ml/evaluation/metrics.py`, 갱신 위치: `analysis/outputs/backtest_17regions.json` summary.

@@ -37,17 +37,20 @@
 
 ## 📊 검증 결과
 
+<!-- METRIC_SOURCE: analysis/outputs/backtest_17regions.json (canonical) -->
+<!-- V11 baseline: 2026-05-14 — DO NOT manually edit, run sync_metrics.py -->
+
 > 17개 시·도 walk-forward 백테스트 · gap = 4주 · 5-fold (2025-2026 인플루엔자 시즌)
 > 산출물: [`analysis/outputs/backtest_17regions.json`](analysis/outputs/backtest_17regions.json) — 재현 가능
 
 | Metric | Value | 기준선 |
 |---|---|---|
-| **F1-Score** | **0.882** | ≥ 0.80 ✅ |
-| **Precision** | **0.949** | ≥ 0.90 ✅ |
-| **Recall** | **0.837** | ≥ 0.75 ✅ |
-| **False Alarm Rate (gate ON)** | **0.206** | < 0.30 ✅ (gate OFF: 0.602) |
+| **F1-Score** | **0.907** | ≥ 0.80 ✅ |
+| **Precision** | **0.940** | ≥ 0.90 ✅ |
+| **Recall** | **0.882** | ≥ 0.75 ✅ |
+| **False Alarm Rate (gate ON)** | **0.250** | < 0.30 ✅ (gate OFF: 0.602) |
 | **Lead Time (avg)** | **6.47주** | ≥ 4주 ✅ |
-| **MCC** | **0.595** | — |
+| **MCC** | **0.610** | — |
 | **Balanced Accuracy** | **0.816** | — |
 | **AUPRC** | **0.973** | — |
 | **Granger 인과 (composite)** | **p=0.021** | < 0.05 ✅ |

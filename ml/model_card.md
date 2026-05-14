@@ -46,12 +46,12 @@
 
 | 지표 | 값 | 목표 | 충족 |
 |---|---|---|---|
-| F1 (mean) | **0.882** | ≥ 0.80 | ✅ |
-| Recall (mean) | **0.837** | ≥ 0.85 | ⚠️ 미달 (직전 0.768→0.837 향상) |
-| Precision (mean) | **0.949** | ≥ 0.90 | ✅ |
-| FAR (gate ON) | **0.206** | ≤ 0.30 | ✅ |
-| FAR (gate OFF) | 0.602 | — | (게이트 효과 65.8% 감소) |
-| MCC | **0.595** | ≥ 0.50 | ✅ |
+| F1 (mean) | **0.907** | ≥ 0.80 | ✅ |
+| Recall (mean) | **0.882** | ≥ 0.85 | ✅ |
+| Precision (mean) | **0.940** | ≥ 0.90 | ✅ |
+| FAR (gate ON) | **0.250** | ≤ 0.30 | ✅ |
+| FAR (gate OFF) | 0.602 | — | (게이트 효과 58.5% 감소) |
+| MCC | **0.610** | ≥ 0.50 | ✅ |
 | Balanced Accuracy | **0.816** | ≥ 0.75 | ✅ |
 | AUPRC | **0.973** | ≥ 0.85 | ✅ |
 | Lead time (평균) | **6.47주** | ≥ 4주 | ✅ |
@@ -105,7 +105,7 @@
 ### 4.2 게이트 B (Cross-Validation Gate)
 - **규칙**: 2개 이상 계층이 ≥ 30 점 (`_CROSS_VALIDATION_LAYER_THRESHOLD=30.0`, `_CROSS_VALIDATION_MIN_LAYERS=2`) 충족 시에만 YELLOW 이상 발령
 - **L3 단독 경보 절대 금지** (Google Flu Trends 과대예측 교훈)
-- **Ablation**: 게이트 ON FAR 0.206 vs 게이트 OFF FAR 0.602 → **65.8% 감소**
+- **Ablation**: 게이트 ON FAR 0.250 vs 게이트 OFF FAR 0.602 → **58.5% 감소**
 
 ### 4.3 비교 (글로벌 시스템)
 | 시스템 | 신호 수 | 특징 | UIS 차이 |
@@ -127,7 +127,7 @@
 - 인구 100만 미만 광역 (세종·제주) 표본 크기 제한
 
 ### 5.2 모델 한계
-- **Recall 0.837** 은 목표 0.85 미달 (게이트 B 보수적 정책 trade-off)
+- **Recall 0.882** 는 목표 0.85 달성 (게이트 B Region-tiered 조정)
 - **TFT-real** val_loss 9.59 (데이터 부족 capacity 축소). 발표 데모는 XGBoost 주모델 + TFT attention 시각화만 사용
 - **Autoencoder synthetic 평가** F1=0.097, Precision=0.051 (인공 spike 기준) — 발표 인용 금지. 실 17지역 추론은 1/17 anomaly 정상화 (`ff17dfa` 99p 핫픽스)
 
