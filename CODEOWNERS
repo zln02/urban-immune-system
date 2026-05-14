@@ -1,0 +1,11 @@
+# Default owner
+* @zln02
+
+# Module owners (until team expansion)
+backend/ @zln02
+ml/ @zln02
+pipeline/ @zln02
+frontend/ @zln02
+infra/ @zln02
+docs/ @zln02
+.github/ @zln02
