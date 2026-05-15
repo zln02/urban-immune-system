@@ -2,6 +2,7 @@
 from docx import Document
 from docx.shared import Pt, Cm, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml.ns import qn
 import os
 
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "letters_docx")
@@ -704,6 +705,9 @@ def set_font(run, size=11, bold=False):
     run.font.name = "맑은 고딕"
     run.font.size = Pt(size)
     run.font.bold = bold
+    rPr = run._r.get_or_add_rPr()
+    rFonts = rPr.get_or_add_rFonts()
+    rFonts.set(qn("w:eastAsia"), "맑은 고딕")
 
 
 def add_paragraph(doc, text, bold=False, size=11, space_before=0, space_after=6):
@@ -730,12 +734,12 @@ def make_letter(data):
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
     title.paragraph_format.space_after = Pt(4)
     run = title.add_run("학부 캡스톤 연구 자문 요청서")
-    run.font.name = "맑은 고딕"
-    run.font.size = Pt(16)
-    run.font.bold = True
+    set_font(run, size=16, bold=True)
 
     # 구분선
-    doc.add_paragraph("─" * 45).paragraph_format.space_after = Pt(2)
+    p_line = doc.add_paragraph()
+    p_line.paragraph_format.space_after = Pt(2)
+    set_font(p_line.add_run("─" * 45))
 
     # 수신
     p = doc.add_paragraph()
@@ -785,7 +789,9 @@ def make_letter(data):
     set_font(r, size=10)
 
     # 서명
-    doc.add_paragraph("─" * 45).paragraph_format.space_after = Pt(4)
+    p_line2 = doc.add_paragraph()
+    p_line2.paragraph_format.space_after = Pt(4)
+    set_font(p_line2.add_run("─" * 45))
     for line in SIGNATURE.split("\n"):
         p = doc.add_paragraph()
         p.paragraph_format.space_after = Pt(2)
