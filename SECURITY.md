@@ -10,9 +10,14 @@
 
 ## Reporting a Vulnerability
 
-Please report security vulnerabilities to: **{{SECURITY_EMAIL}}**
+Please report security vulnerabilities through **GitHub Security Advisories (private vulnerability reporting)**:
 
-Do NOT open public issues for security concerns.
+- Repository **Security** tab → **Report a vulnerability**
+- Direct link: https://github.com/zln02/urban-immune-system/security/advisories/new
+
+GitHub Security Advisories provides an encrypted channel readable only by repository maintainers. Reports are acknowledged within 3 business days per the timeline below.
+
+Do NOT open public issues for security concerns. Public disclosure before coordinated patching exposes operational systems (KDCA, local governments) consuming our alerts to active exploitation.
 
 ## Disclosure Timeline
 
