@@ -69,6 +69,30 @@ async def test_security_headers_frame_ancestors_deny() -> None:
     assert "frame-ancestors 'none'" in csp
 
 
+@pytest.mark.asyncio
+async def test_csp_production_blocks_unsafe_inline_script() -> None:
+    """ISMS-P 2.10.1 — production CSP 는 script-src 에 'unsafe-inline' 금지."""
+    mw = SecurityHeadersMiddleware(app=MagicMock(), environment="production")
+    resp = _make_fake_response()
+    result = await _dispatch(mw, resp)
+
+    csp = result.headers.get("Content-Security-Policy", "")
+    # script-src 는 'self' 만 — 'unsafe-inline' 절대 포함 금지
+    assert "script-src 'self';" in csp
+    assert "script-src 'self' 'unsafe-inline'" not in csp
+
+
+@pytest.mark.asyncio
+async def test_csp_development_allows_unsafe_inline_for_swagger() -> None:
+    """개발 환경: Swagger UI·Streamlit 호환 위해 script unsafe-inline 허용."""
+    mw = SecurityHeadersMiddleware(app=MagicMock(), environment="development")
+    resp = _make_fake_response()
+    result = await _dispatch(mw, resp)
+
+    csp = result.headers.get("Content-Security-Policy", "")
+    assert "script-src 'self' 'unsafe-inline'" in csp
+
+
 # ── config.py production validators (pass-2 추가분) ─────────────────────────
 
 from backend.app.config import Settings
