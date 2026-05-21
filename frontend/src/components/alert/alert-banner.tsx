@@ -15,10 +15,12 @@ export function AlertBanner({ alerts, t: _t, lang, confidence = 0.87 }: AlertBan
 
   const top = critical[0];
   const meta = RISK_META[top.level as RiskLevel];
+  const isRed = top.level >= 4;
 
   return (
     <div
       role="alert"
+      aria-live={isRed ? "assertive" : "polite"}
       style={{
         display: "flex",
         alignItems: "center",
@@ -26,20 +28,43 @@ export function AlertBanner({ alerts, t: _t, lang, confidence = 0.87 }: AlertBan
         padding: "10px 16px",
         background: `var(--risk-${meta.token})`,
         color: "#fff",
+        boxShadow: isRed ? "inset 0 -2px 0 rgba(255,255,255,0.35)" : undefined,
       }}
     >
-      <span
-        style={{
-          width: 8,
-          height: 8,
-          borderRadius: "50%",
-          background: "#fff",
-          animation: "uis-blink 1s infinite",
-          flexShrink: 0,
-        }}
-      />
-      <span style={{ fontWeight: 700, fontSize: 12 }}>
-        L{top.level} {lang === "ko" ? "경보" : "ALERT"} · {top.region}
+      {isRed ? (
+        <span
+          aria-hidden
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 14,
+            height: 14,
+            animation: "uis-blink-fast 0.7s infinite",
+            flexShrink: 0,
+            color: "#fff",
+            fontWeight: 900,
+            fontSize: 14,
+            lineHeight: 1,
+          }}
+        >
+          ⚠
+        </span>
+      ) : (
+        <span
+          aria-hidden
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: "50%",
+            background: "#fff",
+            animation: "uis-blink 1s infinite",
+            flexShrink: 0,
+          }}
+        />
+      )}
+      <span style={{ fontWeight: 700, fontSize: 12, letterSpacing: isRed ? 0.4 : 0 }}>
+        L{top.level} {lang === "ko" ? (isRed ? "긴급경보" : "경보") : isRed ? "CRITICAL" : "ALERT"} · {top.region}
       </span>
       <span style={{ fontSize: 12, opacity: 0.9 }}>{top.summary}</span>
       <span

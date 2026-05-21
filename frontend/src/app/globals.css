@@ -85,6 +85,14 @@
 @keyframes uis-spin {
   to { transform: rotate(360deg); }
 }
+@keyframes uis-pulse-bg {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}
+@keyframes uis-blink-fast {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.35; transform: scale(0.85); }
+}
 
 /* ── Scrollbar ──────────────────────────────────────── */
 * {
