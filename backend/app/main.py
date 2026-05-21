@@ -43,7 +43,10 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
     allow_methods=["GET", "POST"],
-    allow_headers=["*", "X-API-Key"],
+    # 명시 화이트리스트 — ISMS-P 2.10.1·OWASP CORS 가이드.
+    # `*` 와일드카드는 preflight 우회 위험 + Spec 상 credentials 모드에서 무효.
+    # 추가 필요 시 본 리스트에 명시적 등재 후 PR 리뷰.
+    allow_headers=["Accept", "Authorization", "Content-Type", "X-API-Key", "X-Requested-With"],
 )
 app.add_middleware(AuditLogMiddleware)
 app.add_middleware(SecurityHeadersMiddleware, environment=settings.environment)
