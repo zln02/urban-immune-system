@@ -416,11 +416,12 @@ export function AIReportCard({ t, lang, region = "전북특별자치도" }: AIRe
             type="button"
             onClick={downloadPdf}
             disabled={pdfDownloading}
+            aria-busy={pdfDownloading}
             style={{
               fontSize: 10,
               fontWeight: 600,
               padding: "4px 10px",
-              background: pdfDownloading ? "var(--border)" : "var(--primary-70)",
+              background: pdfDownloading ? "var(--primary-70)" : "var(--primary-70)",
               border: "none",
               color: "#fff",
               cursor: pdfDownloading ? "wait" : "pointer",
@@ -428,9 +429,25 @@ export function AIReportCard({ t, lang, region = "전북특별자치도" }: AIRe
               display: "inline-flex",
               alignItems: "center",
               gap: 5,
+              animation: pdfDownloading ? "uis-pulse-bg 1.1s ease-in-out infinite" : undefined,
             }}
           >
-            <I.Download size={11} stroke="#fff" />
+            {pdfDownloading ? (
+              <span
+                aria-hidden
+                style={{
+                  display: "inline-block",
+                  width: 10,
+                  height: 10,
+                  border: "1.5px solid rgba(255,255,255,0.35)",
+                  borderTopColor: "#fff",
+                  borderRadius: "50%",
+                  animation: "uis-spin 0.7s linear infinite",
+                }}
+              />
+            ) : (
+              <I.Download size={11} stroke="#fff" />
+            )}
             {pdfDownloading
               ? lang === "ko" ? "PDF 생성 중…" : "Generating…"
               : lang === "ko" ? "PDF 다운로드" : "Download PDF"}
