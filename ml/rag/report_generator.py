@@ -16,7 +16,7 @@ from ml.rag.vectordb import EpidemiologyVectorDB
 
 logger = logging.getLogger(__name__)
 
-LLM_MODEL = os.getenv("LLM_MODEL", "claude-sonnet-4-6")
+LLM_MODEL = os.getenv("LLM_MODEL", "claude-haiku-4-5-20251001")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 MAX_RAG_DOC_CHARS = 300
 
