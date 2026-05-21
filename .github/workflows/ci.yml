@@ -7,6 +7,23 @@ on:
     branches: [main, develop]
 
 jobs:
+  # ── Secret Scan (ISMS-P 2.8 소스코드 보안) ─────────────────
+  # gitleaks를 docker로 직접 실행 — gitleaks-action license 의존 회피.
+  # pre-commit detect-secrets만으로는 --no-verify 우회를 막을 수 없으므로
+  # CI 레벨에서 한 번 더 차단한다. B2G 조달·ISMS-P 자동화 보안검사 항목 대응.
+  secret-scan:
+    name: Secret Scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 전체 히스토리 스캔 (PR 추가분 + 과거 누출)
+      - name: Run gitleaks
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/repo" \
+            zricethezav/gitleaks:latest \
+            detect --source /repo --redact --verbose --no-banner --exit-code 1
+
   # ── Backend (Python) ──────────────────────────────────────
   backend-lint:
     name: Backend Lint & Type Check

@@ -200,12 +200,16 @@ def main() -> int:
         "학습 시작: %d행 × %d 피처, threshold_pct=%.1f", X_normal_n.shape[0], X_normal_n.shape[1], args.threshold_pct
     )
     losses = detector.fit(X_normal_n, epochs=args.epochs, lr=1e-3)
+    # fit() sets threshold from training-set reconstruction errors; assert so mypy
+    # narrows float | None → float across the remaining metric/checkpoint writes.
+    assert detector.threshold is not None, "AnomalyDetector.fit() failed to set threshold"
+    trained_threshold: float = detector.threshold
     logger.info(
         "학습 완료: 시작 loss %.5f → 최종 %.5f, threshold(%.0fpct) %.5f",
         losses[0],
         losses[-1],
         args.threshold_pct,
-        detector.threshold,
+        trained_threshold,
     )
 
     # ── 3) 인공 spike 평가 ──────────────────────────────────────────────────
@@ -213,7 +217,7 @@ def main() -> int:
     X_eval_n = np.clip((X_eval - X_min) / span, -0.5, 1.5)
     detector.model.eval()
     errors = detector.model.reconstruction_error(torch.FloatTensor(X_eval_n)).numpy()
-    y_pred = (errors > detector.threshold).astype(int)
+    y_pred = (errors > trained_threshold).astype(int)
 
     tp = int(((y_pred == 1) & (y_true == 1)).sum())
     fp = int(((y_pred == 1) & (y_true == 0)).sum())
@@ -253,7 +257,7 @@ def main() -> int:
             "loss_first": float(losses[0]),
             "loss_last": float(losses[-1]),
             "loss_curve_tail": [float(x) for x in losses[-10:]],
-            "threshold": float(detector.threshold),
+            "threshold": float(trained_threshold),
             "train_stats": train_stats,
         },
         "evaluation": {
@@ -286,7 +290,7 @@ def main() -> int:
         torch.save(detector.model.state_dict(), model_path)
         meta = {
             "feature_cols": FEATURE_COLS,
-            "threshold": float(detector.threshold),
+            "threshold": float(trained_threshold),
             "threshold_percentile": args.threshold_pct,
             "X_min": X_min.tolist(),
             "X_max": X_max.tolist(),
@@ -387,6 +391,11 @@ async def _async_infer_17_regions(
     counts: dict[str, int] = {"anomaly": 0, "warning": 0, "normal": 0}
     top3_list: list[dict] = []
     threshold = detector.threshold
+    if threshold is None:
+        raise RuntimeError(
+            "AnomalyDetector.threshold is None — run_inference requires a trained detector "
+            "(call .train() first so the reconstruction-error percentile is fitted)."
+        )
 
     detector.model.eval()
     for region in KR_REGIONS:
