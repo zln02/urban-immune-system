@@ -11,7 +11,9 @@ class Settings(BaseSettings):
     qdrant_url: str = "http://localhost:6333"
     ml_service_url: str = "http://ml:8001"
     anthropic_api_key: str = ""
-    llm_model: str = "claude-sonnet-4-6"
+    # CLAUDE.md 의 RAG 리포트 기본 모델 — Haiku 4.5 (비용·지연 균형).
+    # Sonnet/Opus 가 필요한 운영 환경은 .env 의 LLM_MODEL 로 override.
+    llm_model: str = "claude-haiku-4-5-20251001"
     environment: str = "development"
     allowed_origins: list[str] = ["http://localhost:3000", "http://localhost:8501"]
 

@@ -90,7 +90,10 @@ async def test_call_claude_haiku_returns_text(monkeypatch: pytest.MonkeyPatch) -
     """Claude API 호출이 성공하면 텍스트가 반환되는지 검증 (Mock 사용)."""
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key-mock")
 
+    # SDK 0.40+ TextBlock — .type="text" 와 .text 필드 가짐.
+    # ThinkingBlock/ToolUseBlock 과 구분 위해 .type 명시 필수.
     mock_content = MagicMock()
+    mock_content.type = "text"
     mock_content.text = "테스트 경보 리포트 내용입니다."
 
     mock_response = MagicMock()
