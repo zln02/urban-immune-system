@@ -170,4 +170,11 @@ async def _call_claude(prompt: str) -> str:
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": prompt}],
     )
-    return resp.content[0].text if resp.content else ""
+    # content[0] may be TextBlock, ThinkingBlock, ToolUseBlock, etc. — only TextBlock has .text.
+    # Scan for the first text block so extended-thinking responses don't AttributeError.
+    if not resp.content:
+        return ""
+    for block in resp.content:
+        if getattr(block, "type", None) == "text":
+            return getattr(block, "text", "") or ""
+    return ""
