@@ -50,16 +50,28 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "geolocation=(), camera=(), microphone=(), payment=(), usb=()"
         )
 
-        # CSP — 초기 느슨한 정책 (SSE + API JSON 응답 대상, 프론트엔드 별도 설정)
-        # 'unsafe-inline' 은 Streamlit Phase1 fallback 때문에 임시 허용 — Phase4 엄격화 예정
-        response.headers["Content-Security-Policy"] = (
-            "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline'; "
-            "style-src 'self' 'unsafe-inline'; "
-            "img-src 'self' data:; "
-            "connect-src 'self'; "
-            "frame-ancestors 'none';"
-        )
+        # CSP — production 엄격 / development 느슨 (Streamlit/Next dev HMR 호환).
+        # backend 응답은 주로 API JSON·SSE 이지만, 직접 렌더링 페이지(`/docs` 등) 대비 정책 명시.
+        # ISMS-P 2.10.1: production 에서 'unsafe-inline' script 차단 (XSS 차단력 강화).
+        if self._is_production:
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; "
+                "script-src 'self'; "
+                "style-src 'self' 'unsafe-inline'; "  # FastAPI Swagger UI 인라인 style 필요
+                "img-src 'self' data:; "
+                "connect-src 'self'; "
+                "frame-ancestors 'none';"
+            )
+        else:
+            # 개발 환경 — Streamlit Phase1 fallback·Swagger UI 호환 (script unsafe-inline 허용)
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline'; "
+                "style-src 'self' 'unsafe-inline'; "
+                "img-src 'self' data:; "
+                "connect-src 'self'; "
+                "frame-ancestors 'none';"
+            )
 
         # HSTS — production 에서만 활성화 (개발 환경 http 접속 차단 방지)
         if self._is_production:
