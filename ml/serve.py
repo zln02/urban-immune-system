@@ -57,6 +57,10 @@ class TFTPredictResponse(BaseModel):
     horizon: int
     predictions: list[float]
     attention_top3: list[str]
+    # V11.3 demo transparency — 합성 PoC input 임을 명시 (analysis/diagnostics/tft_flatness_2026-05-22.md)
+    mode: str = "synthetic_demo"
+    caveat: str = "Synthetic PoC input — production DB time series integration in Phase 2"
+    data_source: str = "_make_dataframe(seed=42)"
 
 
 @app.get("/health")

@@ -139,3 +139,22 @@ Output:
 - `analysis/outputs/granger_17regions_heatmap.png` (17 × 3 −log10(p) heatmap)
 
 Source: `analysis/granger_17regions.py`, `analysis/granger_heatmap.py`. Canonical backtest data (`analysis/outputs/backtest_17regions.json`) untouched.
+
+## V11.3 TFT Demo Transparency (2026-05-22)
+
+TFT endpoints (`/predict/tft-{7,14,21}d`) 응답에 demo transparency 메타데이터 3 키 추가 — 발표 청중·리뷰어가 합성 PoC 입력 vs 프로덕션 입력을 즉시 구분할 수 있도록 한다.
+
+| 신규 키 | 값 (default) | 의미 |
+|---------|-------------|------|
+| `mode` | `"synthetic_demo"` | PoC 합성 입력으로 추론 중임을 명시 |
+| `caveat` | `"Synthetic PoC input — production DB time series integration in Phase 2"` | 한 줄 발표 캡션 |
+| `data_source` | `"_make_dataframe(seed=42)"` | 재현 가능성 마커 (`ml/tft/train_synth.py:54`) |
+
+기존 응답 키 (`region`, `horizon`, `predictions`, `attention_top3`) 모두 보존 — 클라이언트 호환 안전.
+
+`composite_score` (XGBoost) 엔드포인트는 프로덕션 실시간 피처 사용 — caveat 표기 대상 아님.
+
+- **Root cause**: `ml/serve.py:185` fixed-seed 합성 input (`_make_dataframe(seed=42)`)
+- **Diagnosis report**: `analysis/diagnostics/tft_flatness_2026-05-22.md`
+- **Phase 2 fix (post-presentation)**: 실 DB layer_signals + confirmed_cases 시계열 연동 (Option A)
+- **Test contract**: `tests/test_ml_serve_metadata.py` (3 케이스 — defaults / override / OpenAPI schema)
