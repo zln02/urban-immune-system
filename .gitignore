@@ -143,3 +143,4 @@ admin/
 docs/business/*.zip
 docs/business/advisory/*.tar.gz
 demo/
+.claude/
