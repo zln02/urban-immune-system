@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-05-06T16:23:40.003120+00:00",
+  "generated_at": "2026-05-27T13:24:48.237854+00:00",
   "git_branch": "develop",
-  "git_commit": "74f9ea9",
+  "git_commit": "3a34615",
   "stages": {
     "synthetic_hardened": {
       "data_source": "synthetic_hardened",
@@ -81,19 +81,88 @@
     "real": {
       "data_source": "real",
       "region": "서울특별시",
-      "status": "skipped",
-      "reason": "실데이터 부족 (3계층 교집합 0주, 최소 30주 필요) — 단계 스킵",
-      "n_weeks_3layer_intersection": 0
+      "status": "ok",
+      "n_weeks": 57,
+      "n_alert_positive": 4,
+      "alert_threshold": 55.0,
+      "feature_cols": [
+        "l1_otc",
+        "l2_wastewater",
+        "l3_search",
+        "temperature",
+        "humidity"
+      ],
+      "first_week": "2025-03-31",
+      "last_week": "2026-04-27",
+      "n_folds_total": 5,
+      "n_folds_valid": 1,
+      "cv_mean_f1": 1.0,
+      "cv_mean_precision": 1.0,
+      "cv_mean_recall": 1.0,
+      "cv_mean_auc_roc": 1.0,
+      "cv_mean_mae": 12.676885023478876,
+      "fold_scores": [
+        {
+          "fold": 1,
+          "mae": 14.567416371771559,
+          "f1": NaN,
+          "precision": NaN,
+          "recall": NaN,
+          "auc_roc": NaN
+        },
+        {
+          "fold": 2,
+          "mae": 10.974544089606841,
+          "f1": NaN,
+          "precision": NaN,
+          "recall": NaN,
+          "auc_roc": NaN
+        },
+        {
+          "fold": 3,
+          "mae": 19.160848617892523,
+          "f1": NaN,
+          "precision": NaN,
+          "recall": NaN,
+          "auc_roc": NaN
+        },
+        {
+          "fold": 4,
+          "mae": 13.596195861397414,
+          "f1": NaN,
+          "precision": NaN,
+          "recall": NaN,
+          "auc_roc": NaN
+        },
+        {
+          "fold": 5,
+          "mae": 5.085420176726045,
+          "f1": 1.0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "auc_roc": 1.0
+        }
+      ],
+      "final_eval": {
+        "mae": 0.7453034946009153,
+        "target_col": "composite_score",
+        "alert_col": "alert_label",
+        "alert_threshold": 55.0,
+        "f1": 1.0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "auc_roc": 1.0
+      }
     },
     "realistic": {
       "status": "ok",
       "data_source": "17regions_backtest",
       "task": "alert_classification (composite ≥ alert_threshold)",
       "n_regions": 17,
-      "cv_mean_f1": 0.882,
-      "cv_mean_precision": 0.949,
-      "cv_mean_recall": 0.837,
-      "cv_mean_far": 0.206,
+      "cv_mean_f1": 0.907,
+      "cv_mean_precision": 0.94,
+      "cv_mean_recall": 0.882,
+      "cv_mean_far": 0.25,
       "skipped_regions": [],
       "source_file": "analysis/outputs/backtest_17regions.json",
       "lead_time_weeks": {
