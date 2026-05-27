@@ -202,7 +202,7 @@ function S04() {
             <div style={{ marginTop: 6, fontSize: 22, color: WHITE, fontWeight: 600, fontFeatureSettings: '"lnum"' }}>
               오경보 <span style={{ color: WHITE_45, textDecoration: 'line-through' }}>0.602</span>
               <span style={{ margin: '0 10px', color: ACCENT }}>→</span>
-              <span style={{ color: ACCENT }}>0.206</span>
+              <span style={{ color: ACCENT }}>0.250</span>
             </div>
           </div>
         </div>
@@ -675,7 +675,7 @@ function S07() {
 
       <Line x={120} y={290} delay={0.2} style={{ ...TYPE.mega, fontSize: 200, color: WHITE_45 }}>0.71</Line>
       <ArrowSweep delay={1.0} />
-      <Line x={1100} y={290} delay={1.4} style={{ ...TYPE.mega, fontSize: 200, color: ACCENT }}>0.882</Line>
+      <Line x={1100} y={290} delay={1.4} style={{ ...TYPE.mega, fontSize: 200, color: ACCENT }}>0.907</Line>
 
       <Line x={120} y={560} delay={0.3} style={TYPE.label}>공모전 수치 · 단일 holdout</Line>
       <Line x={1100} y={560} delay={1.5} style={{ ...TYPE.label, color: ACCENT }}>Walk-forward · 재현 가능</Line>
@@ -683,7 +683,7 @@ function S07() {
       <Plate x={120} y={720} width={1680} height={220} delay={1.8}>
         <div style={{ padding: '48px 56px', fontFamily: FONT }}>
           <div style={{ fontSize: 44, fontWeight: 600, color: WHITE, letterSpacing:'-0.02em' }}>
-            D-7 Precision <span style={{ color: ACCENT }}>1.000</span>은 양성 예측이 희소했던 결과 — 17지역 5-fold로 확장 후 <span style={{ color: ACCENT }}>F1 0.882 · Recall 0.837 · MCC 0.595</span> 안정화.
+            D-7 Precision <span style={{ color: ACCENT }}>1.000</span>은 양성 예측이 희소했던 결과 — 17지역 5-fold로 확장 후 <span style={{ color: ACCENT }}>F1 0.907 · Recall 0.882 · MCC 0.610</span> 안정화.
           </div>
           <div style={{ marginTop: 16, fontSize: 28, color: WHITE_70 }}>
             수치를 지키는 것보다 <span style={{ color: ACCENT }}>재현 가능성</span>이 B2G의 본질이다.
@@ -716,7 +716,7 @@ function S08() {
     'TFT 70K params 실데이터 + Attention top-3',
     'RAG 9섹션 KDCA 표준 (Claude + Qdrant 17 docs)',
     'Next.js 17지역 지도 + SSE 실시간 리포트',
-    'pytest 128 + GitHub Actions CI 통과',
+    'pytest 549 + GitHub Actions CI 통과',
   ];
   return (
     <>
@@ -1292,11 +1292,11 @@ function S11() {
 
           {/* 하단 — 메트릭 5개 */}
           <div style={{ marginTop: 14 }}>
-            <MetricRow label="F1-Score · 종합 정확도"           values={['0.882']} delay={1.4} accent />
-            <MetricRow label="Precision · 경보 신뢰도"          values={['0.949']} delay={1.55} />
-            <MetricRow label="Recall · 놓침 방지율"             values={['0.837']} delay={1.70} />
+            <MetricRow label="F1-Score · 종합 정확도"           values={['0.907']} delay={1.4} accent />
+            <MetricRow label="Precision · 경보 신뢰도"          values={['0.940']} delay={1.55} />
+            <MetricRow label="Recall · 놓침 방지율"             values={['0.882']} delay={1.70} />
             <MetricRow label="AUC-ROC · 위험·정상 구분력"       values={['0.931']} delay={1.85} />
-            <MetricRow label="오경보율 (게이트 ON · 가짜경보)"  values={['0.206']} delay={2.00} accent header />
+            <MetricRow label="오경보율 (게이트 ON · 가짜경보)"  values={['0.250']} delay={2.00} accent header />
           </div>
 
           <div style={{ position: 'absolute', left: 32, right: 32, bottom: 18, ...TYPE.small, fontSize: 14, color: WHITE_45 }}>
@@ -1338,7 +1338,7 @@ function S11() {
           <span style={{ fontFamily: CODE_FONT, fontSize: 16, color: ACCENT }}>$ python -m ml.reproduce_validation</span>
           <span style={{ color: WHITE_45 }}>·</span>
           <span style={{ ...TYPE.label, color: ACCENT, fontSize: 13 }}>검증</span>
-          <span>pytest 128 통과 · RAG 시드 20건 · KOWAS 17지역 적재 완료</span>
+          <span>pytest 549 통과 · RAG 시드 20건 · KOWAS 17지역 적재 완료</span>
         </div>
       </Plate>
     </>
@@ -1657,8 +1657,8 @@ function S15() {
     },
   ];
   const targets = [
-    { metric: 'F1', target: '> 0.90', baseline: '현 0.882', hero: true },
-    { metric: 'FAR', target: '< 0.15', baseline: '현 0.206', hero: true },
+    { metric: 'F1', target: '> 0.90', baseline: '현 0.907', hero: true },
+    { metric: 'FAR', target: '< 0.15', baseline: '현 0.250', hero: true },
     { metric: 'Multi-disease', target: '2종 검증', baseline: '현 인플루엔자 1종' },
     { metric: 'PoC MOU', target: '광역지자체 1건 시도', baseline: '신규' },
   ];
@@ -2038,7 +2038,7 @@ function S07B() {
       <TrapPanel x={1080} y={380} width={720} height={580} delay={0.9}
         trap="2013 Google Flu Trends — 검색 단일 신호로 실제의 2배 과대예측 후 서비스 종료."
         fix="2개 이상 계층이 30점 이상일 때만 YELLOW+ 발령. 단일 신호는 강제로 GREEN."
-        result="게이트 끄고 켠 비교 · 가짜경보율 0.602 → 0.206 — 65.8% 감소" />
+        result="게이트 끄고 켠 비교 · 가짜경보율 0.602 → 0.250 — 58.5% 감소" />
     </>
   );
 }
@@ -2073,7 +2073,7 @@ function S07C() {
       <TrapPanel x={1080} y={380} width={720} height={520} delay={0.9}
         trap="일반 K-Fold(섞어 검증)는 미래 데이터로 과거를 학습 — 발표용 점수만 잘 나오고 실전에서 폭망."
         fix="시간 순 검증 + 4주 갭으로 미래 누출 차단 · 자동인코더 95% 분위수로 신종 패턴 감지."
-        result="17지역 시간순 검증 · 종합정확도 0.882 · 신뢰도 0.949 · MCC 0.595 재현" />
+        result="17지역 시간순 검증 · 종합정확도 0.907 · 신뢰도 0.940 · MCC 0.610 재현" />
 
       <Plate x={1080} y={920} width={720} height={50} delay={1.8} opacity={0.4}>
         <div style={{ padding: '12px 22px', fontFamily: FONT, fontSize: 16, color: WHITE_70, display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -2417,7 +2417,7 @@ function S07F() {
         role="현재 위험도 점수화 (그라디언트 부스팅 트리 앙상블)"
         usage="Kaggle 우승 단골 · 신용평가 · 이탈예측 · 광고 CTR"
         metaphor="지금 빨간불인가, 초록불인가?"
-        io={"5개 신호 입력 → 종합 위험점수 0~100\n시계열 분할 5-fold · 4주 갭(미래 차단)\nF1 0.882 · 경보 신뢰도 0.95"} />
+        io={"5개 신호 입력 → 종합 위험점수 0~100\n시계열 분할 5-fold · 4주 갭(미래 차단)\nF1 0.907 · 경보 신뢰도 0.94"} />
 
       <ModelCard x={690}  y={310} delay={0.6} hero
         badge="TFT · 시계열"
@@ -2516,7 +2516,7 @@ function S13B() {
         <div style={{ padding: 48, fontFamily: FONT }}>
           <div style={{ ...TYPE.label, color: ACCENT }}>발송 트리거 · 어느 정도 되면 보낼지</div>
 
-          <TriggerRow text="17지역 백테스트 PDF — F1 0.882·Granger p=0.021"
+          <TriggerRow text="17지역 백테스트 PDF — F1 0.907·Granger p=0.021"
             done={true} delay={1.3} />
           <TriggerRow text="실데이터 26주 누적 — 누가 돌려도 같은 수치"
             done={true} delay={1.5} />
