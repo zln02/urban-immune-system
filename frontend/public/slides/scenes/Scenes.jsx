@@ -1425,6 +1425,64 @@ function GrangerRow({ label, p, delay }) {
 }
 
 // ----- S12 Competitive landscape (2026-05-05 4-quadrant 통합 — S12B 흡수) -----
+// ----- S11A Rule-based 100% Verified — Gate B 효과 + Flu Trends 회피 -----
+function S11A() {
+  return (
+    <>
+      <Chrome index={12} label="11A · RULE-BASED VERIFIED" />
+      <Line x={120} y={140} style={TYPE.eyebrow}>Rule-based · 100% 실측 검증 · Gate B</Line>
+      <Line x={120} y={200} delay={0.1} style={TYPE.title}>코드가 막은 오경보 −58.5%.</Line>
+
+      {/* 좌측: Gate B FAR 비교 mega */}
+      <Plate x={120} y={340} width={1080} height={600} delay={0.5}>
+        <div style={{ padding: 36, fontFamily: FONT, height: '100%', boxSizing: 'border-box', position: 'relative' }}>
+          <div style={{ ...TYPE.label, color: ACCENT }}>GATE B — 단일계층 단독 경보 강제 차단</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, marginTop: 32 }}>
+            <div>
+              <div style={{ ...TYPE.small, fontSize: 18, color: WHITE_45 }}>단일계층 (gate OFF)</div>
+              <div style={{ ...TYPE.mega, fontSize: 160, color: WHITE_45, letterSpacing: '-0.04em' }}>0.602</div>
+              <div style={{ ...TYPE.small, fontSize: 18, color: WHITE_45 }}>FAR · Google Flu Trends 류</div>
+            </div>
+            <div>
+              <div style={{ ...TYPE.small, fontSize: 18, color: ACCENT }}>2계층 강제 (gate ON)</div>
+              <div style={{ ...TYPE.mega, fontSize: 160, color: ACCENT, letterSpacing: '-0.04em' }}>0.250</div>
+              <div style={{ ...TYPE.small, fontSize: 18, color: ACCENT }}>FAR · 본 시스템</div>
+            </div>
+          </div>
+          <div style={{ marginTop: 36, ...TYPE.titleXL, fontSize: 72, color: ACCENT, letterSpacing: '-0.02em' }}>−58.5% 감축</div>
+          <div style={{ marginTop: 12, ...TYPE.small, fontSize: 20, color: WHITE_70 }}>17개 시·도 실데이터 walk-forward · pipeline/scorer.py L155-222</div>
+          <div style={{ position: 'absolute', left: 36, right: 36, bottom: 24, ...TYPE.small, fontSize: 15, color: WHITE_45 }}>
+            <span style={{ color: ACCENT }}>_CROSS_VALIDATION_MIN_LAYERS = 2</span> — 임계 초과 계층 &lt; 2면 강제 GREEN
+          </div>
+        </div>
+      </Plate>
+
+      {/* 우측: 17/17 ALL PASS + Flu Trends 회피 */}
+      <Plate x={1240} y={340} width={560} height={600} delay={0.7}>
+        <div style={{ padding: 36, fontFamily: FONT, height: '100%', boxSizing: 'border-box' }}>
+          <div style={{ ...TYPE.label, color: ACCENT }}>17 / 17 REGIONS</div>
+          <div style={{ ...TYPE.mega, fontSize: 100, color: ACCENT, marginTop: 18, letterSpacing: '-0.03em' }}>ALL PASS</div>
+          <div style={{ marginTop: 24, paddingTop: 20, borderTop: `1px solid ${WHITE_15}` }}>
+            <div style={{ ...TYPE.small, fontSize: 18, color: WHITE }}>F1 <span style={{ color: ACCENT, fontWeight: 700 }}>0.907</span></div>
+            <div style={{ ...TYPE.small, fontSize: 18, color: WHITE, marginTop: 6 }}>Recall <span style={{ color: ACCENT, fontWeight: 700 }}>0.882</span> · Precision <span style={{ color: ACCENT, fontWeight: 700 }}>0.940</span></div>
+            <div style={{ ...TYPE.small, fontSize: 18, color: WHITE, marginTop: 6 }}>Granger composite p=<span style={{ color: ACCENT, fontWeight: 700 }}>0.021</span></div>
+            <div style={{ ...TYPE.small, fontSize: 18, color: WHITE, marginTop: 6 }}>L3 검색 p=<span style={{ color: ACCENT, fontWeight: 700 }}>0.007</span></div>
+          </div>
+          <div style={{ marginTop: 30, paddingTop: 20, borderTop: `1px solid ${WHITE_15}` }}>
+            <div style={{ ...TYPE.label, color: WHITE_70, fontSize: 14 }}>FLU TRENDS 회피</div>
+            <div style={{ marginTop: 12, ...TYPE.small, fontSize: 17, color: WHITE_70, lineHeight: 1.5 }}>
+              Google Flu Trends(2013): 검색 <span style={{ color: ACCENT }}>단일 신호</span>로 실제의 <span style={{ color: ACCENT }}>2배 과대예측</span>.
+            </div>
+            <div style={{ marginTop: 10, ...TYPE.small, fontSize: 17, color: WHITE_70, lineHeight: 1.5 }}>
+              우리는 <span style={{ color: ACCENT }}>N≥2 이종 비의료 신호 동시 임계</span>를 코드 레벨로 강제 — 특허 핵심.
+            </div>
+          </div>
+        </div>
+      </Plate>
+    </>
+  );
+}
+
 function S12() {
   const quadrants = [
     {
@@ -2585,7 +2643,7 @@ window.Scenes = {
   S06, S07,
   S07A, S07B, S07C, S07D, S07D2, S07E, S07F,
   S08, S10, S10A,
-  S11, S12,
+  S11, S11A, S12,
   S13,
   S13B,
   S14, S15, S16,
