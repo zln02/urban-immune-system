@@ -9,7 +9,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Next.js](https://img.shields.io/badge/Next.js%2015-000?logo=nextdotjs&logoColor=white)](https://nextjs.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Status: Capstone](https://img.shields.io/badge/status-capstone--midterm-orange)]()
+[![Status: Capstone](https://img.shields.io/badge/status-capstone--final-blue)]()
 
 🏆 **제1회 2026 데이터로 미래를 그리는 AI 아이디어 공모전 대상(1등)** — 한국능률협회
 
