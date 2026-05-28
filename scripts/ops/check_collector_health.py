@@ -30,9 +30,9 @@ GH_REPO = "zln02/urban-immune-system"
 
 # layer_signals.layer 값 기준 신선도 임계(시간). L2 KOWAS 는 T-7~10 lag 반영.
 THRESHOLDS = {
-    'otc':        72,
+    'otc':        192,
     'wastewater': 336,
-    'search':     72,
+    'search':     192,
 }
 
 def check_layer(layer, threshold_hours):

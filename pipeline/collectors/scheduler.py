@@ -35,7 +35,7 @@ from pipeline.scorer import run_weekly_scoring
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 logger = logging.getLogger(__name__)
 
-scheduler = BlockingScheduler(timezone="Asia/Seoul")
+scheduler = BlockingScheduler(timezone="Asia/Seoul", job_defaults={"misfire_grace_time": 604800, "coalesce": True})
 
 scheduler.add_job(collect_otc_weekly, CronTrigger(day_of_week="mon", hour=9, minute=0), id="otc")
 
