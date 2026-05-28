@@ -1479,6 +1479,9 @@ function S11A() {
           </div>
         </div>
       </Plate>
+      <Line x={120} y={970} delay={2.4} style={{ ...TYPE.small, fontSize: 14, color: WHITE_45 }}>
+        용어 — FAR: 거짓 경보 비율 · F1: 정확도 종합 점수(1.0=만점, 0.8이상 우수) · Gate B: 두 신호 이상 동시 충족 강제 · Granger: 통계적 선행성 검증
+      </Line>
     </>
   );
 }
@@ -1618,6 +1621,53 @@ function LegalCard({ x, y, delay, title, sub, pct, color, badge, good }) {
 }
 
 // ----- S14 Vision 2027 -----
+// ----- HonestCard — V11.x 정직성 카드 (S13C용) -----
+function HonestCard({ step, title, body, plain, delay, accent }) {
+  return (
+    <div style={{
+      background: 'rgba(255,255,255,0.04)',
+      border: `1px solid ${accent ? 'rgba(34,227,255,0.5)' : 'rgba(255,255,255,0.12)'}`,
+      borderRadius: 8,
+      padding: '20px 18px',
+      animation: `fadeIn 0.6s ${delay}s both`,
+      display: 'flex',
+      flexDirection: 'column',
+    }}>
+      <div style={{ ...TYPE.label, color: accent ? ACCENT : WHITE_70, fontSize: 12 }}>{step}</div>
+      <div style={{ ...TYPE.title, fontSize: 24, color: WHITE, marginTop: 8, letterSpacing: '-0.01em' }}>{title}</div>
+      <div style={{ ...TYPE.small, fontSize: 14, color: WHITE_70, marginTop: 14, lineHeight: 1.5 }}>{body}</div>
+      <div style={{ ...TYPE.small, fontSize: 13, color: ACCENT, marginTop: 'auto', paddingTop: 12, fontStyle: 'italic' }}>→ {plain}</div>
+    </div>
+  );
+}
+
+// ----- S13C V11.0~V11.4 정직성 5단 (비전공자 친화) -----
+function S13C() {
+  return (
+    <>
+      <Chrome index={14} label="13C · HONEST LAYERS" />
+      <Line x={120} y={140} style={TYPE.eyebrow}>V11.0 ~ V11.4 · 정직성 5단 LAYER</Line>
+      <Line x={120} y={200} delay={0.1} style={TYPE.title}>한계까지 정직하게 보여드립니다.</Line>
+
+      <Plate x={120} y={340} width={1680} height={600} delay={0.5}>
+        <div style={{ padding: 36, fontFamily: FONT, height: '100%', boxSizing: 'border-box' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 18, height: '100%' }}>
+            <HonestCard step="V11.0" title="기준 확정" body="17개 시·도 walk-forward로 F1 0.907 측정. 누가 돌려도 같은 수치." plain="기준점 박았다." delay={0.8} />
+            <HonestCard step="V11.1" title="신뢰구간 공개" body="Recall 신뢰구간 [0.834, 0.924]. 하한이 목표 0.85에 살짝 못 미친다는 점도 숨기지 않음." plain="정확도가 운으로 흔들리는 범위까지 명시." delay={1.0} />
+            <HonestCard step="V11.2" title="검정군 솔직" body="51개 통계 검정 중 실제 독립 검정은 18개. 네이버 API 제약으로 일부 지역 같은 신호." plain="겉으론 51개지만 진짜는 18개라고 인정." delay={1.2} />
+            <HonestCard step="V11.3" title="합성 입력 명시" body="TFT 예측 모델은 데모용 합성 입력. API 응답에 synthetic_demo 메타 자동 표시." plain="모델 PoC라는 사실을 응답에 박았다." delay={1.4} />
+            <HonestCard step="V11.4" title="룰 vs ML 분리" body="룰 기반 게이트는 17지역 실측 검증(production). XGBoost는 양성 이벤트 4주뿐이라 PoC." plain="절반은 완성, 절반은 PoC라고 분리." delay={1.6} accent />
+          </div>
+        </div>
+      </Plate>
+
+      <Line x={120} y={970} delay={2.4} style={{ ...TYPE.small, fontSize: 14, color: WHITE_45 }}>
+        용어 — 신뢰구간: "이 범위 안에 진짜 값이 있을 확률 95%" · PoC: "개념 실증, 제품 아님" · production: "검증 끝, 실전 배치 가능"
+      </Line>
+    </>
+  );
+}
+
 function S14() {
   return (
     <>
@@ -2646,6 +2696,7 @@ window.Scenes = {
   S11, S11A, S12,
   S13,
   S13B,
+  S13C,
   S14, S15, S16,
   SCENE_DUR,
 };
