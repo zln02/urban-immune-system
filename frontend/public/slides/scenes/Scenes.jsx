@@ -1668,6 +1668,109 @@ function S13C() {
   );
 }
 
+// ----- S13D Limitations — 7개 한계 정직 공개 (비전공자 친화) -----
+function S13D() {
+  return (
+    <>
+      <Chrome index={15} label="13D · LIMITATIONS" />
+      <Line x={120} y={140} style={TYPE.eyebrow}>한계까지 명시 — Phase 2/3에서 풀 것</Line>
+      <Line x={120} y={200} delay={0.1} style={TYPE.title}>인정하면 신뢰가 됩니다.</Line>
+
+      <Plate x={120} y={340} width={1680} height={600} delay={0.5}>
+        <div style={{ padding: 36, fontFamily: FONT, height: '100%', boxSizing: 'border-box' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, height: '100%' }}>
+            <HonestCard step="L1" title="단일 시즌"     body="2025-2026 인플루엔자 26주만 검증. 다년 일반화는 미수행." plain="한 시즌만 봤다. 다른 해는 나중에." delay={0.8} />
+            <HonestCard step="L2" title="단일 질병"     body="인플루엔자만 검증. 코로나·노로는 KOWAS 데이터는 있지만 백테스트 미수행." plain="독감만 봤다. 다른 병은 나중에." delay={0.95} />
+            <HonestCard step="L3" title="펜데믹 미검증" body="계절성 인플루엔자와 펜데믹은 동역학이 다름. COVID 같은 신종에 외삽은 별도 검증 필요." plain="'독감 적중'이지 '펜데믹 적중'은 아직." delay={1.1} accent />
+            <HonestCard step="L4" title="Recall 경계"   body="신뢰구간 하한 0.834 — 목표 0.85에 살짝 못 미침. Phase 2 다중 시즌으로 좁힘." plain="정확도가 운으로 살짝 흔들릴 수 있다." delay={1.25} />
+            <HonestCard step="L5" title="전국 broadcast" body="네이버 API 제약으로 약국·검색이 17지역 동일 신호. HIRA OpenAPI로 분리 예정(Phase 3)." plain="시도별로 신호가 같음. API 한계." delay={1.4} />
+            <HonestCard step="L6" title="KOWAS 7~10일 lag" body="하수 데이터 자체에 측정-공개 7~10일 지연. 진짜 실시간 아님." plain="실시간이 아니라 '주간'이다." delay={1.55} />
+          </div>
+        </div>
+      </Plate>
+
+      <Line x={120} y={970} delay={2.4} style={{ ...TYPE.small, fontSize: 14, color: WHITE_45 }}>
+        용어 — 동역학: "감염 전파 패턴" · 외삽: "검증 안 된 영역까지 추정" · broadcast: "같은 신호 복제"
+      </Line>
+    </>
+  );
+}
+
+// ----- S14A Evolution — 6주 진보 곡선 -----
+function S14A() {
+  const rows = [
+    { ver: 'D-3',    date: '5/4',  f1: '0.841', added: '17지역 walk-forward 첫 측정' },
+    { ver: 'V11.0',  date: '5/14', f1: '0.907', added: 'F1 +0.066 · canonical 확정', highlight: true },
+    { ver: 'V11.1',  date: '5/17', f1: '0.907', added: '+ Bootstrap 신뢰구간 (정직성 1단)' },
+    { ver: 'V11.2',  date: '5/22', f1: '0.907', added: '+ 지역별 Granger 51검정 (정직성 2단)' },
+    { ver: 'V11.3',  date: '5/22', f1: '0.907', added: '+ TFT 합성 메타 명시 (정직성 3단)' },
+    { ver: 'V11.4',  date: '5/27', f1: '0.907', added: '+ 룰 vs ML 분리 (정직성 4단)', highlight: true },
+  ];
+  return (
+    <>
+      <Chrome index={17} label="14A · EVOLUTION" />
+      <Line x={120} y={140} style={TYPE.eyebrow}>6주 진보 — 메트릭 +0.066, 정직성 4단 추가</Line>
+      <Line x={120} y={200} delay={0.1} style={TYPE.title}>숫자보다 정직성이 매 버전 늘었다.</Line>
+
+      <Plate x={120} y={340} width={1680} height={600} delay={0.5}>
+        <div style={{ padding: 36, fontFamily: FONT }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '140px 100px 140px 1fr', gap: 20, ...TYPE.label, color: WHITE_45, fontSize: 14, paddingBottom: 16, borderBottom: `1px solid ${WHITE_15}` }}>
+            <div>버전</div><div>날짜</div><div>F1</div><div>추가된 것</div>
+          </div>
+          {rows.map((r, i) => (
+            <div key={r.ver} style={{
+              display: 'grid', gridTemplateColumns: '140px 100px 140px 1fr', gap: 20,
+              padding: '18px 0', borderBottom: `1px solid ${WHITE_15}`,
+              animation: `fadeIn 0.5s ${0.8 + i * 0.15}s both`,
+              ...TYPE.small, fontSize: 20,
+              color: r.highlight ? ACCENT : WHITE,
+            }}>
+              <div style={{ fontWeight: 700 }}>{r.ver}</div>
+              <div style={{ color: WHITE_70 }}>{r.date}</div>
+              <div style={{ color: r.highlight ? ACCENT : WHITE, fontWeight: 600 }}>{r.f1}</div>
+              <div>{r.added}</div>
+            </div>
+          ))}
+          <div style={{ marginTop: 24, ...TYPE.small, fontSize: 18, color: WHITE_70, fontStyle: 'italic' }}>
+            → 6주 동안 메트릭은 +0.066, 그러나 더 큰 변화는 매 버전마다 추가된 정직성 layer.
+          </div>
+        </div>
+      </Plate>
+
+      <Line x={120} y={970} delay={2.4} style={{ ...TYPE.small, fontSize: 14, color: WHITE_45 }}>
+        용어 — walk-forward: "미래 데이터 못 보게 한 검증" · canonical: "공식 기준값" · 정직성 layer: "한계를 한 단계씩 공개"
+      </Line>
+    </>
+  );
+}
+
+// ----- S16A Q&A 발표 멘트 5장 -----
+function S16A() {
+  return (
+    <>
+      <Chrome index={20} label="16A · Q&A SCRIPT" />
+      <Line x={120} y={140} style={TYPE.eyebrow}>예상 질문 5장 — 한 줄 대응</Line>
+      <Line x={120} y={200} delay={0.1} style={TYPE.title}>정직히 인정, Phase 2/3에서 보강.</Line>
+
+      <Plate x={120} y={340} width={1680} height={600} delay={0.5}>
+        <div style={{ padding: 36, fontFamily: FONT, height: '100%', boxSizing: 'border-box' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, height: '100%' }}>
+            <HonestCard step="Q1" title="AI 도구 정직" body="Claude Code Opus·Sonnet으로 5인팀 병렬 협업. 핵심 설계·의사결정은 모두 사람." plain="도구는 썼다. 머리는 우리다." delay={0.8} />
+            <HonestCard step="Q2" title="Recall borderline" body="신뢰구간 하한 0.834가 목표 0.85에 살짝 미달 — 인정. Phase 2 다중 시즌으로 좁힘." plain="살짝 모자란다, 다음에 보강." delay={1.0} />
+            <HonestCard step="Q3" title="시도별 신호 같음" body="네이버 API 제약으로 약국·검색이 17지역 동일. Phase 3에서 HIRA OpenAPI 통합." plain="API 한계, 다음에 풀음." delay={1.2} />
+            <HonestCard step="Q4" title="TFT 평탄" body="composite는 실데이터 룰 기반. TFT는 응답에 synthetic_demo 표시되는 PoC." plain="분리해서 보고함." delay={1.4} />
+            <HonestCard step="Q5" title="단일 시즌" body="2025-2026만 검증 — 인정. 프레임워크는 완성, 다중 시즌은 Phase 2 누적." plain="한 시즌만 봤다, 다음에 늘림." delay={1.6} accent />
+          </div>
+        </div>
+      </Plate>
+
+      <Line x={120} y={970} delay={2.4} style={{ ...TYPE.small, fontSize: 14, color: WHITE_45 }}>
+        다섯 질문 모두 동일 한 줄 — "정직히 인정, Phase 2/3에서 보강." 이게 V11.4 honest split의 정신.
+      </Line>
+    </>
+  );
+}
+
 function S14() {
   return (
     <>
@@ -2697,6 +2800,7 @@ window.Scenes = {
   S13,
   S13B,
   S13C,
-  S14, S15, S16,
+  S13D,
+  S14, S14A, S15, S16, S16A,
   SCENE_DUR,
 };
