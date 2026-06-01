@@ -14,7 +14,6 @@ CLI:
   python -m pipeline.collectors.naver_backfill
   python -m pipeline.collectors.naver_backfill --weeks 26 --layers search
 """
-
 from __future__ import annotations
 
 import argparse
@@ -39,25 +38,40 @@ SYMPTOM_KEYWORDS = ["독감 증상", "인플루엔자", "고열 원인", "몸살
 OTC_CATEGORY_ID = "50000167"  # 일반의약품 - 감기·해열·진통제 카테고리
 OTC_PARAM_NAME = "감기약"
 
+# 다질병 L3 검색 키워드 사전 — 2026-06-01 추가
+# L1 OTC는 카테고리 ID 기반이라 인플루엔자(감기약) 외 확장은 별도 R&D 필요 → 인플루엔자만 수집.
+# L3는 키워드 기반이라 pathogen별 확장 가능.
+# 노로바이러스 검색량은 매우 낮을 수 있어 일부 주차 응답 빈 가능성 있음 → 별도 검증 필요.
+SEARCH_KEYWORDS_BY_PATHOGEN: dict[str, list[str]] = {
+    "influenza": SYMPTOM_KEYWORDS,
+    "covid": ["코로나 증상", "코로나 검사", "PCR 검사", "자가검사 키트", "코로나 후유증"],
+    "norovirus": ["노로바이러스", "장염 증상", "구토 설사", "급성 위장염"],
+}
+
+
+def _search_keywords(pathogen: str) -> list[str]:
+    if pathogen not in SEARCH_KEYWORDS_BY_PATHOGEN:
+        raise ValueError(
+            f"미지원 pathogen='{pathogen}'. 지원: {list(SEARCH_KEYWORDS_BY_PATHOGEN)}"
+        )
+    return SEARCH_KEYWORDS_BY_PATHOGEN[pathogen]
+
+
+def _datalab_source(pathogen: str) -> str:
+    """pathogen별 source 라벨 — 멱등 DELETE 격리용.
+
+    delete_signal_range가 (layer, source) 기준이라 pathogen을 source에 포함시켜야
+    influenza 백필이 covid row를 지우지 않음.
+    """
+    # 인플루엔자는 기존 호환성 유지 (legacy "naver_datalab")
+    return "naver_datalab" if pathogen == "influenza" else f"naver_datalab_{pathogen}"
+
 # KOWAS와 동일한 17개 시·도 풀네임 — kowas_parser.SIDO_ORDER 와 정확히 일치해야 함
 SIDO_ALL = [
-    "서울특별시",
-    "부산광역시",
-    "대구광역시",
-    "인천광역시",
-    "광주광역시",
-    "대전광역시",
-    "울산광역시",
-    "세종특별자치시",
-    "경기도",
-    "강원특별자치도",
-    "충청북도",
-    "충청남도",
-    "전라북도",
-    "전라남도",
-    "경상북도",
-    "경상남도",
-    "제주특별자치도",
+    "서울특별시", "부산광역시", "대구광역시", "인천광역시", "광주광역시",
+    "대전광역시", "울산광역시", "세종특별자치시", "경기도", "강원특별자치도",
+    "충청북도", "충청남도", "전라북도", "전라남도", "경상북도",
+    "경상남도", "제주특별자치도",
 ]
 
 
@@ -76,13 +90,19 @@ def _client() -> httpx.Client:
     )
 
 
-def fetch_search_series(client: httpx.Client, start: date, end: date) -> list[tuple[date, float]]:
-    """Naver DataLab 검색 트렌드 1년치 일괄 조회 (주 단위)."""
+def fetch_search_series(
+    client: httpx.Client,
+    start: date,
+    end: date,
+    pathogen: str = "influenza",
+) -> list[tuple[date, float]]:
+    """Naver DataLab 검색 트렌드 1년치 일괄 조회 (주 단위, pathogen별)."""
+    keywords = _search_keywords(pathogen)
     payload = {
         "startDate": start.strftime("%Y-%m-%d"),
         "endDate": end.strftime("%Y-%m-%d"),
         "timeUnit": "week",
-        "keywordGroups": [{"groupName": "독감증상", "keywords": SYMPTOM_KEYWORDS}],
+        "keywordGroups": [{"groupName": pathogen, "keywords": keywords}],
     }
     resp = client.post(DATALAB_SEARCH, json=payload)
     resp.raise_for_status()
@@ -109,6 +129,7 @@ async def backfill_layer(
     series: list[tuple[date, float]],
     source: str,
     regions: list[str],
+    pathogen: str = "influenza",
 ) -> int:
     """단일 layer 시계열을 17개 region에 복제 적재.
 
@@ -132,12 +153,9 @@ async def backfill_layer(
             value = max(0.0, min(100.0, float(raw_v)))
             try:
                 await insert_signal(
-                    region=region,
-                    layer=layer,
-                    value=value,
-                    raw_value=raw_v,
-                    source=source,
-                    ts=ts,
+                    region=region, layer=layer, value=value,
+                    raw_value=raw_v, source=source, ts=ts,
+                    pathogen=pathogen,
                 )
                 inserted += 1
             except Exception as exc:
@@ -149,6 +167,7 @@ async def run_backfill(
     weeks: int = 56,
     layers: str = "both",
     regions: str = "all",
+    pathogen: str = "influenza",
 ) -> dict[str, int]:
     """scheduler/CLI 양쪽에서 호출 가능한 백필 코어.
 
@@ -156,33 +175,41 @@ async def run_backfill(
         weeks: 백필 주차 수
         layers: 'both' | 'otc' | 'search'
         regions: 'all' (17개 시·도) | 'single' (서울만)
+        pathogen: 'influenza' | 'covid' | 'norovirus' — 2026-06-01 다질병 도입.
+            L1 OTC는 카테고리 ID(감기약)가 influenza 전제 → covid/norovirus 시 'search' 만 적재됨.
 
     Returns:
         {'search': 적재건수, 'otc': 적재건수}
     """
     end = date.today()
     start = end - timedelta(weeks=weeks)
-    logger.info("백필 범위: %s ~ %s (%d주)", start, end, weeks)
+    logger.info("백필 범위: %s ~ %s (%d주, pathogen=%s)", start, end, weeks, pathogen)
     region_list = SIDO_ALL if regions == "all" else ["서울특별시"]
     counts: dict[str, int] = {}
+    search_source = _datalab_source(pathogen)
+
+    # L1 OTC는 영향 카테고리(감기약)가 influenza 전제 → 다른 pathogen은 자동 skip
+    do_otc = layers in ("both", "otc") and pathogen == "influenza"
+    if layers in ("both", "otc") and pathogen != "influenza":
+        logger.info("OTC skip: pathogen=%s는 L1 카테고리 미정의 (현재 influenza 전용)", pathogen)
 
     with _client() as client:
         if layers in ("both", "search"):
             try:
-                ser = fetch_search_series(client, start, end)
-                logger.info("Search %d주 수집 → %d 지역 복제 적재", len(ser), len(region_list))
+                ser = fetch_search_series(client, start, end, pathogen=pathogen)
+                if not ser:
+                    logger.warning("Search %s: 빈 응답 (키워드 검색량 너무 낮을 수 있음)", pathogen)
+                logger.info("Search %d주 수집 → %d 지역 복제 적재 (pathogen=%s)",
+                            len(ser), len(region_list), pathogen)
                 counts["search"] = await backfill_layer(
-                    "search",
-                    ser,
-                    "naver_datalab",
-                    region_list,
+                    "search", ser, search_source, region_list, pathogen=pathogen,
                 )
                 logger.info("search 적재 %d건", counts["search"])
             except Exception as exc:
                 logger.exception("Search 백필 실패: %s", exc)
                 counts["search"] = 0
 
-        if layers in ("both", "otc"):
+        if do_otc:
             try:
                 ser = fetch_shopping_series(client, start, end)
                 logger.info("OTC %d주 수집 → %d 지역 복제 적재", len(ser), len(region_list))
@@ -190,10 +217,8 @@ async def run_backfill(
                 # 두 source 가 섞이면 한 region 시계열에 다른 정규화 스케일이 끼어들어 등락 왜곡.
                 # 멱등 DELETE 가 (layer, source) 기준이라 backfill·신규 collector 모두 일관 정리됨.
                 counts["otc"] = await backfill_layer(
-                    "otc",
-                    ser,
-                    "naver_shopping_insight",
-                    region_list,
+                    "otc", ser, "naver_shopping_insight", region_list,
+                    pathogen="influenza",
                 )
                 logger.info("otc 적재 %d건", counts["otc"])
             except Exception as exc:
@@ -207,14 +232,19 @@ async def main() -> int:
     parser = argparse.ArgumentParser(description="Naver OTC/Search 시계열 백필")
     parser.add_argument("--weeks", type=int, default=56, help="백필 주차 수 (기본 1년+여유)")
     parser.add_argument("--layers", choices=["both", "otc", "search"], default="both")
-    parser.add_argument(
-        "--regions", choices=["all", "single"], default="all", help="all=17개 시·도 복제, single=서울만"
-    )
+    parser.add_argument("--regions", choices=["all", "single"], default="all",
+                        help="all=17개 시·도 복제, single=서울만")
+    parser.add_argument("--pathogen", choices=["influenza", "covid", "norovirus"],
+                        default="influenza",
+                        help="병원체 (L3만 분기; L1 OTC는 influenza 전용)")
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", datefmt="%H:%M:%S")
+    logging.basicConfig(level=logging.INFO,
+                        format="%(asctime)s [%(levelname)s] %(message)s",
+                        datefmt="%H:%M:%S")
 
-    await run_backfill(weeks=args.weeks, layers=args.layers, regions=args.regions)
+    await run_backfill(weeks=args.weeks, layers=args.layers, regions=args.regions,
+                       pathogen=args.pathogen)
     return 0
 
 
