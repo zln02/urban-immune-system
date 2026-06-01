@@ -1,8 +1,14 @@
 "use client";
 
 import { Panel } from "@/components/ui/panel";
-import { useLeadTime, useBacktest17, useTftRegression } from "@/hooks/useAnalysisStats";
+import {
+  useLeadTime,
+  useBacktest17,
+  useTftRegression,
+  useCovidBacktest,
+} from "@/hooks/useAnalysisStats";
 import type { Lang } from "@/lib/i18n";
+import type { Pathogen } from "@/hooks/useSignalTimeseries";
 
 interface Metric {
   label: string;
@@ -84,12 +90,23 @@ function AxisCard({ axis }: { axis: Axis }) {
   );
 }
 
-export function ValidationMatrixPanel({ lang }: { lang: Lang }) {
+export function ValidationMatrixPanel({
+  lang,
+  pathogen = "influenza",
+}: {
+  lang: Lang;
+  pathogen?: Pathogen;
+}) {
   const lt = useLeadTime();
   const bt = useBacktest17();
   const tft = useTftRegression();
+  const covid = useCovidBacktest();
+
+  const isCovid = pathogen === "covid";
+  const isNoro = pathogen === "norovirus";
 
   const bs = bt.data?.summary;
+  const cs = covid.data?.summary;
   // 17지역 walk-forward 평균 lead (6.76주) 우선, lead_time_summary(서울 단독)는 폴백
   const leadFromBacktest = bs?.mean_lead_weeks;
   const leadFromLT = lt.data?.signal_lead_weeks?.composite;
@@ -102,12 +119,62 @@ export function ValidationMatrixPanel({ lang }: { lang: Lang }) {
   const fmt = (v: number | null | undefined, digits = 3) =>
     v === undefined || v === null ? "—" : v.toFixed(digits);
 
-  const axes: Axis[] = [
-    {
-      title: lang === "ko" ? "① 분류 검증 (경보 Y/N)" : "① Classification (alert Y/N)",
-      subtitle: lang === "ko" ? "17지역 walk-forward · gate 4주" : "17 regions · gap 4w",
-      color: "var(--risk-safe)",
-      metrics: [
+  // 분류 카드 — pathogen별 다른 source
+  const classificationMetrics: Metric[] = isCovid
+    ? [
+        {
+          label: "F1",
+          value: fmt(cs?.pooled_f1, 3),
+          ok: cs ? cs.pooled_f1 >= 0.5 : null,
+          note: lang === "ko" ? "β baseline (n=" + (cs?.pooled_n ?? "—") + ")" : `β baseline (n=${cs?.pooled_n ?? "—"})`,
+        },
+        {
+          label: "Recall",
+          value: fmt(cs?.pooled_recall, 3),
+          ok: cs ? cs.pooled_recall >= 0.5 : null,
+          note: lang === "ko" ? "12주 데이터" : "12 weeks data",
+        },
+        {
+          label: "Precision",
+          value: fmt(cs?.pooled_precision, 3),
+          ok: cs ? cs.pooled_precision >= 0.5 : null,
+          note: lang === "ko" ? "L1 미적재" : "L1 missing",
+        },
+        {
+          label: "FAR",
+          value: fmt(cs?.pooled_far, 3),
+          ok: cs ? cs.pooled_far < 0.3 : null,
+          note: lang === "ko" ? "AUPRC " + fmt(cs?.pooled_auprc, 3) : `AUPRC ${fmt(cs?.pooled_auprc, 3)}`,
+        },
+      ]
+    : isNoro
+    ? [
+        {
+          label: "F1",
+          value: "—",
+          ok: null,
+          note: lang === "ko" ? "학습 미수행" : "no training",
+        },
+        {
+          label: "Recall",
+          value: "—",
+          ok: null,
+          note: lang === "ko" ? "데이터 12주만" : "12 weeks only",
+        },
+        {
+          label: "Precision",
+          value: "—",
+          ok: null,
+          note: lang === "ko" ? "L1 미적재" : "L1 missing",
+        },
+        {
+          label: "FAR",
+          value: "—",
+          ok: null,
+          note: lang === "ko" ? "수집·시각화만" : "ingest only",
+        },
+      ]
+    : [
         {
           label: "F1",
           value: fmt(bs?.mean_f1, 3),
@@ -132,7 +199,22 @@ export function ValidationMatrixPanel({ lang }: { lang: Lang }) {
           ok: bs ? bs.mean_far_with_gate < 0.3 : null,
           note: lang === "ko" ? "목표 <0.30" : "target <0.30",
         },
-      ],
+      ];
+
+  const axes: Axis[] = [
+    {
+      title: isCovid
+        ? lang === "ko" ? "① 분류 검증 (COVID-19 β)" : "① Classification (COVID-19 β)"
+        : isNoro
+        ? lang === "ko" ? "① 분류 (노로 — 학습 미수행)" : "① Classification (Norovirus — N/A)"
+        : lang === "ko" ? "① 분류 검증 (경보 Y/N)" : "① Classification (alert Y/N)",
+      subtitle: isCovid
+        ? lang === "ko" ? "region-pooled · L2+L3 · self-target proxy" : "pooled · L2+L3 · self-target proxy"
+        : isNoro
+        ? lang === "ko" ? "데이터 적재만 (학습은 P0)" : "data ingested · training pending"
+        : lang === "ko" ? "17지역 walk-forward · gate 4주" : "17 regions · gap 4w",
+      color: "var(--risk-safe)",
+      metrics: classificationMetrics,
     },
     {
       title: lang === "ko" ? "② 시점 검증 (lead time)" : "② Timing (lead time)",
@@ -176,12 +258,19 @@ export function ValidationMatrixPanel({ lang }: { lang: Lang }) {
       ],
     },
     {
-      title: lang === "ko" ? "③ 회귀 검증 (위험점수)" : "③ Regression (risk score)",
-      subtitle: lang === "ko"
-        ? "TFT prod (2026-05-04) · composite 0-100 회귀"
-        : "TFT prod (2026-05-04) · composite 0-100",
+      title: pathogen === "influenza"
+        ? lang === "ko" ? "③ 회귀 검증 (위험점수)" : "③ Regression (risk score)"
+        : lang === "ko" ? "③ 회귀 (인플루엔자 전용)" : "③ Regression (influenza only)",
+      subtitle: pathogen === "influenza"
+        ? lang === "ko" ? "TFT prod (2026-05-04) · composite 0-100 회귀" : "TFT prod (2026-05-04) · composite 0-100"
+        : lang === "ko" ? "다질병 회귀 미수행 — TFT 인플루엔자 학습" : "no multi-pathogen regression yet",
       color: "var(--layer-pharmacy)",
-      metrics: [
+      metrics: pathogen !== "influenza" ? [
+        { label: "MAE @1w", value: "—", ok: null, note: lang === "ko" ? "인플루엔자 전용" : "influenza only" },
+        { label: "MAPE @1w", value: "—", ok: null, note: lang === "ko" ? "P0 PatchTST 도입" : "P0 PatchTST" },
+        { label: "RMSE @1w", value: "—", ok: null, note: lang === "ko" ? "데이터 누적 필요" : "data accrual" },
+        { label: "MAPE @2w", value: "—", ok: null, note: lang === "ko" ? "발표 후 R&D" : "post-presentation R&D" },
+      ] : [
         {
           label: lang === "ko" ? "MAE @1주 후" : "MAE @1w",
           value: fmt(h1?.mae, 2),

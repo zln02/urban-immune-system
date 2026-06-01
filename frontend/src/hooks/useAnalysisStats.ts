@@ -86,3 +86,33 @@ export function useTftRegression() {
     staleTime: 5 * 60 * 1000,
   });
 }
+
+export interface CovidBacktestSummary {
+  primary_evaluation: string;
+  note: string;
+  pooled_f1: number;
+  pooled_precision: number;
+  pooled_recall: number;
+  pooled_far: number;
+  pooled_mcc: number;
+  pooled_auprc: number;
+  pooled_n: number;
+  pooled_n_pos: number;
+}
+
+export interface CovidBacktestFile {
+  generated_at: string;
+  purpose: string;
+  honesty_note: string;
+  config: Record<string, unknown>;
+  summary: CovidBacktestSummary;
+}
+
+export function useCovidBacktest() {
+  return useQuery<CovidBacktestFile, Error>({
+    queryKey: ["analysis", "covid_backtest_17"],
+    queryFn: () =>
+      fetchJson<CovidBacktestFile>("/data/backtest_xgboost_covid_17regions.json"),
+    staleTime: 5 * 60 * 1000,
+  });
+}
