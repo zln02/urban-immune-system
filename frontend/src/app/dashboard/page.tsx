@@ -761,7 +761,7 @@ export default function DashboardPage() {
           />
         </div>
 
-        <ValidationMatrixPanel lang={lang} />
+        <ValidationMatrixPanel lang={lang} pathogen={pathogen} />
 
         <div
           style={{
