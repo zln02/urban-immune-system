@@ -22,6 +22,38 @@ interface BacktestFile {
   summary: BacktestSummary;
 }
 
+export interface TftRegressionMetric {
+  n: number;
+  n_dropped_nan?: number;
+  mae: number | null;
+  mape_percent: number | null;
+  rmse: number | null;
+  mean_true: number;
+  mean_pred: number;
+}
+
+export interface TftRegressionEvaluation {
+  checkpoint: string;
+  n_sequences: number;
+  prediction_length: number;
+  overall: TftRegressionMetric;
+  by_horizon: Record<string, TftRegressionMetric>;
+  by_region: Record<string, Record<string, TftRegressionMetric>>;
+}
+
+export interface TftRegressionFile {
+  generated_at: string;
+  purpose: string;
+  target_semantics: string;
+  data_summary: {
+    n_rows: number;
+    n_regions: number;
+    regions: string[];
+    time_idx_max: number;
+  };
+  evaluations: Record<string, TftRegressionEvaluation>;
+}
+
 async function fetchJson<T>(path: string): Promise<T> {
   const res = await fetch(path, { cache: "no-store" });
   if (!res.ok) throw new Error(`${path} ${res.status}`);
@@ -40,6 +72,15 @@ export function useBacktest17() {
   return useQuery<BacktestFile, Error>({
     queryKey: ["analysis", "backtest_17"],
     queryFn: () => fetchJson<BacktestFile>("/data/backtest_17regions.json"),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useTftRegression() {
+  return useQuery<TftRegressionFile, Error>({
+    queryKey: ["analysis", "tft_regression_17"],
+    queryFn: () =>
+      fetchJson<TftRegressionFile>("/data/tft_regression_backtest_17regions.json"),
     staleTime: 5 * 60 * 1000,
   });
 }

@@ -13,6 +13,7 @@ import { LayerCard } from "@/components/alert/layer-card";
 import { AIReportCard } from "@/components/alert/ai-report-card";
 import { AlertTable } from "@/components/alert/alert-table";
 import { AnomalyPanel } from "@/components/anomaly/anomaly-panel";
+import { ValidationMatrixPanel } from "@/components/alert/validation-matrix-panel";
 import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { ChatWidget } from "@/components/chat/chat-widget";
 
@@ -21,10 +22,11 @@ import { RISK_META } from "@/lib/risk";
 import { DICT, type Lang } from "@/lib/i18n";
 import { mockAlerts, mockDistricts, mockSeries, type DistrictData, type AlertRecord } from "@/lib/mock-data";
 
+type AlertRecordLike = AlertRecord;
 import { useOtcTrend, useSearchTrend } from "@/hooks/useNaverTrend";
 import { useWastewaterSeries } from "@/hooks/useSignalTimeseries";
 import { useRegionAlerts, type RegionAlert } from "@/hooks/useRegionAlerts";
-import { useLeadTime, useBacktest17 } from "@/hooks/useAnalysisStats";
+import { useLeadTime, useBacktest17, useTftRegression } from "@/hooks/useAnalysisStats";
 
 // alert_level → 1~4 매핑 (legend·map 색칠 통일)
 const LEVEL_TO_RISK: Record<string, 1 | 2 | 3 | 4> = {
@@ -84,7 +86,7 @@ export default function DashboardPage() {
 
   // AlertBanner / KpiCard / AlertTable 모두 실 regionAlerts 기반 (mockAlerts 의존 제거)
   // GREEN 만 있으면 activeAlerts = [] → AlertBanner 자동 숨김
-  const activeAlerts: AlertRecord[] = realAlerts
+  const activeAlerts: AlertRecordLike[] = realAlerts
     .filter((a) => a.alert_level !== "GREEN")
     .map((a, i) => ({
       id: `RT-${i}`,
@@ -115,9 +117,10 @@ export default function DashboardPage() {
   // 지도에서 선택한 region (한국어 이름) + 인플루엔자 단일 병원체로 한정.
   const selectedRegionKo = regionName(selected, "ko");
   const sewageQuery = useWastewaterSeries(selectedRegionKo, 365);
-  // ── 분석 산출물 (lead time / backtest 17지역) ───────────────────
+  // ── 분석 산출물 (lead time / backtest 17지역 / TFT 회귀) ─────────
   const leadTimeQuery = useLeadTime();
   const backtestQuery = useBacktest17();
+  const tftRegressionQuery = useTftRegression();
 
   const toSparkValues = (values: number[], scale = 100) =>
     values.map((v) => v * scale);
@@ -157,6 +160,13 @@ export default function DashboardPage() {
   const grangerP = leadTimeQuery.data?.granger_p;
   const backtestRecall = backtestQuery.data?.summary.mean_recall;
   const backtestF1 = backtestQuery.data?.summary.mean_f1;
+
+  // TFT 회귀 검증 (prod ckpt = 2026-05-04, horizon_1week)
+  const tftProdEval = tftRegressionQuery.data?.evaluations?.prod_20260504;
+  const tftMae1w = tftProdEval?.by_horizon?.horizon_1week?.mae;
+  const tftMape1w = tftProdEval?.by_horizon?.horizon_1week?.mape_percent;
+  const tftRmse1w = tftProdEval?.by_horizon?.horizon_1week?.rmse;
+  const tftN = tftProdEval?.by_horizon?.horizon_1week?.n;
 
   return (
     <div
@@ -642,7 +652,7 @@ export default function DashboardPage() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
+            gridTemplateColumns: "repeat(3, 1fr)",
             gap: "var(--sp-4)",
           }}
         >
@@ -678,17 +688,40 @@ export default function DashboardPage() {
             sparkColor="var(--layer-pharmacy)"
           />
           <KpiCard
-            label={lang === "en" ? "Backtest F1" : "백테스트 F1"}
+            label={lang === "en" ? "Backtest F1 (Class.)" : "분류 F1 (백테스트)"}
             labelSuffix={<InfoTooltip term="f1" />}
             value={backtestF1 !== undefined ? backtestF1.toFixed(3) : "—"}
             delta={backtestRecall !== undefined
-              ? `Recall ${backtestRecall.toFixed(3)} · 17지역`
+              ? `Recall ${backtestRecall.toFixed(3)} · 17지역 walk-forward`
               : (lang === "en" ? "loading…" : "로딩 중")}
             tone={backtestF1 !== undefined && backtestF1 >= 0.65 ? "safe" : "caution"}
             sparkData={sewageValues.slice(-20)}
             sparkColor="var(--layer-sewage)"
           />
+          <KpiCard
+            label={lang === "en" ? "Regression MAPE @1w" : "회귀 MAPE (1주 후)"}
+            value={tftMape1w !== undefined && tftMape1w !== null ? tftMape1w.toFixed(2) : "—"}
+            unit="%"
+            delta={tftMae1w !== undefined && tftMae1w !== null
+              ? `MAE ${tftMae1w.toFixed(2)} · n=${tftN ?? "—"} · composite 0-100`
+              : (lang === "en" ? "loading…" : "로딩 중")}
+            tone={tftMape1w !== undefined && tftMape1w !== null && tftMape1w <= 25 ? "safe" : "caution"}
+            sparkData={searchValues.slice(-20)}
+            sparkColor="var(--layer-search)"
+          />
+          <KpiCard
+            label={lang === "en" ? "Regression RMSE @1w" : "회귀 RMSE (1주 후)"}
+            value={tftRmse1w !== undefined && tftRmse1w !== null ? tftRmse1w.toFixed(2) : "—"}
+            delta={tftProdEval
+              ? `TFT prod ckpt (2026-05-04) · ${tftRegressionQuery.data?.data_summary?.n_regions ?? 17}지역`
+              : (lang === "en" ? "loading…" : "로딩 중")}
+            tone="safe"
+            sparkData={otcValues.slice(-20)}
+            sparkColor="var(--layer-pharmacy)"
+          />
         </div>
+
+        <ValidationMatrixPanel lang={lang} />
 
         <div
           style={{
@@ -947,13 +980,6 @@ export default function DashboardPage() {
                 ? (trendDays === null ? searchValues : searchValues.slice(-trendDays))
                 : mockSeries.search,
             }}
-            dates={
-              hasSewage
-                ? (trendDays === null ? sewageSeries : sewageSeries.slice(-trendDays)).map((p) => p.time)
-                : hasOtc
-                ? (trendDays === null ? otcSeries : otcSeries.slice(-trendDays)).map((p) => p.date)
-                : undefined
-            }
             t={t}
             height={280}
           />
@@ -1077,6 +1103,20 @@ const iconBtnDark: CSSProperties = {
   display: "grid",
   placeItems: "center",
   position: "relative",
+};
+
+const btnGhost: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  padding: "7px 12px",
+  fontSize: 12,
+  fontWeight: 500,
+  background: "transparent",
+  color: "var(--text)",
+  border: "1px solid var(--border-strong)",
+  cursor: "pointer",
+  fontFamily: "inherit",
 };
 
 const btnPrimary: CSSProperties = {
