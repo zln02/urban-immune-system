@@ -1,0 +1,125 @@
+{
+  "generated_at": "2026-06-01T08:33:11.128771+00:00",
+  "purpose": "COVID-19 self-target proxy backtest — KDCA confirmed 미연동, L2 KOWAS COVID(t+2주) 라벨",
+  "pool_result": {
+    "status": "ok",
+    "cv": "TimeSeriesSplit n_splits=5, gap=4",
+    "n": 136,
+    "n_pos": 41,
+    "n_neg": 95,
+    "f1": 0.5526,
+    "precision": 0.6,
+    "recall": 0.5122,
+    "false_alarm_rate": 0.1474,
+    "mcc": 0.383,
+    "auprc": 0.5536,
+    "confusion_matrix": {
+      "TP": 21,
+      "FP": 14,
+      "FN": 20,
+      "TN": 81
+    }
+  },
+  "honesty_note": "인플루엔자 backtest와 의미가 다름: 인플루엔자=KDCA peak 외부 검증, COVID=L2 KOWAS 자체 시그널 선행성 (내부 검증). 외부 임상 검증은 KDCA COVID 데이터 연동 후 P0.",
+  "config": {
+    "pathogen": "covid",
+    "features": [
+      "l2_wastewater",
+      "l3_search"
+    ],
+    "target": "L2 KOWAS COVID(t+2주) ≥ 32.0",
+    "model": "GradientBoostingClassifier (n_est=80, max_depth=3)",
+    "cv": "TimeSeriesSplit n_splits=5, gap=4",
+    "alert_threshold": 32.0,
+    "lead_weeks": 2
+  },
+  "data_summary": {
+    "n_rows": 204,
+    "n_regions": 17,
+    "alert_future_positive_rate": 0.2206
+  },
+  "summary": {
+    "primary_evaluation": "region_pooled",
+    "note": "데이터 부족(region당 13주)으로 region-pooled 단일 모델 학습. region_code는 categorical feature.",
+    "pooled_f1": 0.5526,
+    "pooled_precision": 0.6,
+    "pooled_recall": 0.5122,
+    "pooled_far": 0.1474,
+    "pooled_mcc": 0.383,
+    "pooled_auprc": 0.5536,
+    "pooled_n": 136,
+    "pooled_n_pos": 41,
+    "n_ok_regions_individual": 0,
+    "n_total_regions": 17
+  },
+  "regions": {
+    "강원특별자치도": {
+      "status": "skipped",
+      "reason": "n=12 (need ≥14)"
+    },
+    "경기도": {
+      "status": "skipped",
+      "reason": "n=12 (need ≥14)"
+    },
+    "경상남도": {
+      "status": "skipped",
+      "reason": "n=12 (need ≥14)"
+    },
+    "경상북도": {
+      "status": "skipped",
+      "reason": "n=12 (need ≥14)"
+    },
+    "광주광역시": {
+      "status": "skipped",
+      "reason": "n=12 (need ≥14)"
+    },
+    "대구광역시": {
+      "status": "skipped",
+      "reason": "n=12 (need ≥14)"
+    },
+    "대전광역시": {
+      "status": "skipped",
+      "reason": "n=12 (need ≥14)"
+    },
+    "부산광역시": {
+      "status": "skipped",
+      "reason": "n=12 (need ≥14)"
+    },
+    "서울특별시": {
+      "status": "skipped",
+      "reason": "n=12 (need ≥14)"
+    },
+    "세종특별자치시": {
+      "status": "skipped",
+      "reason": "n=12 (need ≥14)"
+    },
+    "울산광역시": {
+      "status": "skipped",
+      "reason": "n=12 (need ≥14)"
+    },
+    "인천광역시": {
+      "status": "skipped",
+      "reason": "n=12 (need ≥14)"
+    },
+    "전라남도": {
+      "status": "skipped",
+      "reason": "n=12 (need ≥14)"
+    },
+    "전라북도": {
+      "status": "skipped",
+      "reason": "n=12 (need ≥14)"
+    },
+    "제주특별자치도": {
+      "status": "skipped",
+      "reason": "n=12 (need ≥14)"
+    },
+    "충청남도": {
+      "status": "skipped",
+      "reason": "n=12 (need ≥14)"
+    },
+    "충청북도": {
+      "status": "skipped",
+      "reason": "n=12 (need ≥14)"
+    }
+  }
+}
