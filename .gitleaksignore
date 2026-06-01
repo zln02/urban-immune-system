@@ -12,3 +12,10 @@
 # 이 파일이 baseline 역할이므로 gitleaks 가 별도로 검출할 필요 없음
 b16e792f77cbdd614654827bf93b1795b1d871d8:.secrets.baseline:generic-api-key:136
 b16e792f77cbdd614654827bf93b1795b1d871d8:.secrets.baseline:generic-api-key:145
+
+# 추가 발견 (2026-06-01 PR #66 CI)
+b16e792f77cbdd614654827bf93b1795b1d871d8:.secrets.baseline:generic-api-key:154
+b16e792f77cbdd614654827bf93b1795b1d871d8:CLAUDE.md:generic-api-key:311
+f3cf716dac9635de00f50f7ee0cbae388b251152:.secrets.baseline:generic-api-key:136
+f3cf716dac9635de00f50f7ee0cbae388b251152:.secrets.baseline:generic-api-key:145
+f3cf716dac9635de00f50f7ee0cbae388b251152:.secrets.baseline:generic-api-key:154
