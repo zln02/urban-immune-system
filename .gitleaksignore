@@ -1,0 +1,14 @@
+# gitleaks false positives — 모두 placeholder / 정상 시크릿 baseline 파일
+# 검증 결과 실제 시크릿 노출 없음 (2026-06-01 확인)
+
+# infra/nginx/README.md line 37: `curl -u admin:PW` 의 "PW"는 password placeholder 약자
+# 실제 자격증명 아님. 운영 시 실 비번은 .env / k8s Secret 으로만 주입.
+4b52a29155f71f786428bbfa79f22ca038126c22:infra/nginx/README.md:curl-auth-user:37
+
+# docs/security.md: `.env.example` 형식의 빈 환경변수 예시 (값 없음)
+3cd52dd9210a6205e3ec9e0d1ed7a5316a000c7d:docs/security.md:generic-api-key:23
+
+# .secrets.baseline: detect-secrets 의 정상 baseline 파일 (SHA1 해시만 저장)
+# 이 파일이 baseline 역할이므로 gitleaks 가 별도로 검출할 필요 없음
+b16e792f77cbdd614654827bf93b1795b1d871d8:.secrets.baseline:generic-api-key:136
+b16e792f77cbdd614654827bf93b1795b1d871d8:.secrets.baseline:generic-api-key:145
