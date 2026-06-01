@@ -42,7 +42,7 @@ pipeline/collectors/   docker-compose:           ml/                 frontend/
 
 | 모델 | 학습일 | 위치 | 상태 |
 |---|---|---|---|
-| XGBoost (앙상블 주모델) | 2026-04-29 | `ml/checkpoints/xgb_best.joblib` | ✅ F1=0.907 / Recall=0.882 / Precision=0.940 / FAR=0.250 (gate ON) / Lead 6.47주 / MCC=0.610 / AUPRC=0.973 (17지역 walk-forward, gap 4주 5-fold, `analysis/outputs/backtest_17regions.json`) |
+| XGBoost (앙상블 주모델) | 2026-04-29 | `ml/checkpoints/xgb_best.joblib` | ✅ F1=0.907 / Recall=0.882 / Precision=0.940 / FAR=0.250 (gate ON) / Lead 6.76주 / MCC=0.610 / AUPRC=0.973 (17지역 walk-forward, gap 4주 5-fold, `analysis/outputs/backtest_17regions.json`) |
 | TFT-real (Lightning) | 2026-04-29 | `ml/checkpoints/tft_real/tft_best.ckpt` | ⚠️ epoch5 best val_loss=5.48, 26주 한계로 발산 — PoC 위치, 데이터 누적 후 prod |
 | TFT-synth (Lightning) | 2026-04-26 | `ml/checkpoints/tft_synth/tft_best-v2.ckpt` | ✅ val_loss=1.88, attention top3 (검색·하수·OTC) 검증용 |
 | Autoencoder | 2026-04-29 | `ml/checkpoints/autoencoder/model.pt` | ✅ 99p threshold 적용 후 17지역 inference 1/17 정상화 (`ff17dfa`) |
