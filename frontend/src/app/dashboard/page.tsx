@@ -14,6 +14,7 @@ import { AIReportCard } from "@/components/alert/ai-report-card";
 import { AlertTable } from "@/components/alert/alert-table";
 import { AnomalyPanel } from "@/components/anomaly/anomaly-panel";
 import { ValidationMatrixPanel } from "@/components/alert/validation-matrix-panel";
+import { SystemHealthBanner } from "@/components/alert/system-health-banner";
 import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { ChatWidget } from "@/components/chat/chat-widget";
 
@@ -620,6 +621,10 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* 운영 알림 (수집기 freshness) — fail/warn 시에만 표시 */}
+        <SystemHealthBanner lang={lang} />
+
+        {/* 경보 알림 (RED/ORANGE) 또는 전국 안전 */}
         {allGreen ? (
           <div
             role="status"

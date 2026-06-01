@@ -16,6 +16,8 @@ export interface BacktestSummary {
   mean_precision: number;
   mean_f1: number;
   mean_far_with_gate: number;
+  mean_lead_weeks?: number;
+  n_regions_with_lead?: number;
 }
 
 interface BacktestFile {

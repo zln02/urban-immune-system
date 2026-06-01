@@ -10,7 +10,7 @@
 | Recall | **0.882** (gate ON) / 0.904 (gate OFF) | |
 | Precision | **0.940** | |
 | FAR | **0.250** (gate ON) / 0.602 (gate OFF) | 게이트 효과 −58.5% FAR |
-| Lead Time | **6.47주** | 임상 확진 대비 선행 |
+| Lead Time | **6.76주** | 임상 확진 대비 선행 |
 | MCC | 0.610 | |
 | Balanced Accuracy | 0.816 | |
 | AUPRC | **0.973** | |
