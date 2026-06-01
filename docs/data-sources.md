@@ -66,6 +66,6 @@
 - **Granger 인과검정**: p < 0.05 (L1·L3 유의, L2 약함 — `analysis/outputs/lead_time_summary.json` 참조)
 - **3-Layer 17개 시·도 walk-forward 백테스트** (2025-2026 인플루엔자 시즌, n=1,020)
   - F1=0.907 · Precision=0.940 · Recall=0.882 · FAR=0.250 (gate ON; 17지역 5-fold)
-  - 평균 lead time 6.47주 (확진 peak 대비)
+  - 평균 lead time 6.76주 (확진 peak 대비)
   - 출처: `analysis/outputs/backtest_17regions.json`
 - **Train/Test Split**: walk-forward (TimeSeriesSplit, gap=4주)

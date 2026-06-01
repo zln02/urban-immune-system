@@ -90,7 +90,11 @@ export function ValidationMatrixPanel({ lang }: { lang: Lang }) {
   const tft = useTftRegression();
 
   const bs = bt.data?.summary;
-  const lead = lt.data?.signal_lead_weeks?.composite;
+  // 17지역 walk-forward 평균 lead (6.76주) 우선, lead_time_summary(서울 단독)는 폴백
+  const leadFromBacktest = bs?.mean_lead_weeks;
+  const leadFromLT = lt.data?.signal_lead_weeks?.composite;
+  const lead = leadFromBacktest ?? leadFromLT;
+  const leadSource = leadFromBacktest !== undefined ? "17regions" : "seoul";
   const prodEval = tft.data?.evaluations?.prod_20260504;
   const h1 = prodEval?.by_horizon?.horizon_1week;
   const h2 = prodEval?.by_horizon?.horizon_2week;
@@ -132,27 +136,35 @@ export function ValidationMatrixPanel({ lang }: { lang: Lang }) {
     },
     {
       title: lang === "ko" ? "② 시점 검증 (lead time)" : "② Timing (lead time)",
-      subtitle: lang === "ko" ? "KCDC peak 대비 composite lead" : "vs KCDC peak",
+      subtitle: lang === "ko"
+        ? (leadSource === "17regions"
+            ? `17지역 walk-forward 평균 · n=${bs?.n_regions_with_lead ?? 17}`
+            : "서울 단독 분석 (Granger/CCF)")
+        : leadSource === "17regions"
+            ? `17 regions walk-forward avg · n=${bs?.n_regions_with_lead ?? 17}`
+            : "Seoul-only (Granger/CCF)",
       color: "var(--layer-search)",
       metrics: [
         {
           label: lang === "ko" ? "Composite lead" : "Composite lead",
           value: fmt(lead, 2),
           unit: lang === "ko" ? "주" : "wks",
-          ok: lead !== undefined ? lead >= 1.0 : null,
-          note: lang === "ko" ? "목표 ≥1주" : "target ≥1 week",
+          ok: lead !== undefined ? lead >= 6.0 : null,
+          note: lang === "ko" ? "목표 ≥6주 (KCDC peak 대비)" : "target ≥6 weeks",
         },
         {
           label: "L1 (OTC)",
           value: fmt(lt.data?.signal_lead_weeks?.l1_otc, 2),
           unit: lang === "ko" ? "주" : "wks",
           ok: null,
+          note: lang === "ko" ? "서울 단독 (CCF)" : "Seoul (CCF)",
         },
         {
           label: "L2 (KOWAS)",
           value: fmt(lt.data?.signal_lead_weeks?.l2_wastewater, 2),
           unit: lang === "ko" ? "주" : "wks",
           ok: null,
+          note: lang === "ko" ? "서울 단독" : "Seoul",
         },
         {
           label: "L3 (Search)",
