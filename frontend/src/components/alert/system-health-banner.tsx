@@ -41,16 +41,29 @@ export function SystemHealthBanner({ lang }: { lang: Lang }) {
   const sewage = useWastewaterSeries("서울특별시", 60);
   const alerts = useRegionAlerts(8);
 
-  const STALE_WARN = 8;
-  const STALE_FAIL = 15;
+  // Layer별 임계 — 발행/수집 주기에 맞춤
+  // L1 OTC, L3 검색: 네이버 DataLab 주1 수집 (월요일) → 8/15일
+  // L2 KOWAS: 보고서 발행이 측정 종료 후 ~10일 지연 → 14/21일로 완화
+  // Alerts API: 1분 staleTime, fetch만 성공하면 ok
+  const STALE_THRESHOLD: Record<string, { warn: number; fail: number }> = {
+    "L1 OTC": { warn: 8, fail: 15 },
+    "L2 KOWAS": { warn: 14, fail: 21 }, // KOWAS 발행 사이클(~2주) 반영
+    "L3 Search": { warn: 8, fail: 15 },
+    default: { warn: 8, fail: 15 },
+  };
 
-  function classify(lastDate: string | undefined, fetchError?: unknown): LayerHealth["state"] {
+  function classify(
+    layerName: string,
+    lastDate: string | undefined,
+    fetchError?: unknown,
+  ): LayerHealth["state"] {
     if (fetchError) return "fail";
     if (!lastDate) return "fail";
     const d = daysBetween(lastDate);
     if (!isFinite(d)) return "fail";
-    if (d >= STALE_FAIL) return "fail";
-    if (d >= STALE_WARN) return "warn";
+    const thr = STALE_THRESHOLD[layerName] ?? STALE_THRESHOLD.default;
+    if (d >= thr.fail) return "fail";
+    if (d >= thr.warn) return "warn";
     return "ok";
   }
 
@@ -67,7 +80,7 @@ export function SystemHealthBanner({ lang }: { lang: Lang }) {
       color: "var(--layer-pharmacy)",
       lastDate: otcLast,
       daysAgo: otcLast ? daysBetween(otcLast) : undefined,
-      state: classify(otcLast, otc.error),
+      state: classify("L1 OTC", otcLast, otc.error),
       errorMsg: otc.error?.message,
     },
     {
@@ -75,7 +88,7 @@ export function SystemHealthBanner({ lang }: { lang: Lang }) {
       color: "var(--layer-sewage)",
       lastDate: sewageLast,
       daysAgo: sewageLast ? daysBetween(sewageLast) : undefined,
-      state: classify(sewageLast, sewage.error),
+      state: classify("L2 KOWAS", sewageLast, sewage.error),
       errorMsg: sewage.error?.message,
     },
     {
@@ -83,7 +96,7 @@ export function SystemHealthBanner({ lang }: { lang: Lang }) {
       color: "var(--layer-search)",
       lastDate: searchLast,
       daysAgo: searchLast ? daysBetween(searchLast) : undefined,
-      state: classify(searchLast, search.error),
+      state: classify("L3 Search", searchLast, search.error),
       errorMsg: search.error?.message,
     },
     {
@@ -134,7 +147,9 @@ export function SystemHealthBanner({ lang }: { lang: Lang }) {
           </strong>
         </div>
         <span style={{ fontSize: 10, color: "var(--text-tertiary)" }}>
-          {lang === "ko" ? "임계 8일 경고 · 15일 실패" : "threshold 8d warn / 15d fail"}
+          {lang === "ko"
+            ? "임계 L1/L3 8일·15일 · L2 14일·21일 (발행 주기 반영)"
+            : "threshold L1/L3 8/15d · L2 14/21d (release cycle)"}
         </span>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
