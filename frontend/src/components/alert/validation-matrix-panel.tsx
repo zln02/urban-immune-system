@@ -6,6 +6,7 @@ import {
   useBacktest17,
   useTftRegression,
   useCovidBacktest,
+  useNoroBacktest,
 } from "@/hooks/useAnalysisStats";
 import type { Lang } from "@/lib/i18n";
 import type { Pathogen } from "@/hooks/useSignalTimeseries";
@@ -101,12 +102,14 @@ export function ValidationMatrixPanel({
   const bt = useBacktest17();
   const tft = useTftRegression();
   const covid = useCovidBacktest();
+  const noro = useNoroBacktest();
 
   const isCovid = pathogen === "covid";
   const isNoro = pathogen === "norovirus";
 
   const bs = bt.data?.summary;
   const cs = covid.data?.summary;
+  const ns = noro.data?.summary;
   // 17지역 walk-forward 평균 lead (6.76주) 우선, lead_time_summary(서울 단독)는 폴백
   const leadFromBacktest = bs?.mean_lead_weeks;
   const leadFromLT = lt.data?.signal_lead_weeks?.composite;
@@ -124,54 +127,54 @@ export function ValidationMatrixPanel({
     ? [
         {
           label: "F1",
-          value: fmt(cs?.pooled_f1, 3),
-          ok: cs ? cs.pooled_f1 >= 0.5 : null,
-          note: lang === "ko" ? "β baseline (n=" + (cs?.pooled_n ?? "—") + ")" : `β baseline (n=${cs?.pooled_n ?? "—"})`,
+          value: fmt(cs?.pool_f1, 3),
+          ok: cs ? cs.pool_f1 >= 0.6 : null,
+          note: lang === "ko" ? "β · 53주 · 17/17 학습" : `β · 53wks · 17/17 trained`,
         },
         {
           label: "Recall",
-          value: fmt(cs?.pooled_recall, 3),
-          ok: cs ? cs.pooled_recall >= 0.5 : null,
-          note: lang === "ko" ? "12주 데이터" : "12 weeks data",
+          value: fmt(cs?.pool_recall, 3),
+          ok: cs ? cs.pool_recall >= 0.7 : null,
+          note: lang === "ko" ? "n=" + (cs?.pool_n ?? "—") + " (양성 " + (cs?.pool_n_pos ?? "—") + ")" : `n=${cs?.pool_n ?? "—"} pos=${cs?.pool_n_pos ?? "—"}`,
         },
         {
           label: "Precision",
-          value: fmt(cs?.pooled_precision, 3),
-          ok: cs ? cs.pooled_precision >= 0.5 : null,
-          note: lang === "ko" ? "L1 미적재" : "L1 missing",
+          value: fmt(cs?.pool_precision, 3),
+          ok: cs ? cs.pool_precision >= 0.6 : null,
+          note: lang === "ko" ? "L1 미적재 (L2+L3)" : "L1 missing (L2+L3)",
         },
         {
           label: "FAR",
-          value: fmt(cs?.pooled_far, 3),
-          ok: cs ? cs.pooled_far < 0.3 : null,
-          note: lang === "ko" ? "AUPRC " + fmt(cs?.pooled_auprc, 3) : `AUPRC ${fmt(cs?.pooled_auprc, 3)}`,
+          value: fmt(cs?.pool_far, 3),
+          ok: cs ? cs.pool_far < 0.3 : null,
+          note: lang === "ko" ? "MCC " + fmt(cs?.pool_mcc, 3) + " / AUPRC " + fmt(cs?.pool_auprc, 3) : `MCC ${fmt(cs?.pool_mcc, 3)} / AUPRC ${fmt(cs?.pool_auprc, 3)}`,
         },
       ]
     : isNoro
     ? [
         {
           label: "F1",
-          value: "—",
-          ok: null,
-          note: lang === "ko" ? "학습 미수행" : "no training",
+          value: fmt(ns?.pool_f1, 3),
+          ok: ns ? ns.pool_f1 >= 0.6 : null,
+          note: lang === "ko" ? "β · 53주 · 17/17 학습" : `β · 53wks · 17/17 trained`,
         },
         {
           label: "Recall",
-          value: "—",
-          ok: null,
-          note: lang === "ko" ? "데이터 12주만" : "12 weeks only",
+          value: fmt(ns?.pool_recall, 3),
+          ok: ns ? ns.pool_recall >= 0.7 : null,
+          note: lang === "ko" ? "n=" + (ns?.pool_n ?? "—") + " (양성 " + (ns?.pool_n_pos ?? "—") + ")" : `n=${ns?.pool_n ?? "—"} pos=${ns?.pool_n_pos ?? "—"}`,
         },
         {
           label: "Precision",
-          value: "—",
-          ok: null,
-          note: lang === "ko" ? "L1 미적재" : "L1 missing",
+          value: fmt(ns?.pool_precision, 3),
+          ok: ns ? ns.pool_precision >= 0.6 : null,
+          note: lang === "ko" ? "L1 미적재 (L2+L3)" : "L1 missing (L2+L3)",
         },
         {
           label: "FAR",
-          value: "—",
-          ok: null,
-          note: lang === "ko" ? "수집·시각화만" : "ingest only",
+          value: fmt(ns?.pool_far, 3),
+          ok: ns ? ns.pool_far < 0.35 : null,
+          note: lang === "ko" ? "MCC " + fmt(ns?.pool_mcc, 3) + " / AUPRC " + fmt(ns?.pool_auprc, 3) : `MCC ${fmt(ns?.pool_mcc, 3)} / AUPRC ${fmt(ns?.pool_auprc, 3)}`,
         },
       ]
     : [
@@ -206,12 +209,12 @@ export function ValidationMatrixPanel({
       title: isCovid
         ? lang === "ko" ? "① 분류 검증 (COVID-19 β)" : "① Classification (COVID-19 β)"
         : isNoro
-        ? lang === "ko" ? "① 분류 (노로 — 학습 미수행)" : "① Classification (Norovirus — N/A)"
+        ? lang === "ko" ? "① 분류 검증 (노로 β)" : "① Classification (Norovirus β)"
         : lang === "ko" ? "① 분류 검증 (경보 Y/N)" : "① Classification (alert Y/N)",
       subtitle: isCovid
-        ? lang === "ko" ? "region-pooled · L2+L3 · self-target proxy" : "pooled · L2+L3 · self-target proxy"
+        ? lang === "ko" ? "pooled · L2+L3·lag·MA · proxy" : "pooled · L2+L3·lag·MA · proxy"
         : isNoro
-        ? lang === "ko" ? "데이터 적재만 (학습은 P0)" : "data ingested · training pending"
+        ? lang === "ko" ? "pooled · L2+L3·lag·MA · proxy" : "pooled · L2+L3·lag·MA · proxy"
         : lang === "ko" ? "17지역 walk-forward · gate 4주" : "17 regions · gap 4w",
       color: "var(--risk-safe)",
       metrics: classificationMetrics,
