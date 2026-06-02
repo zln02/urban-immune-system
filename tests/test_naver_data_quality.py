@@ -153,7 +153,10 @@ class TestSourceUnification:
         text = src.read_text(encoding="utf-8")
         # OTC backfill_layer 호출에 'naver_shopping' (legacy) 가 단독으로 들어가면 안 됨
         # 'naver_shopping_insight' 통일 정책
-        otc_block = text.split('layers in ("both", "otc")')[1].split("return counts")[0]
+        # 2026-06-01 다질병 도입 후 `layers in ("both", "otc")` 가 2회 (do_otc 가드 + 로그).
+        # OTC 적재 실제 블록은 `if do_otc:` 안쪽.
+        assert "if do_otc:" in text, "naver_backfill.py에 do_otc 가드가 있어야 함"
+        otc_block = text.split("if do_otc:")[1].split("return counts")[0]
         assert '"naver_shopping_insight"' in otc_block, (
             "OTC backfill source 가 'naver_shopping_insight' 로 통일돼야 함 "
             "(otc_collector 와 같은 라벨, 두 source 섞임 방지)"
