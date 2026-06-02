@@ -123,60 +123,54 @@ export function ValidationMatrixPanel({
     v === undefined || v === null ? "—" : v.toFixed(digits);
 
   // 분류 카드 — pathogen별 다른 source
+  // 정직성: proxy 라벨 한계 — trivial baseline이 ML보다 좋을 수 있음 (v11.5)
+  const buildProxyMetrics = (s: typeof cs): Metric[] => {
+    const gain = s?.model_gain_vs_trivial_f1 ?? null;
+    const gainSign = gain === null ? "" : gain >= 0 ? "+" : "";
+    const gainLabel =
+      gain === null
+        ? ""
+        : lang === "ko"
+        ? ` · ML gain ${gainSign}${gain.toFixed(3)}`
+        : ` · ML gain ${gainSign}${gain.toFixed(3)}`;
+    return [
+      {
+        label: "F1 (ML)",
+        value: fmt(s?.pool_f1, 3),
+        ok: gain !== null ? gain >= 0 : null,
+        note: (lang === "ko"
+          ? `vs trivial ${fmt(s?.best_trivial_f1, 3)} (${s?.best_trivial_name ?? "—"})`
+          : `vs trivial ${fmt(s?.best_trivial_f1, 3)} (${s?.best_trivial_name ?? "—"})`) + gainLabel,
+      },
+      {
+        label: "Recall (ML)",
+        value: fmt(s?.pool_recall, 3),
+        ok: s ? s.pool_recall >= 0.7 : null,
+        note: lang === "ko"
+          ? `n=${s?.pool_n ?? "—"} 양성 ${s?.pool_n_pos ?? "—"} · weekly group CV`
+          : `n=${s?.pool_n ?? "—"} pos=${s?.pool_n_pos ?? "—"} · weekly group CV`,
+      },
+      {
+        label: "Precision (ML)",
+        value: fmt(s?.pool_precision, 3),
+        ok: s ? s.pool_precision >= 0.6 : null,
+        note: lang === "ko" ? "L1 미적재 (L2+L3 only)" : "L1 missing (L2+L3 only)",
+      },
+      {
+        label: "FAR (ML)",
+        value: fmt(s?.pool_far, 3),
+        ok: s ? s.pool_far < 0.3 : null,
+        note: lang === "ko"
+          ? `trivial FAR ${fmt(s?.best_trivial_far, 3)} · MCC ${fmt(s?.pool_mcc, 3)}`
+          : `trivial FAR ${fmt(s?.best_trivial_far, 3)} · MCC ${fmt(s?.pool_mcc, 3)}`,
+      },
+    ];
+  };
+
   const classificationMetrics: Metric[] = isCovid
-    ? [
-        {
-          label: "F1",
-          value: fmt(cs?.pool_f1, 3),
-          ok: cs ? cs.pool_f1 >= 0.6 : null,
-          note: lang === "ko" ? "β · 53주 · 17/17 학습" : `β · 53wks · 17/17 trained`,
-        },
-        {
-          label: "Recall",
-          value: fmt(cs?.pool_recall, 3),
-          ok: cs ? cs.pool_recall >= 0.7 : null,
-          note: lang === "ko" ? "n=" + (cs?.pool_n ?? "—") + " (양성 " + (cs?.pool_n_pos ?? "—") + ")" : `n=${cs?.pool_n ?? "—"} pos=${cs?.pool_n_pos ?? "—"}`,
-        },
-        {
-          label: "Precision",
-          value: fmt(cs?.pool_precision, 3),
-          ok: cs ? cs.pool_precision >= 0.6 : null,
-          note: lang === "ko" ? "L1 미적재 (L2+L3)" : "L1 missing (L2+L3)",
-        },
-        {
-          label: "FAR",
-          value: fmt(cs?.pool_far, 3),
-          ok: cs ? cs.pool_far < 0.3 : null,
-          note: lang === "ko" ? "MCC " + fmt(cs?.pool_mcc, 3) + " / AUPRC " + fmt(cs?.pool_auprc, 3) : `MCC ${fmt(cs?.pool_mcc, 3)} / AUPRC ${fmt(cs?.pool_auprc, 3)}`,
-        },
-      ]
+    ? buildProxyMetrics(cs)
     : isNoro
-    ? [
-        {
-          label: "F1",
-          value: fmt(ns?.pool_f1, 3),
-          ok: ns ? ns.pool_f1 >= 0.6 : null,
-          note: lang === "ko" ? "β · 53주 · 17/17 학습" : `β · 53wks · 17/17 trained`,
-        },
-        {
-          label: "Recall",
-          value: fmt(ns?.pool_recall, 3),
-          ok: ns ? ns.pool_recall >= 0.7 : null,
-          note: lang === "ko" ? "n=" + (ns?.pool_n ?? "—") + " (양성 " + (ns?.pool_n_pos ?? "—") + ")" : `n=${ns?.pool_n ?? "—"} pos=${ns?.pool_n_pos ?? "—"}`,
-        },
-        {
-          label: "Precision",
-          value: fmt(ns?.pool_precision, 3),
-          ok: ns ? ns.pool_precision >= 0.6 : null,
-          note: lang === "ko" ? "L1 미적재 (L2+L3)" : "L1 missing (L2+L3)",
-        },
-        {
-          label: "FAR",
-          value: fmt(ns?.pool_far, 3),
-          ok: ns ? ns.pool_far < 0.35 : null,
-          note: lang === "ko" ? "MCC " + fmt(ns?.pool_mcc, 3) + " / AUPRC " + fmt(ns?.pool_auprc, 3) : `MCC ${fmt(ns?.pool_mcc, 3)} / AUPRC ${fmt(ns?.pool_auprc, 3)}`,
-        },
-      ]
+    ? buildProxyMetrics(ns)
     : [
         {
           label: "F1",
@@ -207,14 +201,14 @@ export function ValidationMatrixPanel({
   const axes: Axis[] = [
     {
       title: isCovid
-        ? lang === "ko" ? "① 분류 검증 (COVID-19 β)" : "① Classification (COVID-19 β)"
+        ? lang === "ko" ? "① 분류 (COVID-19 β · proxy)" : "① Classification (COVID-19 β · proxy)"
         : isNoro
-        ? lang === "ko" ? "① 분류 검증 (노로 β)" : "① Classification (Norovirus β)"
+        ? lang === "ko" ? "① 분류 (노로 β · proxy)" : "① Classification (Norovirus β · proxy)"
         : lang === "ko" ? "① 분류 검증 (경보 Y/N)" : "① Classification (alert Y/N)",
-      subtitle: isCovid
-        ? lang === "ko" ? "pooled · L2+L3·lag·MA · proxy" : "pooled · L2+L3·lag·MA · proxy"
-        : isNoro
-        ? lang === "ko" ? "pooled · L2+L3·lag·MA · proxy" : "pooled · L2+L3·lag·MA · proxy"
+      subtitle: isCovid || isNoro
+        ? lang === "ko"
+          ? "self-target proxy: L2(t+2주) ≥ thr · weekly group CV (leakage-free)"
+          : "self-target proxy: L2(t+2w) ≥ thr · weekly group CV"
         : lang === "ko" ? "17지역 walk-forward · gate 4주" : "17 regions · gap 4w",
       color: "var(--risk-safe)",
       metrics: classificationMetrics,
@@ -345,15 +339,19 @@ export function ValidationMatrixPanel({
       >
         {lang === "ko" ? (
           <>
-            <strong>정직성 명시 (V11):</strong> ① 분류는 outbreak Y/N, ② 시점은 lead weeks, ③ 회귀는
-            composite 위험점수 0-100. <u>환자 수 절대값 예측은 별도 모델 필요 (현 단계 미수행)</u>.
-            원본 산출물: <code>analysis/outputs/{`{backtest_17regions,lead_time_summary,tft_regression_backtest_17regions}`}.json</code>
+            <strong>정직성 명시 (V11.5):</strong> ① 인플루엔자 분류는 KDCA peak 외부 라벨로 학습/검증.
+            ② COVID·노로는 <u>self-target proxy (L2 자체 t+2주 값 라벨)</u> — L2(t)와 강한 자기상관 때문에
+            단순 임계 비교(trivial)가 ML 모델보다 좋을 수 있음. ML 우위는 KDCA 확진자 연동 후 회복 예상.
+            ③ 시점 = lead weeks, 회귀 = composite 위험점수 (인플루엔자 전용). 환자 수 절대값 예측은 별도 모델.
+            원본: <code>analysis/outputs/backtest_xgboost_{`{covid,norovirus}`}_17regions.json</code> (baselines 포함)
           </>
         ) : (
           <>
-            <strong>Honesty note:</strong> ① classification = outbreak Y/N, ② timing = lead weeks, ③ regression =
-            composite risk score 0-100. <u>Absolute case-count prediction is out of scope (separate model needed)</u>.
-            Source: <code>analysis/outputs/*.json</code>
+            <strong>Honesty note (V11.5):</strong> ① Influenza classification uses KDCA peak external labels.
+            ② COVID·Norovirus use <u>self-target proxy (L2 self t+2w value as label)</u> — strong autocorrelation
+            means trivial threshold may beat ML. ML edge expected post-KDCA confirmed integration.
+            ③ Timing = lead weeks; regression = influenza-only.
+            Source: <code>analysis/outputs/backtest_xgboost_*.json</code> (baselines included)
           </>
         )}
       </div>

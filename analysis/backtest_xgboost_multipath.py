@@ -200,32 +200,49 @@ async def run_pathogen(pathogen: str, threshold: float, db_url: str,
     pool = pool.sort_values("time").reset_index(drop=True)
     pool["region_code"] = pool["region"].astype("category").cat.codes
     pool_features = features + ["region_code"]
-    X_pool = pool[pool_features].values
-    y_pool = pool["alert_future"].values.astype(int)
     n_pool = len(pool)
-    pool_pos_rate = float(y_pool.mean()) if n_pool > 0 else 0.0
+    pool_pos_rate = float(pool["alert_future"].mean()) if n_pool > 0 else 0.0
     logger.info("Pool: n=%d, 양성 비율=%.2f%%", n_pool, pool_pos_rate * 100)
 
+    # weekly group CV: 같은 주차 17지역은 같은 fold (leakage 방지)
+    weeks_sorted = sorted(pool["time"].unique())
+    n_weeks = len(weeks_sorted)
     pool_result: dict = {}
-    if n_pool >= 50 and 0.05 <= pool_pos_rate <= 0.95:
-        tscv = TimeSeriesSplit(n_splits=5, gap=4)
+    if n_pool >= 50 and 0.05 <= pool_pos_rate <= 0.95 and n_weeks >= 30:
+        fold_w = max(4, n_weeks // 6)
         all_true, all_pred, all_prob = [], [], []
-        for tr_idx, te_idx in tscv.split(X_pool):
-            if len(set(y_pool[tr_idx])) < 2 or len(set(y_pool[te_idx])) < 2:
+        train_end = fold_w
+        n_folds_used = 0
+        while True:
+            test_start = train_end + 2  # gap 2주
+            test_end = test_start + fold_w
+            if test_end > n_weeks:
+                break
+            tr_mask = pool["time"].isin(weeks_sorted[:train_end])
+            te_mask = pool["time"].isin(weeks_sorted[test_start:test_end])
+            X_tr = pool.loc[tr_mask, pool_features].values
+            y_tr = pool.loc[tr_mask, "alert_future"].values.astype(int)
+            X_te = pool.loc[te_mask, pool_features].values
+            y_te = pool.loc[te_mask, "alert_future"].values.astype(int)
+            train_end += fold_w
+            if len(set(y_tr)) < 2 or len(y_te) == 0:
                 continue
             clf = GradientBoostingClassifier(
                 n_estimators=200, max_depth=4,
                 learning_rate=0.05, random_state=42,
             )
-            clf.fit(X_pool[tr_idx], y_pool[tr_idx])
-            prob = clf.predict_proba(X_pool[te_idx])[:, 1]
+            clf.fit(X_tr, y_tr)
+            prob = clf.predict_proba(X_te)[:, 1]
             pred = (prob >= prob_threshold).astype(int)
-            all_true.extend(y_pool[te_idx].tolist())
+            all_true.extend(y_te.tolist())
             all_pred.extend(pred.tolist())
             all_prob.extend(prob.tolist())
+            n_folds_used += 1
         if all_true:
             pool_result = {
-                "status": "ok", "cv": "TimeSeriesSplit n_splits=5, gap=4",
+                "status": "ok",
+                "cv": f"Weekly group CV n_folds={n_folds_used}, gap=2주 (leakage-free)",
+                "n_folds_used": n_folds_used,
                 **_metrics(np.array(all_true), np.array(all_pred), np.array(all_prob)),
             }
         else:
@@ -233,13 +250,42 @@ async def run_pathogen(pathogen: str, threshold: float, db_url: str,
     else:
         pool_result = {
             "status": "skipped",
-            "reason": f"n={n_pool}, pos_rate={pool_pos_rate:.3f}",
+            "reason": f"n={n_pool}, n_weeks={n_weeks}, pos_rate={pool_pos_rate:.3f}",
         }
+
+    # ─── trivial baselines (proxy 라벨 한계 노출용 정직성 메트릭) ───
+    full = df_feat.dropna(subset=["l2_wastewater", "l2_ma3", "alert_future"]).copy()
+    y_full = full["alert_future"].values.astype(int)
+    baselines: dict[str, dict] = {}
+    for name, pred_vec in [
+        ("trivial_L2_t",   (full["l2_wastewater"].values >= threshold).astype(int)),
+        ("trivial_L2_MA3", (full["l2_ma3"].values >= threshold).astype(int)),
+        ("trivial_L2_lag2", (full["l2_lag2"].fillna(0).values >= threshold).astype(int)
+            if "l2_lag2" in full.columns else None),
+    ]:
+        if pred_vec is None:
+            continue
+        baselines[name] = _metrics(y_full, pred_vec, None)
+    logger.info("Trivial baselines:")
+    for k, v in baselines.items():
+        if "f1" in v and v["f1"] is not None:
+            logger.info("  %-18s F1=%.3f FAR=%.3f", k, v["f1"], v["false_alarm_rate"])
 
     def avg_key(key: str) -> float | None:
         vals = [region_results[r][key] for r in ok_regions
                 if region_results[r].get(key) is not None]
         return round(float(np.mean(vals)), 4) if vals else None
+
+    # 모델 우위 계산 (vs best trivial)
+    best_trivial_f1 = max(
+        (v.get("f1") for v in baselines.values() if v.get("f1") is not None),
+        default=None,
+    )
+    pool_f1 = pool_result.get("f1")
+    model_gain_vs_trivial = (
+        round(pool_f1 - best_trivial_f1, 4)
+        if (pool_f1 is not None and best_trivial_f1 is not None) else None
+    )
 
     summary = {
         "pathogen": pathogen,
@@ -250,7 +296,7 @@ async def run_pathogen(pathogen: str, threshold: float, db_url: str,
         "pool_status": pool_result.get("status"),
         "pool_n": pool_result.get("n"),
         "pool_n_pos": pool_result.get("n_pos"),
-        "pool_f1": pool_result.get("f1"),
+        "pool_f1": pool_f1,
         "pool_precision": pool_result.get("precision"),
         "pool_recall": pool_result.get("recall"),
         "pool_far": pool_result.get("false_alarm_rate"),
@@ -260,6 +306,17 @@ async def run_pathogen(pathogen: str, threshold: float, db_url: str,
         "mean_recall_per_region": avg_key("recall"),
         "mean_far_per_region": avg_key("false_alarm_rate"),
         "mean_mcc_per_region": avg_key("mcc"),
+        # 정직성: trivial baseline 대비 모델 우위
+        "best_trivial_name": (
+            max(baselines.items(), key=lambda kv: kv[1].get("f1") or 0)[0]
+            if baselines else None
+        ),
+        "best_trivial_f1": best_trivial_f1,
+        "best_trivial_far": (
+            baselines.get(max(baselines.items(), key=lambda kv: kv[1].get("f1") or 0)[0], {}).get("false_alarm_rate")
+            if baselines else None
+        ),
+        "model_gain_vs_trivial_f1": model_gain_vs_trivial,
     }
 
     return {
@@ -271,7 +328,8 @@ async def run_pathogen(pathogen: str, threshold: float, db_url: str,
             "target": f"L2 KOWAS {pathogen}(t+{LEAD_WEEKS}주) ≥ {threshold}",
             "model_region": "GradientBoostingClassifier (n=100, depth=3, lr=0.05)",
             "model_pool": "GradientBoostingClassifier (n=200, depth=4, lr=0.05)",
-            "cv": "TimeSeriesSplit n_splits=5, gap=2~4",
+            "cv_region": "TimeSeriesSplit n_splits<=5, gap=2 (region-internal)",
+            "cv_pool": "Weekly group CV (같은 주차 17지역 = 같은 fold, gap=2주, leakage-free)",
             "alert_threshold": threshold,
             "prob_threshold": prob_threshold,
             "lead_weeks": LEAD_WEEKS,
@@ -284,10 +342,13 @@ async def run_pathogen(pathogen: str, threshold: float, db_url: str,
         },
         "summary": summary,
         "pool_result": pool_result,
+        "baselines": baselines,
         "regions": region_results,
         "honesty_note": (
-            "self-target proxy: L2 자체 t+2주 값을 라벨로 사용. "
-            "외부 임상 데이터(KDCA 확진자) 미연동 상태의 내부 시그널 선행성 검증."
+            "self-target proxy 라벨 (L2 t+2주 값)은 L2(t)와 강한 자기상관을 가져 "
+            "단순 임계 비교(trivial baseline)가 ML 모델보다 좋을 수 있음. "
+            "외부 임상 데이터(KDCA 확진자) 연동 시 ML 우위 회복 예상. "
+            "CV는 weekly group split (같은 주차 17지역은 같은 fold, leakage-free)."
         ),
     }
 

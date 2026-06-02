@@ -106,6 +106,11 @@ export interface PathogenBacktestSummary {
   mean_recall_per_region: number | null;
   mean_far_per_region: number | null;
   mean_mcc_per_region: number | null;
+  // 정직성: trivial baseline 비교
+  best_trivial_name: string | null;
+  best_trivial_f1: number | null;
+  best_trivial_far: number | null;
+  model_gain_vs_trivial_f1: number | null;
 }
 
 export interface PathogenBacktestFile {
