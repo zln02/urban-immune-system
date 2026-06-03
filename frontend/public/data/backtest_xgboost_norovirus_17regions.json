@@ -1,19 +1,28 @@
 {
-  "generated_at": "2026-06-02T06:45:10.705063+00:00",
-  "purpose": "norovirus self-target proxy backtest (확장된 53주 데이터)",
+  "generated_at": "2026-06-03T06:38:46.962026+00:00",
+  "purpose": "norovirus level target backtest (확장된 53주 데이터)",
   "config": {
     "pathogen": "norovirus",
+    "target_mode": "level",
     "features": [
       "l2_wastewater",
       "l2_lag1",
       "l2_lag2",
       "l2_ma3",
       "l2_diff1",
+      "l2_diff2",
+      "l2_ma3_diff",
       "l3_search",
       "l3_lag1",
-      "l3_ma3"
+      "l3_ma3",
+      "l3_diff1",
+      "l3_ma3_diff",
+      "l1_otc",
+      "l1_lag1",
+      "l1_ma3",
+      "l1_diff1"
     ],
-    "target": "L2 KOWAS norovirus(t+2주) ≥ 30.0",
+    "target": "L2 KOWAS norovirus(t+2주) ≥ 30.0 [level proxy]",
     "model_region": "GradientBoostingClassifier (n=100, depth=3, lr=0.05)",
     "model_pool": "GradientBoostingClassifier (n=200, depth=4, lr=0.05)",
     "cv_region": "TimeSeriesSplit n_splits<=5, gap=2 (region-internal)",
@@ -40,20 +49,20 @@
     "pool_status": "ok",
     "pool_n": 850,
     "pool_n_pos": 392,
-    "pool_f1": 0.6861,
-    "pool_precision": 0.6323,
-    "pool_recall": 0.75,
-    "pool_far": 0.3734,
-    "pool_mcc": 0.3772,
-    "pool_auprc": 0.7626,
-    "mean_f1_per_region": 0.5861,
-    "mean_recall_per_region": 0.5782,
-    "mean_far_per_region": 0.4078,
-    "mean_mcc_per_region": 0.2129,
+    "pool_f1": 0.7557,
+    "pool_precision": 0.7153,
+    "pool_recall": 0.801,
+    "pool_far": 0.2729,
+    "pool_mcc": 0.5268,
+    "pool_auprc": 0.8452,
+    "mean_f1_per_region": 0.5707,
+    "mean_recall_per_region": 0.5831,
+    "mean_far_per_region": 0.3821,
+    "mean_mcc_per_region": 0.2318,
     "best_trivial_name": "trivial_L2_MA3",
     "best_trivial_f1": 0.7973,
     "best_trivial_far": 0.1742,
-    "model_gain_vs_trivial_f1": -0.1112
+    "model_gain_vs_trivial_f1": -0.0416
   },
   "pool_result": {
     "status": "ok",
@@ -62,17 +71,17 @@
     "n": 850,
     "n_pos": 392,
     "n_neg": 458,
-    "f1": 0.6861,
-    "precision": 0.6323,
-    "recall": 0.75,
-    "false_alarm_rate": 0.3734,
-    "mcc": 0.3772,
-    "auprc": 0.7626,
+    "f1": 0.7557,
+    "precision": 0.7153,
+    "recall": 0.801,
+    "false_alarm_rate": 0.2729,
+    "mcc": 0.5268,
+    "auprc": 0.8452,
     "confusion_matrix": {
-      "TP": 294,
-      "FP": 171,
-      "FN": 98,
-      "TN": 287
+      "TP": 314,
+      "FP": 125,
+      "FN": 78,
+      "TN": 333
     }
   },
   "baselines": {
@@ -135,17 +144,17 @@
       "n": 50,
       "n_pos": 14,
       "n_neg": 36,
-      "f1": 0.1538,
-      "precision": 0.1667,
+      "f1": 0.1818,
+      "precision": 0.25,
       "recall": 0.1429,
-      "false_alarm_rate": 0.2778,
-      "mcc": -0.1418,
-      "auprc": 0.301,
+      "false_alarm_rate": 0.1667,
+      "mcc": -0.0292,
+      "auprc": 0.2739,
       "confusion_matrix": {
         "TP": 2,
-        "FP": 10,
+        "FP": 6,
         "FN": 12,
-        "TN": 26
+        "TN": 30
       }
     },
     "경기도": {
@@ -154,17 +163,17 @@
       "n": 30,
       "n_pos": 22,
       "n_neg": 8,
-      "f1": 0.619,
-      "precision": 0.65,
+      "f1": 0.6341,
+      "precision": 0.6842,
       "recall": 0.5909,
-      "false_alarm_rate": 0.875,
-      "mcc": -0.2665,
-      "auprc": 0.6619,
+      "false_alarm_rate": 0.75,
+      "mcc": -0.146,
+      "auprc": 0.7156,
       "confusion_matrix": {
         "TP": 13,
-        "FP": 7,
+        "FP": 6,
         "FN": 9,
-        "TN": 1
+        "TN": 2
       }
     },
     "경상남도": {
@@ -173,17 +182,17 @@
       "n": 20,
       "n_pos": 7,
       "n_neg": 13,
-      "f1": 0.6316,
-      "precision": 0.5,
-      "recall": 0.8571,
-      "false_alarm_rate": 0.4615,
-      "mcc": 0.3852,
-      "auprc": 0.7972,
+      "f1": 0.6364,
+      "precision": 0.4667,
+      "recall": 1.0,
+      "false_alarm_rate": 0.6154,
+      "mcc": 0.4237,
+      "auprc": 0.619,
       "confusion_matrix": {
-        "TP": 6,
-        "FP": 6,
-        "FN": 1,
-        "TN": 7
+        "TP": 7,
+        "FP": 8,
+        "FN": 0,
+        "TN": 5
       }
     },
     "경상북도": {
@@ -192,16 +201,16 @@
       "n": 20,
       "n_pos": 7,
       "n_neg": 13,
-      "f1": 0.7143,
-      "precision": 0.7143,
-      "recall": 0.7143,
+      "f1": 0.3636,
+      "precision": 0.5,
+      "recall": 0.2857,
       "false_alarm_rate": 0.1538,
-      "mcc": 0.5604,
-      "auprc": 0.6952,
+      "mcc": 0.1572,
+      "auprc": 0.4405,
       "confusion_matrix": {
-        "TP": 5,
+        "TP": 2,
         "FP": 2,
-        "FN": 2,
+        "FN": 5,
         "TN": 11
       }
     },
@@ -211,16 +220,16 @@
       "n": 50,
       "n_pos": 19,
       "n_neg": 31,
-      "f1": 0.5385,
+      "f1": 0.1905,
       "precision": 1.0,
-      "recall": 0.3684,
+      "recall": 0.1053,
       "false_alarm_rate": 0.0,
-      "mcc": 0.5154,
-      "auprc": 0.6361,
+      "mcc": 0.2607,
+      "auprc": 0.6219,
       "confusion_matrix": {
-        "TP": 7,
+        "TP": 2,
         "FP": 0,
-        "FN": 12,
+        "FN": 17,
         "TN": 31
       }
     },
@@ -235,7 +244,7 @@
       "recall": 0.7368,
       "false_alarm_rate": 1.0,
       "mcc": -0.1325,
-      "auprc": 0.9009,
+      "auprc": 0.8981,
       "confusion_matrix": {
         "TP": 28,
         "FP": 2,
@@ -249,17 +258,17 @@
       "n": 30,
       "n_pos": 17,
       "n_neg": 13,
-      "f1": 0.5185,
-      "precision": 0.7,
-      "recall": 0.4118,
-      "false_alarm_rate": 0.2308,
-      "mcc": 0.1903,
-      "auprc": 0.7451,
+      "f1": 0.7805,
+      "precision": 0.6667,
+      "recall": 0.9412,
+      "false_alarm_rate": 0.6154,
+      "mcc": 0.4036,
+      "auprc": 0.9745,
       "confusion_matrix": {
-        "TP": 7,
-        "FP": 3,
-        "FN": 10,
-        "TN": 10
+        "TP": 16,
+        "FP": 8,
+        "FN": 1,
+        "TN": 5
       }
     },
     "부산광역시": {
@@ -268,17 +277,17 @@
       "n": 30,
       "n_pos": 28,
       "n_neg": 2,
-      "f1": 0.6957,
-      "precision": 0.8889,
-      "recall": 0.5714,
-      "false_alarm_rate": 1.0,
-      "mcc": -0.2182,
-      "auprc": 0.8785,
+      "f1": 0.4444,
+      "precision": 1.0,
+      "recall": 0.2857,
+      "false_alarm_rate": 0.0,
+      "mcc": 0.1612,
+      "auprc": 0.9748,
       "confusion_matrix": {
-        "TP": 16,
-        "FP": 2,
-        "FN": 12,
-        "TN": 0
+        "TP": 8,
+        "FP": 0,
+        "FN": 20,
+        "TN": 2
       }
     },
     "서울특별시": {
@@ -287,17 +296,17 @@
       "n": 50,
       "n_pos": 15,
       "n_neg": 35,
-      "f1": 0.6087,
-      "precision": 0.875,
-      "recall": 0.4667,
-      "false_alarm_rate": 0.0286,
-      "mcc": 0.5476,
-      "auprc": 0.6536,
+      "f1": 0.48,
+      "precision": 0.6,
+      "recall": 0.4,
+      "false_alarm_rate": 0.1143,
+      "mcc": 0.3273,
+      "auprc": 0.5636,
       "confusion_matrix": {
-        "TP": 7,
-        "FP": 1,
-        "FN": 8,
-        "TN": 34
+        "TP": 6,
+        "FP": 4,
+        "FN": 9,
+        "TN": 31
       }
     },
     "세종특별자치시": {
@@ -306,17 +315,17 @@
       "n": 40,
       "n_pos": 26,
       "n_neg": 14,
-      "f1": 0.7619,
-      "precision": 0.6486,
-      "recall": 0.9231,
-      "false_alarm_rate": 0.9286,
-      "mcc": -0.0099,
-      "auprc": 0.851,
+      "f1": 0.7879,
+      "precision": 0.65,
+      "recall": 1.0,
+      "false_alarm_rate": 1.0,
+      "mcc": 0.0,
+      "auprc": 0.6466,
       "confusion_matrix": {
-        "TP": 24,
-        "FP": 13,
-        "FN": 2,
-        "TN": 1
+        "TP": 26,
+        "FP": 14,
+        "FN": 0,
+        "TN": 0
       }
     },
     "울산광역시": {
@@ -325,17 +334,17 @@
       "n": 50,
       "n_pos": 21,
       "n_neg": 29,
-      "f1": 0.2941,
-      "precision": 0.3846,
+      "f1": 0.303,
+      "precision": 0.4167,
       "recall": 0.2381,
-      "false_alarm_rate": 0.2759,
-      "mcc": -0.0425,
-      "auprc": 0.4924,
+      "false_alarm_rate": 0.2414,
+      "mcc": -0.0038,
+      "auprc": 0.5588,
       "confusion_matrix": {
         "TP": 5,
-        "FP": 8,
+        "FP": 7,
         "FN": 16,
-        "TN": 21
+        "TN": 22
       }
     },
     "인천광역시": {
@@ -344,17 +353,17 @@
       "n": 50,
       "n_pos": 24,
       "n_neg": 26,
-      "f1": 0.4,
-      "precision": 0.6364,
-      "recall": 0.2917,
-      "false_alarm_rate": 0.1538,
-      "mcc": 0.1662,
-      "auprc": 0.6384,
+      "f1": 0.7755,
+      "precision": 0.76,
+      "recall": 0.7917,
+      "false_alarm_rate": 0.2308,
+      "mcc": 0.5604,
+      "auprc": 0.7235,
       "confusion_matrix": {
-        "TP": 7,
-        "FP": 4,
-        "FN": 17,
-        "TN": 22
+        "TP": 19,
+        "FP": 6,
+        "FN": 5,
+        "TN": 20
       }
     },
     "전라남도": {
@@ -363,17 +372,17 @@
       "n": 20,
       "n_pos": 8,
       "n_neg": 12,
-      "f1": 0.8235,
-      "precision": 0.7778,
+      "f1": 0.9333,
+      "precision": 1.0,
       "recall": 0.875,
-      "false_alarm_rate": 0.1667,
-      "mcc": 0.6975,
-      "auprc": 0.8964,
+      "false_alarm_rate": 0.0,
+      "mcc": 0.8987,
+      "auprc": 0.925,
       "confusion_matrix": {
         "TP": 7,
-        "FP": 2,
+        "FP": 0,
         "FN": 1,
-        "TN": 10
+        "TN": 12
       }
     },
     "전라북도": {
@@ -382,17 +391,17 @@
       "n": 30,
       "n_pos": 14,
       "n_neg": 16,
-      "f1": 0.75,
-      "precision": 0.6667,
-      "recall": 0.8571,
-      "false_alarm_rate": 0.375,
-      "mcc": 0.491,
-      "auprc": 0.5769,
+      "f1": 0.6364,
+      "precision": 0.4667,
+      "recall": 1.0,
+      "false_alarm_rate": 1.0,
+      "mcc": 0.0,
+      "auprc": 0.3893,
       "confusion_matrix": {
-        "TP": 12,
-        "FP": 6,
-        "FN": 2,
-        "TN": 10
+        "TP": 14,
+        "FP": 16,
+        "FN": 0,
+        "TN": 0
       }
     },
     "제주특별자치도": {
@@ -401,17 +410,17 @@
       "n": 50,
       "n_pos": 18,
       "n_neg": 32,
-      "f1": 0.48,
-      "precision": 0.8571,
-      "recall": 0.3333,
-      "false_alarm_rate": 0.0312,
-      "mcc": 0.4179,
-      "auprc": 0.5879,
+      "f1": 0.4,
+      "precision": 0.7143,
+      "recall": 0.2778,
+      "false_alarm_rate": 0.0625,
+      "mcc": 0.2978,
+      "auprc": 0.6476,
       "confusion_matrix": {
-        "TP": 6,
-        "FP": 1,
-        "FN": 12,
-        "TN": 31
+        "TP": 5,
+        "FP": 2,
+        "FN": 13,
+        "TN": 30
       }
     },
     "충청남도": {
@@ -420,16 +429,16 @@
       "n": 50,
       "n_pos": 31,
       "n_neg": 19,
-      "f1": 0.5185,
-      "precision": 0.6087,
-      "recall": 0.4516,
+      "f1": 0.7302,
+      "precision": 0.7188,
+      "recall": 0.7419,
       "false_alarm_rate": 0.4737,
-      "mcc": -0.0215,
-      "auprc": 0.6257,
+      "mcc": 0.2713,
+      "auprc": 0.6787,
       "confusion_matrix": {
-        "TP": 14,
+        "TP": 23,
         "FP": 9,
-        "FN": 17,
+        "FN": 8,
         "TN": 10
       }
     },
@@ -439,17 +448,17 @@
       "n": 20,
       "n_pos": 6,
       "n_neg": 14,
-      "f1": 0.6316,
-      "precision": 0.4615,
-      "recall": 1.0,
-      "false_alarm_rate": 0.5,
-      "mcc": 0.4804,
-      "auprc": 1.0,
+      "f1": 0.6,
+      "precision": 0.75,
+      "recall": 0.5,
+      "false_alarm_rate": 0.0714,
+      "mcc": 0.491,
+      "auprc": 0.65,
       "confusion_matrix": {
-        "TP": 6,
-        "FP": 7,
-        "FN": 0,
-        "TN": 7
+        "TP": 3,
+        "FP": 1,
+        "FN": 3,
+        "TN": 13
       }
     }
   },
