@@ -272,8 +272,11 @@ def test_otc_source_label_unified():
     src = Path(__file__).resolve().parents[1] / "pipeline" / "collectors" / "naver_backfill.py"
     text = src.read_text(encoding="utf-8")
 
-    otc_block = text.split('layers in ("both", "otc")')[1].split("return counts")[0]
-    assert '"naver_shopping_insight"' in otc_block, "OTC backfill source가 'naver_shopping_insight'로 통일돼야 함"
+    assert "if do_otc:" in text, "naver_backfill.py에 do_otc 가드가 있어야 함"
+    otc_block = text.split("if do_otc:")[1].split("return counts")[0]
+    assert '"naver_shopping_insight"' in otc_block, (
+        "OTC backfill source가 'naver_shopping_insight'로 통일돼야 함 (do_otc 블록 내부)"
+    )
 
 
 # ─────────────────────── Case 10: run_backfill both 레이어 ────────────────
@@ -370,7 +373,7 @@ async def test_run_backfill_single_region(monkeypatch: pytest.MonkeyPatch):
     search_series = [(date(2026, 3, 1), 55.0)]
     captured_regions: list[list[str]] = []
 
-    async def fake_backfill_layer(layer, series, source, regions):
+    async def fake_backfill_layer(layer, series, source, regions, pathogen="influenza"):
         captured_regions.append(regions)
         return len(regions) * len(series)
 
