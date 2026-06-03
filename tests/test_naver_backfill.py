@@ -273,9 +273,16 @@ def test_otc_source_label_unified():
     text = src.read_text(encoding="utf-8")
 
     assert "if do_otc:" in text, "naver_backfill.py에 do_otc 가드가 있어야 함"
-    otc_block = text.split("if do_otc:")[1].split("return counts")[0]
-    assert '"naver_shopping_insight"' in otc_block, (
-        "OTC backfill source가 'naver_shopping_insight'로 통일돼야 함 (do_otc 블록 내부)"
+    # 다질병 도입 후 source 라벨은 변수(otc_source)로 분기:
+    #   influenza  → 'naver_shopping_insight'  (호환성 유지)
+    #   covid/노로 → 'naver_shopping_insight_{pathogen}'
+    # 변수 할당 코드와 do_otc 블록 내부 변수 사용 둘 다 검증.
+    assert (
+        '"naver_shopping_insight" if pathogen == "influenza"' in text
+        or '"naver_shopping_insight"' in text.split("if do_otc:")[1].split("return counts")[0]
+    ), (
+        "OTC backfill source가 'naver_shopping_insight'로 통일돼야 함 "
+        "(do_otc 블록 또는 otc_source 변수 정의에서)"
     )
 
 

@@ -370,7 +370,7 @@ async def main() -> int:
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_PATH.write_text(json.dumps(result, indent=2, ensure_ascii=False))
     logger.info("결과 저장: %s", OUTPUT_PATH)
-    print(f"\n=== COVID backtest 결과 ===")
+    print("\n=== COVID backtest 결과 ===")
     print(json.dumps(summary, indent=2, ensure_ascii=False))
     return 0
 

@@ -17,10 +17,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use("Agg")  # 헤드리스 서버 렌더링
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 import matplotlib.font_manager as fm
+import matplotlib.pyplot as plt
 
 # 한글 폰트 설정 (NanumGothic 사용)
 _NANUM_PATH = "/usr/share/fonts/truetype/nanum/NanumGothic.ttf"
@@ -30,10 +30,11 @@ if Path(_NANUM_PATH).exists():
 else:
     matplotlib.rcParams["font.family"] = "DejaVu Sans"
 matplotlib.rcParams["axes.unicode_minus"] = False
+import asyncio
+
+import asyncpg
 import numpy as np
 import pandas as pd
-import asyncpg
-import asyncio
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
@@ -257,7 +258,7 @@ def _plot_timeseries(
         ax5.grid(True, alpha=0.3, axis="y")
         # 피크 표시
         peak_idx = confirmed["case_count"].idxmax()
-        ax5.axvline(peak_idx, color="black", linewidth=1.5, linestyle="--", alpha=0.8, label=f"확진 Peak")
+        ax5.axvline(peak_idx, color="black", linewidth=1.5, linestyle="--", alpha=0.8, label="확진 Peak")
 
     plt.xlabel("주차", fontsize=10)
     plt.tight_layout(rect=[0, 0, 1, 0.97])
@@ -526,8 +527,8 @@ if __name__ == "__main__":
     print()
     print(f"한 문장 Claim:\n  {result['one_sentence_claim']}")
     print()
-    print(f"산출물:")
+    print("산출물:")
     print(f"  JSON : {OUTPUT_DIR}/lead_time_summary.json")
     print(f"  PNG1 : {OUTPUT_DIR}/lead_time_plot.png")
     print(f"  PNG2 : {OUTPUT_DIR}/ccf_heatmap.png")
-    print(f"  (발표덱 assets에도 복사됨)")
+    print("  (발표덱 assets에도 복사됨)")
