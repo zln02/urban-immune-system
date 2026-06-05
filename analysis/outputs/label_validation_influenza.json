@@ -1,0 +1,31 @@
+{
+  "pathogen": "influenza",
+  "ili_threshold": 5.8,
+  "lead_weeks": 2,
+  "kdca_truth_weeks": 299,
+  "kdca_positive_rate": 0.5652,
+  "generated_at": "2026-06-05T07:01:07.691991+00:00",
+  "limitations": [
+    "KDCA 데이터: 받은 절기 수만큼만 — 1절기 (39주) 만 있으면 부분 overlap",
+    "전국 단일값 → region 차원 미지원 — proxy 라벨은 majority reduce",
+    "self-proxy 가 음→양 transition 아닌 level 라벨이면 KDCA 와 정렬 차이 정상"
+  ],
+  "proxy_threshold": 70.0,
+  "agreement": {
+    "n_overlap": 61,
+    "agreement_rate": 0.2951,
+    "cohen_kappa": 0.0582,
+    "confusion": {
+      "tp": 9,
+      "tn": 9,
+      "fp": 0,
+      "fn": 43
+    },
+    "proxy_positive_rate": 0.1475,
+    "truth_positive_rate": 0.8525,
+    "overlap_period": {
+      "first": "2025-W12",
+      "last": "2026-W20"
+    }
+  }
+}
