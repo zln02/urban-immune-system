@@ -15,7 +15,7 @@ RESEARCH_OVERVIEW = (
     "임계값을 초과할 때만 경보를 발령하는 교차검증 규칙(이하 Gate B)을 적용해 "
     "단일 신호 대비 오경보율을 58.5% 감소시켰습니다. 2025~2026 인플루엔자 시즌 "
     "26주 walk-forward 백테스트 결과 F1=0.907, Recall=0.882, 오경보율=0.250, "
-    "Lead time=6.47주 성능을 확인하였습니다. 다만 단일 시즌·17개 시·도라는 "
+    "Lead time=6.76주 성능을 확인하였습니다. 다만 단일 시즌·17개 시·도라는 "
     "데이터 한계와 학부 캡스톤이라는 연구 단계상 검증해야 할 부분이 적지 않아 "
     "전문가 자문을 청하고자 합니다."
 )
@@ -82,7 +82,7 @@ LETTERS = [
             ("경보 단계 매핑 적절성 — YELLOW(composite 30~55) / ORANGE(55~75) / RED(75+) 3단계가 "
              "질병관리청의 관심·주의·경계·심각 4단계 위기경보와 어떻게 연결될 수 있는지, "
              "학부 캡스톤 수준에서 매핑 가능한 범위와 한계를 알려주시면 감사하겠습니다."),
-            ("선행성의 실효성 — 평균 6.47주 선행 경보가 실제 역학조사관 출동·방역 자원 배치 관점에서 "
+            ("선행성의 실효성 — 평균 6.76주 선행 경보가 실제 역학조사관 출동·방역 자원 배치 관점에서 "
              "너무 이르거나(over-sensitive) 실무 활용이 어려울 수 있는지, 보건당국 입장에서 "
              "\"유용한 선행성\"의 현실적 범위를 여쭙고자 합니다."),
             ("오경보 허용 수준 — FAR=0.250(4번 경보 중 1번 오경보)이 보건당국 운영 관점에서 "
@@ -541,7 +541,7 @@ LETTERS = [
             "저는 동신대학교 컴퓨터공학과 [학번] OOO이며, [지도교수 ○○○ 교수님] 지도 하에 "
             "학부 캡스톤 「Urban Immune System(UIS)」을 진행하고 있습니다.\n\n"
             "저희 팀은 KOWAS에서 공개하는 주간 PDF를 L2 신호로 활용하여 인플루엔자 조기경보 "
-            "AI 시스템(F1=0.907, Lead=6.47주)을 개발하였습니다."
+            "AI 시스템(F1=0.907, Lead=6.76주)을 개발하였습니다."
         ),
         "questions": [
             ("약신호 지역 원인 — 충북·대구·경북의 L2 신호가 타 지역 대비 낮게 관측됩니다. "
@@ -666,7 +666,7 @@ LETTERS = [
             "Multi-layer Non-medical Signal Cross-validation.\"\n\n"
             "Our system integrates pharmacy OTC purchases (L1), wastewater biomarker concentrations (L2), "
             "and search trends (L3) with a 2-of-3 cross-validation gate to deliver region-level early warnings. "
-            "Validated on 17 Korean regions: F1=0.907 / Recall=0.882 / FAR=0.250 / Lead=6.47 weeks."
+            "Validated on 17 Korean regions: F1=0.907 / Recall=0.882 / FAR=0.250 / Lead=6.76 weeks."
         ),
         "questions": [
             ("International WBE Standards — Does WHO WPRO have published guidelines or frameworks for "

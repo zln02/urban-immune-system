@@ -1,7 +1,8 @@
 # Architecture Overview
 
-> 마지막 갱신: 2026-05-02 · 발표 D-5 시점 기준
+> 마지막 갱신: 2026-06-08 · **최종발표 D-9 시점 (2026-06-17)** · PPT freeze 6/15
 > Canonical 다이어그램: README.md Mermaid + 노션 PM Hub
+> 중간발표 (2026-05-07 ✅) 산출물 아카이브: `analysis/outputs/archive/midterm-2026-05-07/`
 
 ## Purpose
 
@@ -38,14 +39,18 @@ pipeline/collectors/   docker-compose:           ml/                 frontend/
                                                                           └ /api/v1/health
 ```
 
-## ML 모델 현황 (2026-05-02)
+## ML 모델 현황 (2026-06-08)
 
 | 모델 | 학습일 | 위치 | 상태 |
 |---|---|---|---|
-| XGBoost (앙상블 주모델) | 2026-04-29 | `ml/checkpoints/xgb_best.joblib` | ✅ F1=0.907 / Recall=0.882 / Precision=0.940 / FAR=0.250 (gate ON) / Lead 6.47주 / MCC=0.610 / AUPRC=0.973 (17지역 walk-forward, gap 4주 5-fold, `analysis/outputs/backtest_17regions.json`) |
-| TFT-real (Lightning) | 2026-04-29 | `ml/checkpoints/tft_real/tft_best.ckpt` | ⚠️ epoch5 best val_loss=5.48, 26주 한계로 발산 — PoC 위치, 데이터 누적 후 prod |
+| XGBoost — 인플루엔자 (앙상블 주모델) | 2026-06-03 | `ml/checkpoints/xgb_best.joblib` | ✅ F1=0.907 / Recall=0.882 / Precision=0.940 / FAR=0.250 (gate ON) / Lead 6.76주 / MCC=0.610 / AUPRC=0.973 (17지역 walk-forward, gap 4주 5-fold, self-target proxy, `analysis/outputs/backtest_17regions.json`) |
+| XGBoost — COVID-19 (다질병 ✅) | 2026-06-03 | `analysis/outputs/backtest_xgboost_covid_17regions.json` | ✅ F1=0.68 (pathogen selector 활성화, PR #71/#72) |
+| XGBoost — 노로 (다질병 ✅) | 2026-06-03 | `analysis/outputs/backtest_xgboost_norovirus_17regions.json` | ✅ F1=0.70 (transition 타깃 우위 입증, PR #73) |
+| TFT-real (Lightning) | 2026-06-01 | `ml/checkpoints/tft_real/tft_best.ckpt` | ⚠️ epoch5 best val_loss=5.48, 26주 한계로 발산 — PoC 위치, +12주 누적 후 prod |
 | TFT-synth (Lightning) | 2026-04-26 | `ml/checkpoints/tft_synth/tft_best-v2.ckpt` | ✅ val_loss=1.88, attention top3 (검색·하수·OTC) 검증용 |
 | Autoencoder | 2026-04-29 | `ml/checkpoints/autoencoder/model.pt` | ✅ 99p threshold 적용 후 17지역 inference 1/17 정상화 (`ff17dfa`) |
+
+> **V11.5 라벨 정직성**: XGBoost 인플루엔자 메트릭은 OTC z-score 기반 self-target proxy 라벨. KDCA 4급 ILI ground truth (`analysis/outputs/label_validation_influenza.json`) 대비 Cohen κ=0.058, agreement 29.5% (n=61). Phase 3 #63 라벨 교체 재학습 진행 중.
 
 > 합성 평가 메트릭(`anomaly_metrics.json` 의 `evaluation.precision=0.051`)은 **artificial spike** 실험 결과로, 실제 17지역 inference (`real_data_inference`) 와 무관. 발표 데모는 후자 사용.
 
@@ -83,13 +88,18 @@ RED    : composite ≥ 75
 
 ## 한계 (정직)
 
-- L1·L3 는 네이버 API 제약으로 **전국 단일값 → 17지역 broadcast** (`pipeline/collectors/otc_collector.py` 의 zero-collapse 핫픽스 `07c9c5a` 이후). HIRA OpenAPI 교체로 Phase 3 에서 지역 분리.
-- L2 KOWAS 는 PDF 수동 추출 (Selenium 자동화 Phase 3).
-- TFT-real 26주 데이터로 발산 → 12주 추가 누적 후 재학습.
+- **라벨 정직성 (V11.5)**: 인플루엔자 F1=0.907 은 OTC z-score 기반 self-target proxy. KDCA 4급 ILI ground truth 대비 Cohen κ=0.058 — `analysis/outputs/label_validation_influenza.json`. Phase 3 #63 라벨 교체 재학습 진행 중.
+- **지역 분리**: L1·L3 는 네이버 API 제약으로 **전국 단일값 → 17지역 broadcast** (`pipeline/collectors/otc_collector.py` 의 zero-collapse 핫픽스 `07c9c5a` 이후). HIRA OpenAPI 교체로 Phase 3 에서 지역 분리.
+- **L2 자동화**: KOWAS PDF 수동/반자동 추출 (Selenium 풀 자동화 Phase 3).
+- **TFT-real**: 26주 데이터로 발산 → 12주 추가 누적 후 재학습.
+- **다질병 신호 편차**: COVID F1=0.68 / 노로 F1=0.70 — 인플루엔자 대비 OTC·검색 신호 약함 (질병별 행동 패턴 차이).
 
-## Future (Phase 4+)
+## Phase 로드맵 (2026-06-08 기준)
 
-- TFT → PatchTST/IPatch/TimeMixer 비교 R&D (TFT 대비 24% MSE 개선 보고, 데이터 누적 전제)
-- Next.js 14.2.3 → 15.2 마이그레이션 (Turbopack HMR 5–10× · React 19 강제)
-- FastAPI 마이너 동기화 (Pydantic v2.7+ 50× validation)
-- 1개 추가 질병/국가 확장 데모 (캡스톤 평가 4번째 항목)
+| Phase | 상태 | 주요 작업 | 마감 |
+|---|---|---|---|
+| 1 — Streamlit MVP | ✅ 완료 | 3-Layer 합성 PoC | 2026-03 |
+| 2 — Phase 2 통합 | ✅ 완료 | FastAPI + Kafka + TimescaleDB + Qdrant + Next.js + SSE/RAG + XGBoost 17지역 | 2026-04 |
+| 3 — 최종발표 (현재) | 🔧 진행중 | KDCA ILI 라벨 검증 ✅, multipath 라벨 교체 재학습 (#63), 다질병 (COVID/노로) ✅, OTC completeness 알람 ✅, KOWAS 자동 크롤링, HIRA OpenAPI | **2026-06-17** |
+| 4 — 운영화 | 📋 예정 | ISMS-P 풀 점검, 조달청 혁신제품 신청, 파일럿 기관 (KDCA·서울시·WHO 협력센터), TFT-real prod 전환 | 2026-07~ |
+| 5 — R&D | 📋 예정 | TFT → PatchTST/IPatch/TimeMixer 비교, Next.js 14→15.2, FastAPI Pydantic v2.7+, Kafka KRaft consumer 실연결 | 2026-Q3+ |

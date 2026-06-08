@@ -117,7 +117,7 @@ A: `/predict/tft-{7,14,21}d` 엔드포인트로 7/14/21일 선행 예측 제공.
 A: 게이트 B 임계를 지역별로 조정(Region-tiered)해 Recall 0.882 달성 — D-3 mid-term baseline (2026-05-04) 0.768 대비 +0.114 향상. FAR=0.250 (gate OFF=0.602, 58.5% 감소). Precision=0.940. FAR 0.30 미만 제약 안에서 Recall 최대화 전략.
 
 **Q: 17개 지역 평균 리드타임이 6.5주라는 근거는?**
-A: `analysis/outputs/backtest_17regions.json` walk-forward 백테스트 결과 17지역 평균 6.47주. 가장 빠른 탐지는 세종(9주), 부산·제주(8주), 서울(7주), 경기·인천 등 12개 지역(6주). 임상 확진 약 1.5개월 전 YELLOW 발령으로 대응 준비시간 확보.
+A: `analysis/outputs/backtest_17regions.json` walk-forward 백테스트 결과 17지역 평균 6.76주. 가장 빠른 탐지는 세종(9주), 부산·제주(8주), 서울(7주), 경기·인천 등 12개 지역(6주). 임상 확진 약 1.5개월 전 YELLOW 발령으로 대응 준비시간 확보.
 
 **Q: 합성 데이터 F1 0.967 vs 실제 F1 0.907 갭은?**
 A: 합성 데이터는 이상적 분포 가정, 실제는 지역별 편차 존재. 갭이 있더라도 실제 데이터 기준 목표(0.80) 초과 달성. `ml/outputs/validation.json`에서 상세 수치 확인 가능.

@@ -445,7 +445,9 @@
     "far_delta": -0.352,
     "mean_mcc": 0.61,
     "mean_balanced_accuracy": 0.816,
-    "mean_auprc": 0.973
+    "mean_auprc": 0.973,
+    "mean_lead_weeks": 6.7647,
+    "n_regions_with_lead": 17
   },
   "validation": {
     "mean_far_lt_0.5": true,

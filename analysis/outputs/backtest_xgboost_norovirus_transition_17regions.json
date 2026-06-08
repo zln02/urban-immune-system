@@ -1,0 +1,416 @@
+{
+  "generated_at": "2026-06-03T05:41:52.157796+00:00",
+  "purpose": "norovirus transition target backtest (확장된 53주 데이터)",
+  "config": {
+    "pathogen": "norovirus",
+    "target_mode": "transition",
+    "features": [
+      "l2_wastewater",
+      "l2_lag1",
+      "l2_lag2",
+      "l2_ma3",
+      "l2_diff1",
+      "l2_diff2",
+      "l2_ma3_diff",
+      "l3_search",
+      "l3_lag1",
+      "l3_ma3",
+      "l3_diff1",
+      "l3_ma3_diff",
+      "l1_otc",
+      "l1_lag1",
+      "l1_ma3",
+      "l1_diff1"
+    ],
+    "target": "L2 KOWAS norovirus(t) < 30.0 AND (t+2주) ≥ 30.0 [outbreak transition]",
+    "model_region": "GradientBoostingClassifier (n=100, depth=3, lr=0.05)",
+    "model_pool": "GradientBoostingClassifier (n=200, depth=4, lr=0.05)",
+    "cv_region": "TimeSeriesSplit n_splits<=5, gap=2 (region-internal)",
+    "cv_pool": "Weekly group CV (같은 주차 17지역 = 같은 fold, gap=2주, leakage-free)",
+    "alert_threshold": 30.0,
+    "prob_threshold": 0.18,
+    "lead_weeks": 2
+  },
+  "data_summary": {
+    "n_rows": 1088,
+    "n_regions": 17,
+    "alert_future_positive_rate": 0.0827,
+    "date_range": [
+      "2025-03-17",
+      "2026-06-01"
+    ]
+  },
+  "summary": {
+    "pathogen": "norovirus",
+    "alert_threshold": 30.0,
+    "lead_weeks": 2,
+    "n_total_regions": 17,
+    "n_ok_regions": 17,
+    "pool_status": "ok",
+    "pool_n": 850,
+    "pool_n_pos": 75,
+    "pool_f1": 0.3959,
+    "pool_precision": 0.3197,
+    "pool_recall": 0.52,
+    "pool_far": 0.1071,
+    "pool_mcc": 0.334,
+    "pool_auprc": 0.215,
+    "mean_f1_per_region": 0.2238,
+    "mean_recall_per_region": 0.3569,
+    "mean_far_per_region": 0.1901,
+    "mean_mcc_per_region": 0.1316,
+    "best_trivial_name": "trivial_L2_below_and_L3_up",
+    "best_trivial_f1": 0.2654,
+    "best_trivial_far": 0.1784,
+    "model_gain_vs_trivial_f1": 0.1305
+  },
+  "pool_result": {
+    "status": "ok",
+    "cv": "Weekly group CV n_folds=5, gap=2주 (leakage-free)",
+    "n_folds_used": 5,
+    "n": 850,
+    "n_pos": 75,
+    "n_neg": 775,
+    "f1": 0.3959,
+    "precision": 0.3197,
+    "recall": 0.52,
+    "false_alarm_rate": 0.1071,
+    "mcc": 0.334,
+    "auprc": 0.215,
+    "confusion_matrix": {
+      "TP": 39,
+      "FP": 83,
+      "FN": 36,
+      "TN": 692
+    }
+  },
+  "baselines": {
+    "trivial_L2_below_and_up": {
+      "n": 1088,
+      "n_pos": 90,
+      "n_neg": 998,
+      "f1": 0.1682,
+      "precision": 0.1152,
+      "recall": 0.3111,
+      "false_alarm_rate": 0.2154,
+      "mcc": 0.0633,
+      "auprc": null,
+      "confusion_matrix": {
+        "TP": 28,
+        "FP": 215,
+        "FN": 62,
+        "TN": 783
+      }
+    },
+    "trivial_L2_below_and_MA_up": {
+      "n": 1088,
+      "n_pos": 90,
+      "n_neg": 998,
+      "f1": 0.2157,
+      "precision": 0.1462,
+      "recall": 0.4111,
+      "false_alarm_rate": 0.2164,
+      "mcc": 0.1269,
+      "auprc": null,
+      "confusion_matrix": {
+        "TP": 37,
+        "FP": 216,
+        "FN": 53,
+        "TN": 782
+      }
+    },
+    "trivial_L2_below_and_L3_up": {
+      "n": 1088,
+      "n_pos": 90,
+      "n_neg": 998,
+      "f1": 0.2654,
+      "precision": 0.1872,
+      "recall": 0.4556,
+      "false_alarm_rate": 0.1784,
+      "mcc": 0.1904,
+      "auprc": null,
+      "confusion_matrix": {
+        "TP": 41,
+        "FP": 178,
+        "FN": 49,
+        "TN": 820
+      }
+    }
+  },
+  "regions": {
+    "강원특별자치도": {
+      "status": "ok",
+      "n_folds_used": 5,
+      "n": 50,
+      "n_pos": 5,
+      "n_neg": 45,
+      "f1": 0.2,
+      "precision": 0.2,
+      "recall": 0.2,
+      "false_alarm_rate": 0.0889,
+      "mcc": 0.1111,
+      "auprc": 0.1713,
+      "confusion_matrix": {
+        "TP": 1,
+        "FP": 4,
+        "FN": 4,
+        "TN": 41
+      }
+    },
+    "경기도": {
+      "status": "ok",
+      "n_folds_used": 5,
+      "n": 30,
+      "n_pos": 6,
+      "n_neg": 24,
+      "f1": 0.2222,
+      "precision": 0.1667,
+      "recall": 0.3333,
+      "false_alarm_rate": 0.4167,
+      "mcc": -0.068,
+      "auprc": 0.2074,
+      "confusion_matrix": {
+        "TP": 2,
+        "FP": 10,
+        "FN": 4,
+        "TN": 14
+      }
+    },
+    "경상남도": {
+      "status": "ok",
+      "n_folds_used": 5,
+      "n": 20,
+      "n_pos": 1,
+      "n_neg": 19,
+      "f1": 0.0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "false_alarm_rate": 0.1053,
+      "mcc": -0.0765,
+      "auprc": 0.05,
+      "confusion_matrix": {
+        "TP": 0,
+        "FP": 2,
+        "FN": 1,
+        "TN": 17
+      }
+    },
+    "경상북도": {
+      "status": "ok",
+      "n_folds_used": 5,
+      "n": 20,
+      "n_pos": 2,
+      "n_neg": 18,
+      "f1": 0.4444,
+      "precision": 0.2857,
+      "recall": 1.0,
+      "false_alarm_rate": 0.2778,
+      "mcc": 0.4543,
+      "auprc": 0.4,
+      "confusion_matrix": {
+        "TP": 2,
+        "FP": 5,
+        "FN": 0,
+        "TN": 13
+      }
+    },
+    "광주광역시": {
+      "status": "ok",
+      "n_folds_used": 5,
+      "n": 50,
+      "n_pos": 4,
+      "n_neg": 46,
+      "f1": 0.0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "false_alarm_rate": 0.0,
+      "mcc": 0.0,
+      "auprc": 0.0656,
+      "confusion_matrix": {
+        "TP": 0,
+        "FP": 0,
+        "FN": 4,
+        "TN": 46
+      }
+    },
+    "대구광역시": {
+      "status": "ok",
+      "n_folds_used": 5,
+      "n": 40,
+      "n_pos": 0,
+      "n_neg": 40,
+      "f1": null,
+      "skipped_reason": "single_class"
+    },
+    "대전광역시": {
+      "status": "ok",
+      "n_folds_used": 5,
+      "n": 30,
+      "n_pos": 0,
+      "n_neg": 30,
+      "f1": null,
+      "skipped_reason": "single_class"
+    },
+    "부산광역시": {
+      "status": "ok",
+      "n_folds_used": 5,
+      "n": 30,
+      "n_pos": 0,
+      "n_neg": 30,
+      "f1": null,
+      "skipped_reason": "single_class"
+    },
+    "서울특별시": {
+      "status": "ok",
+      "n_folds_used": 5,
+      "n": 50,
+      "n_pos": 2,
+      "n_neg": 48,
+      "f1": 0.0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "false_alarm_rate": 0.1042,
+      "mcc": -0.068,
+      "auprc": 0.0478,
+      "confusion_matrix": {
+        "TP": 0,
+        "FP": 5,
+        "FN": 2,
+        "TN": 43
+      }
+    },
+    "세종특별자치시": {
+      "status": "ok",
+      "n_folds_used": 5,
+      "n": 40,
+      "n_pos": 4,
+      "n_neg": 36,
+      "f1": 0.2857,
+      "precision": 0.2,
+      "recall": 0.5,
+      "false_alarm_rate": 0.2222,
+      "mcc": 0.1925,
+      "auprc": 0.2056,
+      "confusion_matrix": {
+        "TP": 2,
+        "FP": 8,
+        "FN": 2,
+        "TN": 28
+      }
+    },
+    "울산광역시": {
+      "status": "ok",
+      "n_folds_used": 5,
+      "n": 50,
+      "n_pos": 12,
+      "n_neg": 38,
+      "f1": 0.4667,
+      "precision": 0.3889,
+      "recall": 0.5833,
+      "false_alarm_rate": 0.2895,
+      "mcc": 0.2615,
+      "auprc": 0.3762,
+      "confusion_matrix": {
+        "TP": 7,
+        "FP": 11,
+        "FN": 5,
+        "TN": 27
+      }
+    },
+    "인천광역시": {
+      "status": "ok",
+      "n_folds_used": 5,
+      "n": 50,
+      "n_pos": 4,
+      "n_neg": 46,
+      "f1": 0.2667,
+      "precision": 0.1818,
+      "recall": 0.5,
+      "false_alarm_rate": 0.1957,
+      "mcc": 0.1993,
+      "auprc": 0.1661,
+      "confusion_matrix": {
+        "TP": 2,
+        "FP": 9,
+        "FN": 2,
+        "TN": 37
+      }
+    },
+    "전라남도": {
+      "status": "ok",
+      "n_folds_used": 5,
+      "n": 20,
+      "n_pos": 0,
+      "n_neg": 20,
+      "f1": null,
+      "skipped_reason": "single_class"
+    },
+    "전라북도": {
+      "status": "ok",
+      "n_folds_used": 5,
+      "n": 30,
+      "n_pos": 2,
+      "n_neg": 28,
+      "f1": 0.1333,
+      "precision": 0.0769,
+      "recall": 0.5,
+      "false_alarm_rate": 0.4286,
+      "mcc": 0.036,
+      "auprc": 0.1048,
+      "confusion_matrix": {
+        "TP": 1,
+        "FP": 12,
+        "FN": 1,
+        "TN": 16
+      }
+    },
+    "제주특별자치도": {
+      "status": "ok",
+      "n_folds_used": 5,
+      "n": 50,
+      "n_pos": 3,
+      "n_neg": 47,
+      "f1": 0.0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "false_alarm_rate": 0.1064,
+      "mcc": -0.0842,
+      "auprc": 0.0956,
+      "confusion_matrix": {
+        "TP": 0,
+        "FP": 5,
+        "FN": 3,
+        "TN": 42
+      }
+    },
+    "충청남도": {
+      "status": "ok",
+      "n_folds_used": 5,
+      "n": 50,
+      "n_pos": 6,
+      "n_neg": 44,
+      "f1": 0.6667,
+      "precision": 0.6667,
+      "recall": 0.6667,
+      "false_alarm_rate": 0.0455,
+      "mcc": 0.6212,
+      "auprc": 0.5377,
+      "confusion_matrix": {
+        "TP": 4,
+        "FP": 2,
+        "FN": 2,
+        "TN": 42
+      }
+    },
+    "충청북도": {
+      "status": "ok",
+      "n_folds_used": 5,
+      "n": 20,
+      "n_pos": 0,
+      "n_neg": 20,
+      "f1": null,
+      "skipped_reason": "single_class"
+    }
+  },
+  "honesty_note": "self-target proxy 라벨 (L2 t+2주 값)은 L2(t)와 강한 자기상관을 가져 단순 임계 비교(trivial baseline)가 ML 모델보다 좋을 수 있음. 외부 임상 데이터(KDCA 확진자) 연동 시 ML 우위 회복 예상. CV는 weekly group split (같은 주차 17지역은 같은 fold, leakage-free)."
+}

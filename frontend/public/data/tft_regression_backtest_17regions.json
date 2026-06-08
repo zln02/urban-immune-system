@@ -1,0 +1,783 @@
+{
+  "generated_at": "2026-06-01T03:40:44.184030+00:00",
+  "purpose": "TFT composite score(0-100) 회귀 검증 — 환자수 절대 예측 아님",
+  "target_semantics": "confirmed_future = composite shift(-2 weeks); composite = 0.35·L1+0.40·L2+0.25·L3",
+  "data_summary": {
+    "n_rows": 2102,
+    "n_regions": 17,
+    "regions": [
+      "강원특별자치도",
+      "경기도",
+      "경상남도",
+      "경상북도",
+      "광주광역시",
+      "대구광역시",
+      "대전광역시",
+      "부산광역시",
+      "서울특별시",
+      "세종특별자치시",
+      "울산광역시",
+      "인천광역시",
+      "전라남도",
+      "전라북도",
+      "제주특별자치도",
+      "충청남도",
+      "충청북도"
+    ],
+    "time_idx_max": 123
+  },
+  "evaluations": {
+    "prod_20260504": {
+      "checkpoint": "tft_best.ckpt",
+      "n_sequences": 2119,
+      "prediction_length": 2,
+      "overall": {
+        "n": 4204,
+        "n_dropped_nan": 34,
+        "mae": 7.134,
+        "mape_percent": 21.13,
+        "rmse": 9.895,
+        "mean_true": 36.11,
+        "mean_pred": 35.24
+      },
+      "by_horizon": {
+        "horizon_1week": {
+          "n": 2119,
+          "n_dropped_nan": 0,
+          "mae": 6.616,
+          "mape_percent": 19.58,
+          "rmse": 9.145,
+          "mean_true": 36.17,
+          "mean_pred": 35.17
+        },
+        "horizon_2week": {
+          "n": 2085,
+          "n_dropped_nan": 34,
+          "mae": 7.66,
+          "mape_percent": 22.71,
+          "rmse": 10.603,
+          "mean_true": 36.05,
+          "mean_pred": 35.31
+        }
+      },
+      "by_region": {
+        "강원특별자치도": {
+          "horizon_1week": {
+            "n": 125,
+            "n_dropped_nan": 0,
+            "mae": 6.765,
+            "mape_percent": 19.32,
+            "rmse": 9.847,
+            "mean_true": 36.04,
+            "mean_pred": 35.44
+          },
+          "horizon_2week": {
+            "n": 123,
+            "n_dropped_nan": 2,
+            "mae": 7.451,
+            "mape_percent": 21.49,
+            "rmse": 10.767,
+            "mean_true": 35.98,
+            "mean_pred": 35.64
+          }
+        },
+        "경기도": {
+          "horizon_1week": {
+            "n": 125,
+            "n_dropped_nan": 0,
+            "mae": 7.018,
+            "mape_percent": 19.92,
+            "rmse": 9.905,
+            "mean_true": 35.86,
+            "mean_pred": 36.2
+          },
+          "horizon_2week": {
+            "n": 123,
+            "n_dropped_nan": 2,
+            "mae": 7.882,
+            "mape_percent": 22.54,
+            "rmse": 11.173,
+            "mean_true": 35.79,
+            "mean_pred": 36.27
+          }
+        },
+        "경상남도": {
+          "horizon_1week": {
+            "n": 124,
+            "n_dropped_nan": 0,
+            "mae": 6.119,
+            "mape_percent": 17.46,
+            "rmse": 8.839,
+            "mean_true": 37.26,
+            "mean_pred": 36.32
+          },
+          "horizon_2week": {
+            "n": 122,
+            "n_dropped_nan": 2,
+            "mae": 7.374,
+            "mape_percent": 20.8,
+            "rmse": 10.923,
+            "mean_true": 37.21,
+            "mean_pred": 36.48
+          }
+        },
+        "경상북도": {
+          "horizon_1week": {
+            "n": 124,
+            "n_dropped_nan": 0,
+            "mae": 5.794,
+            "mape_percent": 18.21,
+            "rmse": 7.72,
+            "mean_true": 34.74,
+            "mean_pred": 34.52
+          },
+          "horizon_2week": {
+            "n": 122,
+            "n_dropped_nan": 2,
+            "mae": 6.663,
+            "mape_percent": 20.92,
+            "rmse": 9.085,
+            "mean_true": 34.66,
+            "mean_pred": 34.6
+          }
+        },
+        "광주광역시": {
+          "horizon_1week": {
+            "n": 125,
+            "n_dropped_nan": 0,
+            "mae": 6.71,
+            "mape_percent": 19.04,
+            "rmse": 9.084,
+            "mean_true": 36.51,
+            "mean_pred": 34.57
+          },
+          "horizon_2week": {
+            "n": 123,
+            "n_dropped_nan": 2,
+            "mae": 7.79,
+            "mape_percent": 22.33,
+            "rmse": 10.357,
+            "mean_true": 36.38,
+            "mean_pred": 34.79
+          }
+        },
+        "대구광역시": {
+          "horizon_1week": {
+            "n": 125,
+            "n_dropped_nan": 0,
+            "mae": 7.354,
+            "mape_percent": 23.69,
+            "rmse": 9.125,
+            "mean_true": 34.37,
+            "mean_pred": 33.62
+          },
+          "horizon_2week": {
+            "n": 123,
+            "n_dropped_nan": 2,
+            "mae": 8.348,
+            "mape_percent": 26.94,
+            "rmse": 10.371,
+            "mean_true": 34.27,
+            "mean_pred": 33.78
+          }
+        },
+        "대전광역시": {
+          "horizon_1week": {
+            "n": 125,
+            "n_dropped_nan": 0,
+            "mae": 6.684,
+            "mape_percent": 17.74,
+            "rmse": 9.35,
+            "mean_true": 38.94,
+            "mean_pred": 36.8
+          },
+          "horizon_2week": {
+            "n": 123,
+            "n_dropped_nan": 2,
+            "mae": 8.206,
+            "mape_percent": 21.5,
+            "rmse": 11.347,
+            "mean_true": 38.92,
+            "mean_pred": 36.9
+          }
+        },
+        "부산광역시": {
+          "horizon_1week": {
+            "n": 125,
+            "n_dropped_nan": 0,
+            "mae": 5.535,
+            "mape_percent": 15.93,
+            "rmse": 7.786,
+            "mean_true": 38.61,
+            "mean_pred": 36.43
+          },
+          "horizon_2week": {
+            "n": 123,
+            "n_dropped_nan": 2,
+            "mae": 6.562,
+            "mape_percent": 18.68,
+            "rmse": 9.202,
+            "mean_true": 38.58,
+            "mean_pred": 36.57
+          }
+        },
+        "서울특별시": {
+          "horizon_1week": {
+            "n": 125,
+            "n_dropped_nan": 0,
+            "mae": 7.553,
+            "mape_percent": 23.46,
+            "rmse": 10.364,
+            "mean_true": 32.47,
+            "mean_pred": 33.74
+          },
+          "horizon_2week": {
+            "n": 123,
+            "n_dropped_nan": 2,
+            "mae": 8.648,
+            "mape_percent": 27.18,
+            "rmse": 11.782,
+            "mean_true": 32.32,
+            "mean_pred": 34.0
+          }
+        },
+        "세종특별자치시": {
+          "horizon_1week": {
+            "n": 125,
+            "n_dropped_nan": 0,
+            "mae": 6.553,
+            "mape_percent": 17.17,
+            "rmse": 8.717,
+            "mean_true": 41.32,
+            "mean_pred": 38.32
+          },
+          "horizon_2week": {
+            "n": 123,
+            "n_dropped_nan": 2,
+            "mae": 7.206,
+            "mape_percent": 19.24,
+            "rmse": 9.399,
+            "mean_true": 40.97,
+            "mean_pred": 38.18
+          }
+        },
+        "울산광역시": {
+          "horizon_1week": {
+            "n": 125,
+            "n_dropped_nan": 0,
+            "mae": 6.292,
+            "mape_percent": 19.05,
+            "rmse": 9.009,
+            "mean_true": 34.23,
+            "mean_pred": 33.06
+          },
+          "horizon_2week": {
+            "n": 123,
+            "n_dropped_nan": 2,
+            "mae": 7.41,
+            "mape_percent": 22.13,
+            "rmse": 10.943,
+            "mean_true": 34.14,
+            "mean_pred": 33.25
+          }
+        },
+        "인천광역시": {
+          "horizon_1week": {
+            "n": 125,
+            "n_dropped_nan": 0,
+            "mae": 6.123,
+            "mape_percent": 17.69,
+            "rmse": 7.93,
+            "mean_true": 38.17,
+            "mean_pred": 35.94
+          },
+          "horizon_2week": {
+            "n": 123,
+            "n_dropped_nan": 2,
+            "mae": 7.195,
+            "mape_percent": 20.54,
+            "rmse": 9.318,
+            "mean_true": 38.13,
+            "mean_pred": 36.19
+          }
+        },
+        "전라남도": {
+          "horizon_1week": {
+            "n": 124,
+            "n_dropped_nan": 0,
+            "mae": 7.182,
+            "mape_percent": 23.6,
+            "rmse": 10.69,
+            "mean_true": 31.65,
+            "mean_pred": 32.78
+          },
+          "horizon_2week": {
+            "n": 122,
+            "n_dropped_nan": 2,
+            "mae": 8.559,
+            "mape_percent": 28.31,
+            "rmse": 12.457,
+            "mean_true": 31.52,
+            "mean_pred": 33.15
+          }
+        },
+        "전라북도": {
+          "horizon_1week": {
+            "n": 124,
+            "n_dropped_nan": 0,
+            "mae": 7.981,
+            "mape_percent": 23.48,
+            "rmse": 10.508,
+            "mean_true": 36.24,
+            "mean_pred": 35.05
+          },
+          "horizon_2week": {
+            "n": 122,
+            "n_dropped_nan": 2,
+            "mae": 9.214,
+            "mape_percent": 27.35,
+            "rmse": 12.18,
+            "mean_true": 35.82,
+            "mean_pred": 35.04
+          }
+        },
+        "제주특별자치도": {
+          "horizon_1week": {
+            "n": 124,
+            "n_dropped_nan": 0,
+            "mae": 6.298,
+            "mape_percent": 19.26,
+            "rmse": 8.061,
+            "mean_true": 36.16,
+            "mean_pred": 35.32
+          },
+          "horizon_2week": {
+            "n": 122,
+            "n_dropped_nan": 2,
+            "mae": 7.374,
+            "mape_percent": 22.4,
+            "rmse": 9.013,
+            "mean_true": 35.97,
+            "mean_pred": 35.42
+          }
+        },
+        "충청남도": {
+          "horizon_1week": {
+            "n": 124,
+            "n_dropped_nan": 0,
+            "mae": 5.193,
+            "mape_percent": 15.16,
+            "rmse": 7.584,
+            "mean_true": 38.72,
+            "mean_pred": 36.82
+          },
+          "horizon_2week": {
+            "n": 122,
+            "n_dropped_nan": 2,
+            "mae": 5.672,
+            "mape_percent": 16.6,
+            "rmse": 9.062,
+            "mean_true": 38.56,
+            "mean_pred": 36.72
+          }
+        },
+        "충청북도": {
+          "horizon_1week": {
+            "n": 125,
+            "n_dropped_nan": 0,
+            "mae": 7.314,
+            "mape_percent": 22.74,
+            "rmse": 10.021,
+            "mean_true": 33.63,
+            "mean_pred": 32.88
+          },
+          "horizon_2week": {
+            "n": 123,
+            "n_dropped_nan": 2,
+            "mae": 8.655,
+            "mape_percent": 27.11,
+            "rmse": 11.816,
+            "mean_true": 33.54,
+            "mean_pred": 33.24
+          }
+        }
+      }
+    },
+    "v3_20260601": {
+      "checkpoint": "tft_best-v3.ckpt",
+      "n_sequences": 2119,
+      "prediction_length": 2,
+      "overall": {
+        "n": 4204,
+        "n_dropped_nan": 34,
+        "mae": 7.853,
+        "mape_percent": 23.17,
+        "rmse": 10.927,
+        "mean_true": 36.11,
+        "mean_pred": 34.66
+      },
+      "by_horizon": {
+        "horizon_1week": {
+          "n": 2119,
+          "n_dropped_nan": 0,
+          "mae": 7.74,
+          "mape_percent": 22.95,
+          "rmse": 10.67,
+          "mean_true": 36.17,
+          "mean_pred": 34.72
+        },
+        "horizon_2week": {
+          "n": 2085,
+          "n_dropped_nan": 34,
+          "mae": 7.968,
+          "mape_percent": 23.39,
+          "rmse": 11.182,
+          "mean_true": 36.05,
+          "mean_pred": 34.59
+        }
+      },
+      "by_region": {
+        "강원특별자치도": {
+          "horizon_1week": {
+            "n": 125,
+            "n_dropped_nan": 0,
+            "mae": 6.118,
+            "mape_percent": 17.91,
+            "rmse": 8.91,
+            "mean_true": 36.04,
+            "mean_pred": 35.11
+          },
+          "horizon_2week": {
+            "n": 123,
+            "n_dropped_nan": 2,
+            "mae": 6.174,
+            "mape_percent": 18.02,
+            "rmse": 9.107,
+            "mean_true": 35.98,
+            "mean_pred": 34.98
+          }
+        },
+        "경기도": {
+          "horizon_1week": {
+            "n": 125,
+            "n_dropped_nan": 0,
+            "mae": 6.927,
+            "mape_percent": 18.82,
+            "rmse": 10.086,
+            "mean_true": 35.86,
+            "mean_pred": 34.73
+          },
+          "horizon_2week": {
+            "n": 123,
+            "n_dropped_nan": 2,
+            "mae": 7.284,
+            "mape_percent": 19.54,
+            "rmse": 10.673,
+            "mean_true": 35.79,
+            "mean_pred": 34.61
+          }
+        },
+        "경상남도": {
+          "horizon_1week": {
+            "n": 124,
+            "n_dropped_nan": 0,
+            "mae": 8.916,
+            "mape_percent": 25.61,
+            "rmse": 12.421,
+            "mean_true": 37.26,
+            "mean_pred": 34.63
+          },
+          "horizon_2week": {
+            "n": 122,
+            "n_dropped_nan": 2,
+            "mae": 9.223,
+            "mape_percent": 26.04,
+            "rmse": 13.221,
+            "mean_true": 37.21,
+            "mean_pred": 34.56
+          }
+        },
+        "경상북도": {
+          "horizon_1week": {
+            "n": 124,
+            "n_dropped_nan": 0,
+            "mae": 7.398,
+            "mape_percent": 25.18,
+            "rmse": 9.777,
+            "mean_true": 34.74,
+            "mean_pred": 34.82
+          },
+          "horizon_2week": {
+            "n": 122,
+            "n_dropped_nan": 2,
+            "mae": 7.784,
+            "mape_percent": 25.96,
+            "rmse": 10.365,
+            "mean_true": 34.66,
+            "mean_pred": 34.68
+          }
+        },
+        "광주광역시": {
+          "horizon_1week": {
+            "n": 125,
+            "n_dropped_nan": 0,
+            "mae": 7.224,
+            "mape_percent": 20.46,
+            "rmse": 9.604,
+            "mean_true": 36.51,
+            "mean_pred": 34.57
+          },
+          "horizon_2week": {
+            "n": 123,
+            "n_dropped_nan": 2,
+            "mae": 7.437,
+            "mape_percent": 20.99,
+            "rmse": 9.925,
+            "mean_true": 36.38,
+            "mean_pred": 34.43
+          }
+        },
+        "대구광역시": {
+          "horizon_1week": {
+            "n": 125,
+            "n_dropped_nan": 0,
+            "mae": 8.04,
+            "mape_percent": 27.14,
+            "rmse": 10.296,
+            "mean_true": 34.37,
+            "mean_pred": 34.81
+          },
+          "horizon_2week": {
+            "n": 123,
+            "n_dropped_nan": 2,
+            "mae": 8.295,
+            "mape_percent": 27.8,
+            "rmse": 10.663,
+            "mean_true": 34.27,
+            "mean_pred": 34.63
+          }
+        },
+        "대전광역시": {
+          "horizon_1week": {
+            "n": 125,
+            "n_dropped_nan": 0,
+            "mae": 7.403,
+            "mape_percent": 17.28,
+            "rmse": 10.861,
+            "mean_true": 38.94,
+            "mean_pred": 34.93
+          },
+          "horizon_2week": {
+            "n": 123,
+            "n_dropped_nan": 2,
+            "mae": 7.811,
+            "mape_percent": 18.17,
+            "rmse": 11.477,
+            "mean_true": 38.92,
+            "mean_pred": 34.82
+          }
+        },
+        "부산광역시": {
+          "horizon_1week": {
+            "n": 125,
+            "n_dropped_nan": 0,
+            "mae": 7.431,
+            "mape_percent": 19.22,
+            "rmse": 10.922,
+            "mean_true": 38.61,
+            "mean_pred": 35.15
+          },
+          "horizon_2week": {
+            "n": 123,
+            "n_dropped_nan": 2,
+            "mae": 7.626,
+            "mape_percent": 19.35,
+            "rmse": 11.408,
+            "mean_true": 38.58,
+            "mean_pred": 35.06
+          }
+        },
+        "서울특별시": {
+          "horizon_1week": {
+            "n": 125,
+            "n_dropped_nan": 0,
+            "mae": 7.663,
+            "mape_percent": 24.57,
+            "rmse": 10.523,
+            "mean_true": 32.47,
+            "mean_pred": 34.05
+          },
+          "horizon_2week": {
+            "n": 123,
+            "n_dropped_nan": 2,
+            "mae": 7.902,
+            "mape_percent": 25.15,
+            "rmse": 11.146,
+            "mean_true": 32.32,
+            "mean_pred": 33.92
+          }
+        },
+        "세종특별자치시": {
+          "horizon_1week": {
+            "n": 125,
+            "n_dropped_nan": 0,
+            "mae": 8.606,
+            "mape_percent": 20.58,
+            "rmse": 11.11,
+            "mean_true": 41.32,
+            "mean_pred": 36.12
+          },
+          "horizon_2week": {
+            "n": 123,
+            "n_dropped_nan": 2,
+            "mae": 8.621,
+            "mape_percent": 20.73,
+            "rmse": 11.17,
+            "mean_true": 40.97,
+            "mean_pred": 35.94
+          }
+        },
+        "울산광역시": {
+          "horizon_1week": {
+            "n": 125,
+            "n_dropped_nan": 0,
+            "mae": 6.994,
+            "mape_percent": 20.72,
+            "rmse": 10.717,
+            "mean_true": 34.23,
+            "mean_pred": 34.05
+          },
+          "horizon_2week": {
+            "n": 123,
+            "n_dropped_nan": 2,
+            "mae": 7.395,
+            "mape_percent": 21.46,
+            "rmse": 11.739,
+            "mean_true": 34.14,
+            "mean_pred": 33.93
+          }
+        },
+        "인천광역시": {
+          "horizon_1week": {
+            "n": 125,
+            "n_dropped_nan": 0,
+            "mae": 7.14,
+            "mape_percent": 18.28,
+            "rmse": 9.704,
+            "mean_true": 38.17,
+            "mean_pred": 34.71
+          },
+          "horizon_2week": {
+            "n": 123,
+            "n_dropped_nan": 2,
+            "mae": 7.408,
+            "mape_percent": 18.71,
+            "rmse": 10.311,
+            "mean_true": 38.13,
+            "mean_pred": 34.62
+          }
+        },
+        "전라남도": {
+          "horizon_1week": {
+            "n": 124,
+            "n_dropped_nan": 0,
+            "mae": 8.057,
+            "mape_percent": 28.76,
+            "rmse": 11.186,
+            "mean_true": 31.65,
+            "mean_pred": 33.7
+          },
+          "horizon_2week": {
+            "n": 122,
+            "n_dropped_nan": 2,
+            "mae": 8.201,
+            "mape_percent": 29.05,
+            "rmse": 11.622,
+            "mean_true": 31.52,
+            "mean_pred": 33.6
+          }
+        },
+        "전라북도": {
+          "horizon_1week": {
+            "n": 124,
+            "n_dropped_nan": 0,
+            "mae": 9.729,
+            "mape_percent": 31.25,
+            "rmse": 12.328,
+            "mean_true": 36.24,
+            "mean_pred": 34.75
+          },
+          "horizon_2week": {
+            "n": 122,
+            "n_dropped_nan": 2,
+            "mae": 9.792,
+            "mape_percent": 31.27,
+            "rmse": 12.688,
+            "mean_true": 35.82,
+            "mean_pred": 34.59
+          }
+        },
+        "제주특별자치도": {
+          "horizon_1week": {
+            "n": 124,
+            "n_dropped_nan": 0,
+            "mae": 8.202,
+            "mape_percent": 27.1,
+            "rmse": 10.206,
+            "mean_true": 36.16,
+            "mean_pred": 34.91
+          },
+          "horizon_2week": {
+            "n": 122,
+            "n_dropped_nan": 2,
+            "mae": 8.423,
+            "mape_percent": 27.23,
+            "rmse": 10.576,
+            "mean_true": 35.97,
+            "mean_pred": 34.79
+          }
+        },
+        "충청남도": {
+          "horizon_1week": {
+            "n": 124,
+            "n_dropped_nan": 0,
+            "mae": 6.672,
+            "mape_percent": 19.65,
+            "rmse": 9.457,
+            "mean_true": 38.72,
+            "mean_pred": 35.77
+          },
+          "horizon_2week": {
+            "n": 122,
+            "n_dropped_nan": 2,
+            "mae": 6.626,
+            "mape_percent": 19.29,
+            "rmse": 9.925,
+            "mean_true": 38.56,
+            "mean_pred": 35.6
+          }
+        },
+        "충청북도": {
+          "horizon_1week": {
+            "n": 125,
+            "n_dropped_nan": 0,
+            "mae": 9.077,
+            "mape_percent": 27.84,
+            "rmse": 12.46,
+            "mean_true": 33.63,
+            "mean_pred": 33.43
+          },
+          "horizon_2week": {
+            "n": 123,
+            "n_dropped_nan": 2,
+            "mae": 9.477,
+            "mape_percent": 28.98,
+            "rmse": 13.168,
+            "mean_true": 33.54,
+            "mean_pred": 33.29
+          }
+        }
+      }
+    }
+  }
+}

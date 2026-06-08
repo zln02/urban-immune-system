@@ -2,7 +2,11 @@
 
 AI 기반 감염병 조기경보 시스템 (B2G 납품 목표). 3계층 비의료 신호(약국 OTC·하수도 바이오마커·검색 트렌드) 교차검증으로 임상 확진 1–3주 선행 탐지.
 
-> **중간발표: 2026-05-07** (4/30 → 5/7 연기) · **최종: 2026-06 초** · 현 baseline **F1=0.907 / Recall=0.882 (gate ON) / Recall_no_gate=0.904 / Precision=0.940 / FAR=0.250 (gate ON, 게이트 OFF=0.602, 게이트 효과 −58.5%) / Lead 6.47주 / MCC=0.610 / Balanced Acc=0.816 / AUPRC=0.973** (17지역 walk-forward 실측, `analysis/outputs/backtest_17regions.json`).
+> **중간발표: 2026-05-07** ✅ 완료 · **최종발표: 2026-06-17** (6/초 → 6/17 연기, **D-9 / 6/8 기준**) · PPT 6/15 freeze · 현 baseline **F1=0.907 / Recall=0.882 (gate ON) / Recall_no_gate=0.904 / Precision=0.940 / FAR=0.250 (gate ON, 게이트 OFF=0.602, 게이트 효과 −58.5%) / Lead 6.76주 / MCC=0.610 / Balanced Acc=0.816 / AUPRC=0.973** (17지역 walk-forward 실측 — self-target proxy 라벨, `analysis/outputs/backtest_17regions.json`).
+>
+> ⚠️ **V11.5 라벨 정직성**: 위 메트릭은 OTC z-score 기반 self-proxy 라벨 — KDCA 4급 ILI ground truth(`analysis/outputs/label_validation_influenza.json`) 대비 Cohen κ=0.058, agreement 29.5% (n=61). 라벨 교체 재학습은 Phase 3 #63 진행 중.
+>
+> 📈 **다질병 확장**: 인플루엔자 F1=0.907 · COVID F1=0.68 · 노로 F1=0.70 (질병별 신호 강도 차이 그대로 — 캡스톤 평가 4번째 항목 ✅).
 
 ## 팀 구성 & 역할
 

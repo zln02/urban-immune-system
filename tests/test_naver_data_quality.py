@@ -153,11 +153,17 @@ class TestSourceUnification:
         text = src.read_text(encoding="utf-8")
         # OTC backfill_layer 호출에 'naver_shopping' (legacy) 가 단독으로 들어가면 안 됨
         # 'naver_shopping_insight' 통일 정책
-        otc_block = text.split('layers in ("both", "otc")')[1].split("return counts")[0]
-        assert '"naver_shopping_insight"' in otc_block, (
-            "OTC backfill source 가 'naver_shopping_insight' 로 통일돼야 함 "
+        # 2026-06-01 다질병 도입 후 source 라벨이 변수(otc_source) 로 분기:
+        #   influenza  → 'naver_shopping_insight'  (호환성 유지, otc_collector 와 통일)
+        #   covid/노로 → 'naver_shopping_insight_{pathogen}' (멱등 DELETE 분리)
+        # 변수 정의 코드와 do_otc 블록 내부 사용 둘 다 'naver_shopping_insight' 리터럴 검증.
+        assert (
+            '"naver_shopping_insight" if pathogen == "influenza"' in text
+        ), (
+            "OTC backfill source 가 influenza 일 때 'naver_shopping_insight' 로 통일돼야 함 "
             "(otc_collector 와 같은 라벨, 두 source 섞임 방지)"
         )
-        assert '"naver_shopping",' not in otc_block.replace('"naver_shopping_insight"', ""), (
+        # legacy 라벨 회귀 방지
+        assert '"naver_shopping",' not in text, (
             "legacy 'naver_shopping' source 로 backfill 하면 안 됨 — 정규화 스케일 분기 사고 재발"
         )
