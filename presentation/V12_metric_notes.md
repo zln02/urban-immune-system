@@ -42,6 +42,28 @@
 - 결과: self-proxy 는 임상 라벨과 다른 사건을 탐지 중. 진짜 F1 측정은 #63 multipath 라벨 교체 재학습 후 가능.
 - 위치: `analysis/outputs/label_validation_influenza.json`
 
+### V11.7 — KOWAS L2 carry-forward audit (PR #82, 2026-06-08)
+
+운영 DB (layer_signals · 최근 40주 · 17지역 · pathogen=influenza) 직접 audit.
+
+**결과**:
+- **같은 value 연속 비율: 60.7%** (846 / 1411 행)
+- 지역별 56.1% ~ 70.7% 범위 — 대구 70.7% / 전북 64.6% / 울산·광주·경남·부산·충남 62.2% / 세종·전남 56.1%
+- value=0 행 **0개** → '비수기 zero floor' 가설 부정
+- value < 5 인 행 34.4% / value ≥ 5 인 행 65.6%
+
+**원인 추정** (분리 불가, 양쪽 가능):
+1. **KOWAS PDF 게시 지연** — 매주 화 발행 정시 안 됨 → scheduler 화 09:30 실행 시 새 PDF 없어서 wastewater.py 의 `_apply_wastewater_fallback` 호출
+2. **PDF 픽셀 분석 일관성** — 같은 차트 → 같은 픽셀 → 같은 정규화 값 (정상 작동, 새 측정 동일)
+3. **운영 silent miss** — Issue #63 같은 사고로 INSERT 실패, fallback 호출
+
+**한계**:
+- 운영 DB 의 `layer_signals` 에 **meta JSONB 컬럼 부재** → wastewater.py 의 `meta.fallback=True` 마커가 운영에서 기록 안 됨 → 정확한 carry-forward 카운트 불가능 (위 60.7% 는 '같은 value 연속' 추정치)
+
+**위치**: `analysis/outputs/kowas_carry_forward_audit.json`
+
+**발표 메시지**: "L2 데이터의 절반 이상이 같은 값 연속 — 새 측정 vs 이전 주 복제 분리 불가, Phase 3 meta 컬럼 추가로 정확 추적 예정."
+
 ### V11.6 — KDCA 라벨 교체 재학습 결과 (#63, PR #78, 2026-06-08)
 
 V11.5 의 라벨 갭에 대한 본 작업. `analysis/backtest_xgboost_multipath.py --labels-from-kdca`

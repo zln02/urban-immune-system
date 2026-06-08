@@ -1,0 +1,216 @@
+{
+  "generated_at": "2026-06-08T07:39:12.463261+00:00",
+  "purpose": "KOWAS L2 wastewater carry-forward 발생 빈도 정직성 audit",
+  "window": "최근 40주 (현재 시점 기준)",
+  "pathogen": "influenza",
+  "data_range_pct": {
+    "zero": 0.0,
+    "low_below_5": 34.4,
+    "normal_above_5": 65.6
+  },
+  "overall": {
+    "total_weeks_rows": 1411,
+    "same_value_consecutive": 846,
+    "carry_forward_pct": 60.7
+  },
+  "by_region": [
+    {
+      "region": "대구광역시",
+      "total_weeks": 83,
+      "carry_forward_n": 58,
+      "carry_forward_pct": 70.7,
+      "value_stats": {
+        "avg": 19.61,
+        "max": 100.0,
+        "min": 0.79
+      }
+    },
+    {
+      "region": "전라북도",
+      "total_weeks": 83,
+      "carry_forward_n": 53,
+      "carry_forward_pct": 64.6,
+      "value_stats": {
+        "avg": 26.7,
+        "max": 100.0,
+        "min": 0.85
+      }
+    },
+    {
+      "region": "울산광역시",
+      "total_weeks": 83,
+      "carry_forward_n": 51,
+      "carry_forward_pct": 62.2,
+      "value_stats": {
+        "avg": 24.6,
+        "max": 100.0,
+        "min": 0.94
+      }
+    },
+    {
+      "region": "광주광역시",
+      "total_weeks": 83,
+      "carry_forward_n": 51,
+      "carry_forward_pct": 62.2,
+      "value_stats": {
+        "avg": 28.62,
+        "max": 100.0,
+        "min": 1.58
+      }
+    },
+    {
+      "region": "경상남도",
+      "total_weeks": 83,
+      "carry_forward_n": 51,
+      "carry_forward_pct": 62.2,
+      "value_stats": {
+        "avg": 38.3,
+        "max": 100.0,
+        "min": 0.9
+      }
+    },
+    {
+      "region": "부산광역시",
+      "total_weeks": 83,
+      "carry_forward_n": 51,
+      "carry_forward_pct": 62.2,
+      "value_stats": {
+        "avg": 38.7,
+        "max": 100.0,
+        "min": 0.82
+      }
+    },
+    {
+      "region": "충청남도",
+      "total_weeks": 83,
+      "carry_forward_n": 51,
+      "carry_forward_pct": 62.2,
+      "value_stats": {
+        "avg": 41.19,
+        "max": 100.0,
+        "min": 0.96
+      }
+    },
+    {
+      "region": "강원특별자치도",
+      "total_weeks": 83,
+      "carry_forward_n": 50,
+      "carry_forward_pct": 61.0,
+      "value_stats": {
+        "avg": 29.44,
+        "max": 100.0,
+        "min": 0.85
+      }
+    },
+    {
+      "region": "충청북도",
+      "total_weeks": 83,
+      "carry_forward_n": 49,
+      "carry_forward_pct": 59.8,
+      "value_stats": {
+        "avg": 20.56,
+        "max": 100.0,
+        "min": 0.81
+      }
+    },
+    {
+      "region": "경기도",
+      "total_weeks": 83,
+      "carry_forward_n": 49,
+      "carry_forward_pct": 59.8,
+      "value_stats": {
+        "avg": 29.97,
+        "max": 100.0,
+        "min": 1.28
+      }
+    },
+    {
+      "region": "대전광역시",
+      "total_weeks": 83,
+      "carry_forward_n": 49,
+      "carry_forward_pct": 59.8,
+      "value_stats": {
+        "avg": 41.79,
+        "max": 100.0,
+        "min": 1.26
+      }
+    },
+    {
+      "region": "서울특별시",
+      "total_weeks": 83,
+      "carry_forward_n": 49,
+      "carry_forward_pct": 59.8,
+      "value_stats": {
+        "avg": 13.97,
+        "max": 100.0,
+        "min": 1.19
+      }
+    },
+    {
+      "region": "제주특별자치도",
+      "total_weeks": 83,
+      "carry_forward_n": 48,
+      "carry_forward_pct": 58.5,
+      "value_stats": {
+        "avg": 31.66,
+        "max": 100.0,
+        "min": 2.08
+      }
+    },
+    {
+      "region": "인천광역시",
+      "total_weeks": 83,
+      "carry_forward_n": 47,
+      "carry_forward_pct": 57.3,
+      "value_stats": {
+        "avg": 38.48,
+        "max": 100.0,
+        "min": 1.1
+      }
+    },
+    {
+      "region": "경상북도",
+      "total_weeks": 83,
+      "carry_forward_n": 47,
+      "carry_forward_pct": 57.3,
+      "value_stats": {
+        "avg": 27.19,
+        "max": 100.0,
+        "min": 1.0
+      }
+    },
+    {
+      "region": "전라남도",
+      "total_weeks": 83,
+      "carry_forward_n": 46,
+      "carry_forward_pct": 56.1,
+      "value_stats": {
+        "avg": 17.95,
+        "max": 100.0,
+        "min": 0.88
+      }
+    },
+    {
+      "region": "세종특별자치시",
+      "total_weeks": 83,
+      "carry_forward_n": 46,
+      "carry_forward_pct": 56.1,
+      "value_stats": {
+        "avg": 38.17,
+        "max": 100.0,
+        "min": 1.09
+      }
+    }
+  ],
+  "limitations_note": [
+    "value=0 행이 0개 — '비수기 zero floor' 가설 부정",
+    "meta JSONB 컬럼 운영 DB 미존재 — wastewater.py 의 fallback 마커 추적 불가",
+    "'같은 value 연속' 은 carry-forward 또는 parser 보수적 픽셀 분석 결과일 수 있음 (PDF 차트 동일 → 동일 정규화)",
+    "지역별 56.1%~70.7% 범위 — KOWAS PDF 게시 지연 또는 scheduler silent miss 영향 추정"
+  ],
+  "honesty_implications": [
+    "발표 슬라이드 S13D L6 (KOWAS 7-10일 lag) 옆에 'carry-forward ~60%' 정직 명시 필요",
+    "L2 시그널 '실시간성' 주장 추가 약화 — 'L2 데이터의 절반 이상이 같은 값 연속, 새 측정 또는 이전 주 복제 분리 불가'",
+    "Phase 3 후속: meta 컬럼 추가 + fallback 마커 운영 적용으로 정확 추적"
+  ]
+}
