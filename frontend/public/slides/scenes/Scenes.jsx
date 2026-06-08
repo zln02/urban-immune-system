@@ -22,7 +22,7 @@ function S01() {
       <OrbitNode cx={960} cy={540} r={380} angle={30} color={ACCENT} delay={1.6} />
       <OrbitNode cx={960} cy={540} r={380} angle={150} color={ACCENT} delay={1.8} />
 
-      <Line x={120} y={180} delay={0.1} style={TYPE.eyebrow}>CAPSTONE · MID-TERM · 2026</Line>
+      <Line x={120} y={180} delay={0.1} style={TYPE.eyebrow}>CAPSTONE · FINAL · 2026</Line>
       <Line x={120} y={720} delay={0.4} style={{ ...TYPE.titleXL, fontSize: 130 }}>URBAN IMMUNE</Line>
       <Line x={120} y={870} delay={0.6} style={{ ...TYPE.titleXL, fontSize: 130, color: ACCENT }}>SYSTEM</Line>
 
@@ -1774,7 +1774,7 @@ function S13D() {
         <div style={{ padding: 36, fontFamily: FONT, height: '100%', boxSizing: 'border-box' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, height: '100%' }}>
             <HonestCard step="L1" title="단일 시즌"     body="2025-2026 인플루엔자 26주만 검증. 다년 일반화는 미수행." plain="한 시즌만 봤다. 다른 해는 나중에." delay={0.8} />
-            <HonestCard step="L2" title="단일 질병"     body="인플루엔자만 검증. 코로나·노로는 KOWAS 데이터는 있지만 백테스트 미수행." plain="독감만 봤다. 다른 병은 나중에." delay={0.95} />
+            <HonestCard step="L2" title="양성 imbalance" body="V11.6 KDCA 라벨 재학습 시 양성 비율 82% (유행기 비중 큼). 'always positive' trivial F1≈0.85 — 모델 진짜 gain 은 trivial L2 임계 (F1=0.29) 대비 +0.67." plain="유행기 데이터 비중 커서 쉬워 보일 수 있다. 진짜 강도는 trivial 대비." delay={0.95} />
             <HonestCard step="L3" title="펜데믹 미검증" body="계절성 인플루엔자와 펜데믹은 동역학이 다름. COVID 같은 신종에 외삽은 별도 검증 필요." plain="'독감 적중'이지 '펜데믹 적중'은 아직." delay={1.1} accent />
             <HonestCard step="L4" title="Recall 경계"   body="신뢰구간 하한 0.834 — 목표 0.85에 살짝 못 미침. Phase 2 다중 시즌으로 좁힘." plain="정확도가 운으로 살짝 흔들릴 수 있다." delay={1.25} />
             <HonestCard step="L5" title="전국 broadcast" body="네이버 API 제약으로 약국·검색이 17지역 동일 신호. HIRA OpenAPI로 분리 예정(Phase 3)." plain="시도별로 신호가 같음. API 한계." delay={1.4} />
@@ -1964,16 +1964,16 @@ function S15() {
     },
   ];
   const targets = [
-    { metric: 'F1', target: '> 0.90', baseline: '현 0.907', hero: true },
-    { metric: 'FAR', target: '< 0.15', baseline: '현 0.250', hero: true },
-    { metric: 'Multi-disease', target: '2종 검증', baseline: '현 인플루엔자 1종' },
-    { metric: 'PoC MOU', target: '광역지자체 1건 시도', baseline: '신규' },
+    { metric: 'F1', target: '> 0.90', baseline: '✅ self-proxy 0.907 / V11.6 KDCA 0.96', hero: true },
+    { metric: 'FAR', target: '< 0.15', baseline: '⚠️ 0.250 (gate ON, OFF 0.602 → −58.5%)', hero: true },
+    { metric: 'Multi-disease', target: '2종 검증', baseline: '✅ COVID 0.68 / 노로 0.70 (PR #71/#73)' },
+    { metric: 'PoC MOU', target: '광역지자체 1건 시도', baseline: '📋 Phase 4 (6월 후반~)' },
   ];
   return (
     <>
-      <Chrome index={15} label="15 · ROADMAP TO FINAL" />
-      <Line x={120} y={140} style={TYPE.eyebrow}>ROADMAP TO FINAL — 5/7 ▶ 6/9~14 (6주)</Line>
-      <Line x={120} y={200} delay={0.1} style={TYPE.title}>중간발표 → 최종발표 6주.</Line>
+      <Chrome index={15} label="15 · 6-WEEK RECAP" />
+      <Line x={120} y={140} style={TYPE.eyebrow}>ROADMAP 회고 — 5/7 ▶ 6/17 (6주 결산)</Line>
+      <Line x={120} y={200} delay={0.1} style={TYPE.title}>지난 6주, 약속한 것 vs 한 것.</Line>
 
       <div style={{ position: 'absolute', left: 120, top: 320, right: 120, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 28 }}>
         {sections.map((s, i) => <RoadmapSection key={i} section={s} delay={0.5 + i * 0.25} />)}
@@ -2050,7 +2050,7 @@ function S16() {
     ['김나영', '프런트엔드'],
     ['박정빈', 'DevOps · QA · 법'],
   ];
-  const risks = ['네이버 API 정책 변경', '하수 데이터 품질 · 지역 편차', '6일 · TFT 실학습 완료 압박'];
+  const risks = ['네이버 API 정책 변경 (전국 단일값)', '하수 데이터 품질 · 지역 편차', 'HIRA L1 지역분리 · KOWAS 자동화 (Phase 3)'];
   return (
     <>
       <Chrome index={16} label="16 · TEAM & Q&A" />
