@@ -1463,10 +1463,14 @@ function S11A() {
           <div style={{ ...TYPE.label, color: ACCENT }}>17 / 17 REGIONS</div>
           <div style={{ ...TYPE.mega, fontSize: 100, color: ACCENT, marginTop: 18, letterSpacing: '-0.03em' }}>ALL PASS</div>
           <div style={{ marginTop: 24, paddingTop: 20, borderTop: `1px solid ${WHITE_15}` }}>
-            <div style={{ ...TYPE.small, fontSize: 18, color: WHITE }}>F1 <span style={{ color: ACCENT, fontWeight: 700 }}>0.907</span></div>
+            <div style={{ ...TYPE.small, fontSize: 18, color: WHITE }}>F1 <span style={{ color: ACCENT, fontWeight: 700 }}>0.907</span> <span style={{ color: WHITE_45, fontSize: 14 }}>(self-proxy)</span></div>
             <div style={{ ...TYPE.small, fontSize: 18, color: WHITE, marginTop: 6 }}>Recall <span style={{ color: ACCENT, fontWeight: 700 }}>0.882</span> · Precision <span style={{ color: ACCENT, fontWeight: 700 }}>0.940</span></div>
             <div style={{ ...TYPE.small, fontSize: 18, color: WHITE, marginTop: 6 }}>Granger composite p=<span style={{ color: ACCENT, fontWeight: 700 }}>0.021</span></div>
             <div style={{ ...TYPE.small, fontSize: 18, color: WHITE, marginTop: 6 }}>L3 검색 p=<span style={{ color: ACCENT, fontWeight: 700 }}>0.007</span></div>
+            <div style={{ marginTop: 10, padding: '8px 10px', background: 'rgba(34,227,255,0.08)', border: `1px solid rgba(34,227,255,0.35)`, borderRadius: 4 }}>
+              <div style={{ ...TYPE.label, fontSize: 11, color: ACCENT }}>V11.6 · KDCA 임상 라벨 재학습</div>
+              <div style={{ ...TYPE.small, fontSize: 16, color: WHITE, marginTop: 4 }}>F1 <span style={{ color: ACCENT, fontWeight: 700 }}>0.96</span> · Precision <span style={{ color: ACCENT, fontWeight: 700 }}>1.00</span> · FAR <span style={{ color: ACCENT, fontWeight: 700 }}>0.0</span></div>
+            </div>
           </div>
           <div style={{ marginTop: 30, paddingTop: 20, borderTop: `1px solid ${WHITE_15}` }}>
             <div style={{ ...TYPE.label, color: WHITE_70, fontSize: 14 }}>FLU TRENDS 회피</div>
@@ -1641,28 +1645,29 @@ function HonestCard({ step, title, body, plain, delay, accent }) {
   );
 }
 
-// ----- S13C V11.0~V11.4 정직성 5단 (비전공자 친화) -----
+// ----- S13C V11.0~V11.5 정직성 6단 (비전공자 친화) -----
 function S13C() {
   return (
     <>
       <Chrome index={14} label="13C · HONEST LAYERS" />
-      <Line x={120} y={140} style={TYPE.eyebrow}>V11.0 ~ V11.4 · 정직성 5단 LAYER</Line>
+      <Line x={120} y={140} style={TYPE.eyebrow}>V11.0 ~ V11.5 · 정직성 6단 LAYER</Line>
       <Line x={120} y={200} delay={0.1} style={TYPE.title}>한계까지 정직하게 보여드립니다.</Line>
 
       <Plate x={120} y={340} width={1680} height={600} delay={0.5}>
-        <div style={{ padding: 36, fontFamily: FONT, height: '100%', boxSizing: 'border-box' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 18, height: '100%' }}>
+        <div style={{ padding: 28, fontFamily: FONT, height: '100%', boxSizing: 'border-box' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 14, height: '100%' }}>
             <HonestCard step="V11.0" title="기준 확정" body="17개 시·도 walk-forward로 F1 0.907 측정. 누가 돌려도 같은 수치." plain="기준점 박았다." delay={0.8} />
             <HonestCard step="V11.1" title="신뢰구간 공개" body="Recall 신뢰구간 [0.834, 0.924]. 하한이 목표 0.85에 살짝 못 미친다는 점도 숨기지 않음." plain="정확도가 운으로 흔들리는 범위까지 명시." delay={1.0} />
             <HonestCard step="V11.2" title="검정군 솔직" body="51개 통계 검정 중 실제 독립 검정은 18개. 네이버 API 제약으로 일부 지역 같은 신호." plain="겉으론 51개지만 진짜는 18개라고 인정." delay={1.2} />
             <HonestCard step="V11.3" title="합성 입력 명시" body="TFT 예측 모델은 데모용 합성 입력. API 응답에 synthetic_demo 메타 자동 표시." plain="모델 PoC라는 사실을 응답에 박았다." delay={1.4} />
-            <HonestCard step="V11.4" title="룰 vs ML 분리" body="룰 기반 게이트는 17지역 실측 검증(production). XGBoost는 양성 이벤트 4주뿐이라 PoC." plain="절반은 완성, 절반은 PoC라고 분리." delay={1.6} accent />
+            <HonestCard step="V11.4" title="룰 vs ML 분리" body="룰 기반 게이트는 17지역 실측 검증(production). XGBoost는 양성 이벤트 4주뿐이라 PoC." plain="절반은 완성, 절반은 PoC라고 분리." delay={1.6} />
+            <HonestCard step="V11.5" title="KDCA 라벨 갭" body="F1 0.907은 self-proxy. KDCA 임상 ILI와 일치율 29.5%, Cohen κ 0.058 (≈random) — 라벨 정의 차이를 정량 공개." plain="실험 라벨과 임상 라벨이 달랐다고 인정." delay={1.8} accent />
           </div>
         </div>
       </Plate>
 
       <Line x={120} y={970} delay={2.4} style={{ ...TYPE.small, fontSize: 14, color: WHITE_45 }}>
-        용어 — 신뢰구간: "이 범위 안에 진짜 값이 있을 확률 95%" · PoC: "개념 실증, 제품 아님" · production: "검증 끝, 실전 배치 가능"
+        용어 — 신뢰구간: "이 범위 안에 진짜 값이 있을 확률 95%" · PoC: "개념 실증, 제품 아님" · production: "검증 끝, 실전 배치 가능" · Cohen κ: "두 라벨 일치도 (0=무작위, 1=완벽)"
       </Line>
     </>
   );
@@ -1704,12 +1709,14 @@ function S14A() {
     { ver: 'V11.1',  date: '5/17', f1: '0.907', added: '+ Bootstrap 신뢰구간 (정직성 1단)' },
     { ver: 'V11.2',  date: '5/22', f1: '0.907', added: '+ 지역별 Granger 51검정 (정직성 2단)' },
     { ver: 'V11.3',  date: '5/22', f1: '0.907', added: '+ TFT 합성 메타 명시 (정직성 3단)' },
-    { ver: 'V11.4',  date: '5/27', f1: '0.907', added: '+ 룰 vs ML 분리 (정직성 4단)', highlight: true },
+    { ver: 'V11.4',  date: '5/27', f1: '0.907', added: '+ 룰 vs ML 분리 (정직성 4단)' },
+    { ver: 'V11.5',  date: '6/5',  f1: '0.907', added: '+ KDCA 라벨 갭 정량 공개 (정직성 5단)' },
+    { ver: 'V11.6',  date: '6/8',  f1: '0.960', added: 'KDCA ground truth 재학습 · 임상 라벨 기준 F1=0.96', highlight: true },
   ];
   return (
     <>
       <Chrome index={17} label="14A · EVOLUTION" />
-      <Line x={120} y={140} style={TYPE.eyebrow}>6주 진보 — 메트릭 +0.066, 정직성 4단 추가</Line>
+      <Line x={120} y={140} style={TYPE.eyebrow}>9주 진보 — V11.6 KDCA 라벨 F1 0.96, 정직성 5단 추가</Line>
       <Line x={120} y={200} delay={0.1} style={TYPE.title}>숫자보다 정직성이 매 버전 늘었다.</Line>
 
       <Plate x={120} y={340} width={1680} height={600} delay={0.5}>
@@ -1731,8 +1738,8 @@ function S14A() {
               <div>{r.added}</div>
             </div>
           ))}
-          <div style={{ marginTop: 24, ...TYPE.small, fontSize: 18, color: WHITE_70, fontStyle: 'italic' }}>
-            → 6주 동안 메트릭은 +0.066, 그러나 더 큰 변화는 매 버전마다 추가된 정직성 layer.
+          <div style={{ marginTop: 18, ...TYPE.small, fontSize: 17, color: WHITE_70, fontStyle: 'italic' }}>
+            → 9주 동안 self-proxy F1 +0.066 → V11.6 KDCA 임상 라벨 기준 F1 0.96. 매 버전 정직성 layer +1.
           </div>
         </div>
       </Plate>
