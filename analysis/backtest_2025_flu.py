@@ -33,12 +33,13 @@ from pathlib import Path
 from typing import Any
 
 import matplotlib
+
 matplotlib.use("Agg")  # 헤드리스 서버 렌더링
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-import matplotlib.font_manager as fm
-import numpy as np
 import asyncpg
+import matplotlib.font_manager as fm
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
+import numpy as np
 
 # 한글 폰트 설정 (NanumGothic)
 _NANUM_PATH = "/usr/share/fonts/truetype/nanum/NanumGothic.ttf"
@@ -262,7 +263,6 @@ def map_confirmed_to_weeks(
     confirmed_cases.time 은 주 시작일(월요일) 기준이므로
     가장 가까운 주차에 매핑한다.
     """
-    from datetime import date
 
     week_map: dict[str, int] = {}
 

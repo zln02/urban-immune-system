@@ -50,6 +50,7 @@ DEFAULT_THRESHOLDS = {
 
 
 async def _fetch_signals(db_url: str, pathogen: str) -> pd.DataFrame:
+    """L1 OTC + L2 wastewater + L3 search 통합. L1은 카테고리 미정의 시 NaN."""
     import asyncpg
     conn = await asyncpg.connect(db_url.replace("postgresql+asyncpg://", "postgresql://"))
     try:
@@ -57,7 +58,7 @@ async def _fetch_signals(db_url: str, pathogen: str) -> pd.DataFrame:
             """
             SELECT time, region, layer, value
             FROM layer_signals
-            WHERE pathogen = $1 AND layer IN ('wastewater', 'search')
+            WHERE pathogen = $1 AND layer IN ('wastewater', 'search', 'otc')
             ORDER BY region, time, layer
             """,
             pathogen,
@@ -75,10 +76,14 @@ async def _fetch_signals(db_url: str, pathogen: str) -> pd.DataFrame:
         index=["isoyear", "isoweek", "region"],
         columns="layer", values="value", aggfunc="mean",
     ).reset_index()
-    wide = wide.rename(columns={"wastewater": "l2_wastewater", "search": "l3_search"})
+    wide = wide.rename(columns={
+        "wastewater": "l2_wastewater",
+        "search": "l3_search",
+        "otc": "l1_otc",
+    })
 
     wide = wide.sort_values(["region", "isoyear", "isoweek"]).reset_index(drop=True)
-    for col in ["l2_wastewater", "l3_search"]:
+    for col in ["l1_otc", "l2_wastewater", "l3_search"]:
         if col not in wide.columns:
             wide[col] = np.nan
         wide[col] = wide.groupby("region")[col].transform(lambda s: s.ffill().bfill())
@@ -87,33 +92,64 @@ async def _fetch_signals(db_url: str, pathogen: str) -> pd.DataFrame:
         wide["isoyear"].astype(str) + "-W" + wide["isoweek"].astype(str).str.zfill(2) + "-1",
         format="%G-W%V-%u", utc=True,
     )
-    return wide[["time", "region", "l2_wastewater", "l3_search"]].sort_values(
+    return wide[["time", "region", "l1_otc", "l2_wastewater", "l3_search"]].sort_values(
         ["region", "time"]
     ).reset_index(drop=True)
 
 
-def _build_features(df: pd.DataFrame, threshold: float) -> tuple[pd.DataFrame, list[str]]:
+def _build_features(
+    df: pd.DataFrame,
+    threshold: float,
+    target_mode: str = "level",
+) -> tuple[pd.DataFrame, list[str]]:
+    """피처 + 라벨 빌드.
+
+    Args:
+        target_mode:
+          'level'      → L2(t+2주) ≥ thr  (기존, proxy)
+          'transition' → L2(t) < thr AND L2(t+2주) ≥ thr (음→양 전환만 양성)
+    """
     out = []
     for region, g in df.groupby("region"):
         g = g.sort_values("time").reset_index(drop=True)
         if len(g) < LEAD_WEEKS + 6:
             continue
         g["l2_future"] = g["l2_wastewater"].shift(-LEAD_WEEKS)
-        g["alert_future"] = (g["l2_future"] >= threshold).astype(int)
+        if target_mode == "transition":
+            was_below = (g["l2_wastewater"] < threshold).astype(int)
+            future_above = (g["l2_future"] >= threshold).astype(int)
+            g["alert_future"] = (was_below & future_above).astype(int)
+        else:
+            g["alert_future"] = (g["l2_future"] >= threshold).astype(int)
         g["l2_lag1"] = g["l2_wastewater"].shift(1)
         g["l2_lag2"] = g["l2_wastewater"].shift(2)
         g["l2_ma3"] = g["l2_wastewater"].rolling(window=3, min_periods=1).mean()
         g["l2_diff1"] = g["l2_wastewater"].diff(1)
+        g["l2_diff2"] = g["l2_wastewater"].diff(2)
         g["l3_lag1"] = g["l3_search"].shift(1)
         g["l3_ma3"] = g["l3_search"].rolling(window=3, min_periods=1).mean()
+        g["l3_diff1"] = g["l3_search"].diff(1)
+        # 누적 momentum (transition 감지에 유용)
+        g["l2_ma3_diff"] = g["l2_ma3"].diff(1)
+        g["l3_ma3_diff"] = g["l3_ma3"].diff(1)
+        # L1 OTC (있는 pathogen만)
+        if "l1_otc" in g.columns:
+            g["l1_lag1"] = g["l1_otc"].shift(1)
+            g["l1_ma3"] = g["l1_otc"].rolling(window=3, min_periods=1).mean()
+            g["l1_diff1"] = g["l1_otc"].diff(1)
         out.append(g)
     if not out:
         raise RuntimeError("모든 region 데이터 부족")
+    base = pd.concat(out, ignore_index=True)
     features = [
-        "l2_wastewater", "l2_lag1", "l2_lag2", "l2_ma3", "l2_diff1",
-        "l3_search", "l3_lag1", "l3_ma3",
+        "l2_wastewater", "l2_lag1", "l2_lag2", "l2_ma3", "l2_diff1", "l2_diff2",
+        "l2_ma3_diff",
+        "l3_search", "l3_lag1", "l3_ma3", "l3_diff1", "l3_ma3_diff",
     ]
-    return pd.concat(out, ignore_index=True), features
+    # L1 OTC 활성 여부: 적어도 한 행이 non-null이고 분산이 있으면 피처로 포함
+    if "l1_otc" in base.columns and base["l1_otc"].notna().any() and base["l1_otc"].std() > 0.1:
+        features += ["l1_otc", "l1_lag1", "l1_ma3", "l1_diff1"]
+    return base, features
 
 
 def _metrics(y_true: np.ndarray, y_pred: np.ndarray, y_prob: np.ndarray | None) -> dict:
@@ -176,14 +212,15 @@ def _walk_forward(g: pd.DataFrame, features: list[str], min_n: int = 20,
 
 
 async def run_pathogen(pathogen: str, threshold: float, db_url: str,
-                       prob_threshold: float = 0.5) -> dict:
-    logger.info("=== %s backtest (alert=%s, prob=%s, lead=%d주) ===",
-                pathogen, threshold, prob_threshold, LEAD_WEEKS)
+                       prob_threshold: float = 0.5,
+                       target_mode: str = "level") -> dict:
+    logger.info("=== %s backtest (target=%s, alert=%s, prob=%s, lead=%d주) ===",
+                pathogen, target_mode, threshold, prob_threshold, LEAD_WEEKS)
     raw = await _fetch_signals(db_url, pathogen)
     logger.info("DataFrame: %d행 × %d지역, 기간 %s ~ %s",
                 len(raw), raw["region"].nunique(), raw["time"].min(), raw["time"].max())
 
-    df_feat, features = _build_features(raw, threshold)
+    df_feat, features = _build_features(raw, threshold, target_mode=target_mode)
     pos_rate = float(df_feat["alert_future"].mean())
     logger.info("피처 빌드: %d행, 피처 %d개, 양성 비율=%.2f%%",
                 len(df_feat), len(features), pos_rate * 100)
@@ -257,19 +294,35 @@ async def run_pathogen(pathogen: str, threshold: float, db_url: str,
     full = df_feat.dropna(subset=["l2_wastewater", "l2_ma3", "alert_future"]).copy()
     y_full = full["alert_future"].values.astype(int)
     baselines: dict[str, dict] = {}
-    for name, pred_vec in [
-        ("trivial_L2_t",   (full["l2_wastewater"].values >= threshold).astype(int)),
-        ("trivial_L2_MA3", (full["l2_ma3"].values >= threshold).astype(int)),
-        ("trivial_L2_lag2", (full["l2_lag2"].fillna(0).values >= threshold).astype(int)
-            if "l2_lag2" in full.columns else None),
-    ]:
+    if target_mode == "transition":
+        # transition은 L2(t)>=thr 이면 무조건 음성 → smarter trivial 후보들
+        trivials = [
+            ("trivial_L2_below_and_up",
+                ((full["l2_wastewater"].values < threshold) &
+                 (full["l2_diff1"].fillna(0).values > 0)).astype(int)),
+            ("trivial_L2_below_and_MA_up",
+                ((full["l2_wastewater"].values < threshold) &
+                 (full["l2_ma3_diff"].fillna(0).values > 0)).astype(int)),
+            ("trivial_L2_below_and_L3_up",
+                ((full["l2_wastewater"].values < threshold) &
+                 (full["l3_diff1"].fillna(0).values > 0)).astype(int)),
+        ]
+    else:
+        trivials = [
+            ("trivial_L2_t",   (full["l2_wastewater"].values >= threshold).astype(int)),
+            ("trivial_L2_MA3", (full["l2_ma3"].values >= threshold).astype(int)),
+            ("trivial_L2_lag2",
+                (full["l2_lag2"].fillna(0).values >= threshold).astype(int)
+                if "l2_lag2" in full.columns else None),
+        ]
+    for name, pred_vec in trivials:
         if pred_vec is None:
             continue
         baselines[name] = _metrics(y_full, pred_vec, None)
     logger.info("Trivial baselines:")
     for k, v in baselines.items():
         if "f1" in v and v["f1"] is not None:
-            logger.info("  %-18s F1=%.3f FAR=%.3f", k, v["f1"], v["false_alarm_rate"])
+            logger.info("  %-26s F1=%.3f FAR=%.3f", k, v["f1"], v["false_alarm_rate"])
 
     def avg_key(key: str) -> float | None:
         vals = [region_results[r][key] for r in ok_regions
@@ -319,13 +372,19 @@ async def run_pathogen(pathogen: str, threshold: float, db_url: str,
         "model_gain_vs_trivial_f1": model_gain_vs_trivial,
     }
 
+    target_desc = (
+        f"L2 KOWAS {pathogen}(t) < {threshold} AND (t+{LEAD_WEEKS}주) ≥ {threshold} "
+        "[outbreak transition]" if target_mode == "transition"
+        else f"L2 KOWAS {pathogen}(t+{LEAD_WEEKS}주) ≥ {threshold} [level proxy]"
+    )
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "purpose": f"{pathogen} self-target proxy backtest (확장된 53주 데이터)",
+        "purpose": f"{pathogen} {target_mode} target backtest (확장된 53주 데이터)",
         "config": {
             "pathogen": pathogen,
+            "target_mode": target_mode,
             "features": features,
-            "target": f"L2 KOWAS {pathogen}(t+{LEAD_WEEKS}주) ≥ {threshold}",
+            "target": target_desc,
             "model_region": "GradientBoostingClassifier (n=100, depth=3, lr=0.05)",
             "model_pool": "GradientBoostingClassifier (n=200, depth=4, lr=0.05)",
             "cv_region": "TimeSeriesSplit n_splits<=5, gap=2 (region-internal)",
@@ -358,6 +417,8 @@ async def main() -> int:
     parser.add_argument("--pathogen", required=True, choices=["covid", "norovirus", "influenza"])
     parser.add_argument("--threshold", type=float, default=None)
     parser.add_argument("--prob", type=float, default=0.5, help="classification probability threshold")
+    parser.add_argument("--target", choices=["level", "transition"], default="level",
+                        help="level=기존 proxy, transition=음→양 전환만 양성 (proxy 한계 회피)")
     parser.add_argument("--output", type=str, default=None)
     args = parser.parse_args()
 
@@ -370,10 +431,13 @@ async def main() -> int:
         logger.error("DATABASE_URL 환경변수 없음")
         return 2
 
-    result = await run_pathogen(args.pathogen, threshold, db_url, prob_threshold=args.prob)
+    result = await run_pathogen(args.pathogen, threshold, db_url,
+                                prob_threshold=args.prob, target_mode=args.target)
 
+    suffix = "_transition" if args.target == "transition" else ""
     out = (Path(args.output) if args.output else
-           Path(__file__).parent / "outputs" / f"backtest_xgboost_{args.pathogen}_17regions.json")
+           Path(__file__).parent / "outputs" /
+           f"backtest_xgboost_{args.pathogen}{suffix}_17regions.json")
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(result, indent=2, ensure_ascii=False))
     logger.info("저장: %s", out)
