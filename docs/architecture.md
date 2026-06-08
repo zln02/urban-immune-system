@@ -90,7 +90,7 @@ RED    : composite ≥ 75
 
 - **라벨 정직성 (V11.5)**: 인플루엔자 F1=0.907 은 OTC z-score 기반 self-target proxy. KDCA 4급 ILI ground truth 대비 Cohen κ=0.058 — `analysis/outputs/label_validation_influenza.json`. Phase 3 #63 라벨 교체 재학습 진행 중.
 - **지역 분리**: L1·L3 는 네이버 API 제약으로 **전국 단일값 → 17지역 broadcast** (`pipeline/collectors/otc_collector.py` 의 zero-collapse 핫픽스 `07c9c5a` 이후). HIRA OpenAPI 교체로 Phase 3 에서 지역 분리.
-- **L2 자동화**: KOWAS PDF 수동/반자동 추출 (Selenium 풀 자동화 Phase 3).
+- **L2 자동화 + carry-forward**: KOWAS PDF httpx 자동 다운로더 + APScheduler 주간 잡 + cron fallback 작동 중 (매주 화 09:30). 그러나 운영 DB audit (`analysis/outputs/kowas_carry_forward_audit.json`, 2026-06-08) 결과 17지역 40주 KOWAS L2 데이터의 **60.7% 가 같은 value 연속** — KOWAS 게시 지연 / PDF 픽셀 분석 일관성 / scheduler silent miss 분리 불가. Phase 3: `layer_signals.meta` JSONB 컬럼 추가 + fallback 마커 운영 적용.
 - **TFT-real**: 26주 데이터로 발산 → 12주 추가 누적 후 재학습.
 - **다질병 신호 편차**: COVID F1=0.68 / 노로 F1=0.70 — 인플루엔자 대비 OTC·검색 신호 약함 (질병별 행동 패턴 차이).
 

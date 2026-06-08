@@ -1778,7 +1778,7 @@ function S13D() {
             <HonestCard step="L3" title="펜데믹 미검증" body="계절성 인플루엔자와 펜데믹은 동역학이 다름. COVID 같은 신종에 외삽은 별도 검증 필요." plain="'독감 적중'이지 '펜데믹 적중'은 아직." delay={1.1} accent />
             <HonestCard step="L4" title="Recall 경계"   body="신뢰구간 하한 0.834 — 목표 0.85에 살짝 못 미침. Phase 2 다중 시즌으로 좁힘." plain="정확도가 운으로 살짝 흔들릴 수 있다." delay={1.25} />
             <HonestCard step="L5" title="전국 broadcast" body="네이버 API 제약으로 약국·검색이 17지역 동일 신호. HIRA OpenAPI로 분리 예정(Phase 3)." plain="시도별로 신호가 같음. API 한계." delay={1.4} />
-            <HonestCard step="L6" title="KOWAS 7~10일 lag" body="하수 데이터 자체에 측정-공개 7~10일 지연. 진짜 실시간 아님." plain="실시간이 아니라 '주간'이다." delay={1.55} />
+            <HonestCard step="L6" title="KOWAS 7~10일 lag + 60% carry-forward" body="하수 데이터 측정-공개 7~10일 지연 + 운영 DB audit 결과 같은 값 연속 60.7% (846/1411 행, 17지역 40주). KOWAS 게시 지연 또는 PDF 픽셀 분석 동일성으로 추정." plain="실시간 아닐 뿐 아니라 절반 이상이 새 측정인지 이전 주 복제인지 분리 불가." delay={1.55} accent />
           </div>
         </div>
       </Plate>
