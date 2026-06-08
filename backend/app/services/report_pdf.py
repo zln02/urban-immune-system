@@ -512,6 +512,49 @@ def _format_citation(idx: int, c: dict) -> str:
 
 
 # ── 핵심 PDF 빌드 (신규 6페이지 버전) ───────────────────────────
+
+def _generate_fallback_summary(region: str, risk: dict) -> str:
+    """alert_reports 레코드 없을 때 risk_scores 기반 한국어 요약 생성.
+
+    데모/PoC 시 LLM 리포트가 아직 발행 안 된 지역을 클릭해도 PDF가
+    의미있는 본문을 제공하도록 fallback. risk_scores 의 composite/l1/l2/l3
+    + 경보 단계로 4섹션 요약을 markdown 으로 만든다.
+    """
+    composite = float(risk.get("composite_score") or 0)
+    l1 = float(risk.get("l1_score") or 0)
+    l2 = float(risk.get("l2_score") or 0)
+    l3 = float(risk.get("l3_score") or 0)
+    level = risk.get("alert_level") or "GREEN"
+    level_ko = LEVEL_LABEL_KO.get(level, level)
+
+    dominant = max(
+        [("L1 약국 OTC", l1), ("L2 하수 바이오마커", l2), ("L3 검색 트렌드", l3)],
+        key=lambda x: x[1],
+    )
+
+    lines = [
+        f"## {region} 감염병 신호 현황 요약\n",
+        f"**현재 경보 단계: {level_ko} ({level})**  ",
+        f"종합 위험지수: **{composite:.1f} / 100**\n",
+        "### 계층별 신호 현황\n",
+        "| 계층 | 신호값 |",
+        "|------|--------|",
+        f"| L1 약국 OTC 구매지수 | {l1:.1f} |",
+        f"| L2 하수 바이오마커 | {l2:.1f} |",
+        f"| L3 검색 트렌드 | {l3:.1f} |",
+        "",
+        f"현재 가장 높은 신호는 **{dominant[0]}** ({dominant[1]:.1f})입니다.\n",
+        "### 해석 안내\n",
+        "- **GREEN (< 30)**: 정상 범위. 특이 동향 없음.",
+        "- **YELLOW (30–74)**: 주의 단계. 2개 이상 계층 교차 확인 권고.",
+        "- **RED (≥ 75)**: 경보 단계. 즉각적인 역학 조사 고려.\n",
+        "> **참고**: 본 요약은 risk_scores 데이터를 바탕으로 자동 생성된 것입니다. "
+        "Claude Haiku RAG 전문 분석은 `/api/v1/alerts/stream?region="
+        f"{region}` 호출 후 이 리포트를 재발급하면 반영됩니다.",
+    ]
+    return "\n".join(lines)
+
+
 async def _build_pdf_story(
     region: str,
     db: AsyncSession | None,
@@ -815,12 +858,13 @@ async def _build_pdf_story(
 
     # ─── Page 5 — AI 분석 본문 + RAG 인용 ───────────────────────
     story.append(Paragraph("4. AI 분석 리포트 (전문)", h2))
-    story.append(Paragraph(f"모델: {rep.get('model_used') or '-'} · 생성 시각: {rep.get('created_at') or '-'}", small))
+    _model_label = rep.get("model_used") or "자동 생성 (risk_scores 기반)"
+    _ts_label = rep.get("created_at") or now_kst
+    story.append(Paragraph(f"모델: {_model_label} · 생성 시각: {_ts_label}", small))
     story.append(Spacer(1, 4 * mm))
 
     summary_text = (
-        rep.get("summary")
-        or "alert_reports DB에 해당 지역 리포트가 없습니다. /api/v1/alerts/stream 호출 후 다시 시도하세요."
+        rep.get("summary") or _generate_fallback_summary(region, risk)
     ).strip()
     story.extend(_md_to_paragraphs(summary_text, base, h2, h3))
 
