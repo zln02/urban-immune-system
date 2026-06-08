@@ -10,6 +10,7 @@ ReportLab + matplotlib 로 5~6페이지 구성:
 
 폰트: NanumGothic (시스템 설치 가정 — 캡스톤 GCP VM에 기본 포함)
 """
+
 # ruff: noqa: E501  -- ReportLab Paragraph 한국어 본문은 한 줄 유지가 가독성에 유리
 from __future__ import annotations
 
@@ -126,8 +127,7 @@ def _iso_week_label(dt: datetime) -> tuple[str, str]:
 class _UISDocTemplate(SimpleDocTemplate):
     """페이지 하단 푸터 + 표지 색상 띠 자동 삽입."""
 
-    def __init__(self, *args, total_pages: int = 6, level: str = "GREEN",
-                 generated_kst: str = "", **kwargs):
+    def __init__(self, *args, total_pages: int = 6, level: str = "GREEN", generated_kst: str = "", **kwargs):
         super().__init__(*args, **kwargs)
         self._total_pages = total_pages
         self._level = level
@@ -225,8 +225,9 @@ def _chart_top5_regions(regions_data: list[dict]) -> bytes:
     fig, ax = plt.subplots(figsize=(7.5, 2.8))
     bars = ax.barh(labels[::-1], vals[::-1], color=level_colors[::-1], height=0.55)
     for b, v in zip(bars, vals[::-1]):
-        ax.text(v + 0.8, b.get_y() + b.get_height() / 2, f"{v:.1f}",
-                va="center", fontsize=9, weight="bold", color="#111827")
+        ax.text(
+            v + 0.8, b.get_y() + b.get_height() / 2, f"{v:.1f}", va="center", fontsize=9, weight="bold", color="#111827"
+        )
     ax.set_xlim(0, 100)
     ax.set_title("Top 5 위험 지역 (composite score)", fontsize=10.5, weight="bold", loc="left")
     ax.set_xlabel("composite score", fontsize=9)
@@ -263,8 +264,7 @@ def _chart_lead_time(lead: dict) -> bytes:
     ax1.set_ylabel("주 (weeks)", fontsize=9)
     ax1.grid(axis="y", linestyle="--", alpha=0.3)
     for b, v in zip(bars, vals):
-        ax1.text(b.get_x() + b.get_width() / 2, v + 0.1, f"{v}주",
-                 ha="center", fontsize=9, weight="bold")
+        ax1.text(b.get_x() + b.get_width() / 2, v + 0.1, f"{v}주", ha="center", fontsize=9, weight="bold")
     ax1.spines["top"].set_visible(False)
     ax1.spines["right"].set_visible(False)
 
@@ -311,13 +311,17 @@ def _chart_backtest(backtest: dict) -> bytes:
     bars = ax.barh(labels, vals, color=colors_, height=0.55)
     for k, b, v in zip(labels, bars, vals):
         t = targets[k]
-        ax.axvline(t, ymin=(b.get_y() - ax.get_ylim()[0]) / (ax.get_ylim()[1] - ax.get_ylim()[0]),
-                   color="#6b7280", lw=0.8, ls=":", alpha=0.6)
-        ax.text(v + 0.015, b.get_y() + b.get_height() / 2, f"{v:.3f}",
-                va="center", fontsize=9, weight="bold")
+        ax.axvline(
+            t,
+            ymin=(b.get_y() - ax.get_ylim()[0]) / (ax.get_ylim()[1] - ax.get_ylim()[0]),
+            color="#6b7280",
+            lw=0.8,
+            ls=":",
+            alpha=0.6,
+        )
+        ax.text(v + 0.015, b.get_y() + b.get_height() / 2, f"{v:.3f}", va="center", fontsize=9, weight="bold")
     ax.set_xlim(0, 1.0)
-    ax.set_title("17개 시·도 백테스트 결과 (2025-W40 ~ 2026-W08)",
-                 fontsize=10.5, weight="bold", loc="left")
+    ax.set_title("17개 시·도 백테스트 결과 (2025-W40 ~ 2026-W08)", fontsize=10.5, weight="bold", loc="left")
     ax.set_xlabel("score", fontsize=9)
     ax.grid(axis="x", linestyle="--", alpha=0.3)
     ax.spines["top"].set_visible(False)
@@ -333,79 +337,113 @@ def _chart_backtest(backtest: dict) -> bytes:
 
 # ── 데이터 조회 ────────────────────────────────────────────────
 async def _fetch_layer_series(db: AsyncSession, region: str, layer: str, days: int = 84) -> list[tuple]:
-    rows = (await db.execute(
-        text(f"""
+    rows = (
+        await db.execute(
+            text("""
             SELECT time, value FROM layer_signals
             WHERE region = :region AND layer = :layer
-              AND time >= NOW() - INTERVAL '{int(days)} days'
+              AND time >= NOW() - make_interval(days => :days)
             ORDER BY time
         """),
-        {"region": region, "layer": layer},
-    )).all()
+            {"region": region, "layer": layer, "days": days},
+        )
+    ).all()
     return [(r[0], float(r[1])) for r in rows]
 
 
 async def _fetch_composite_series(db: AsyncSession, region: str, days: int = 84) -> list[tuple]:
     """composite_score 시계열 (risk_scores 테이블)."""
-    rows = (await db.execute(
-        text(f"""
+    rows = (
+        await db.execute(
+            text("""
             SELECT time, composite_score FROM risk_scores
             WHERE region = :region
-              AND time >= NOW() - INTERVAL '{int(days)} days'
+              AND time >= NOW() - make_interval(days => :days)
             ORDER BY time
         """),
-        {"region": region},
-    )).all()
+            {"region": region, "days": days},
+        )
+    ).all()
     return [(r[0], float(r[1])) for r in rows]
 
 
 async def _fetch_latest_risk(db: AsyncSession, region: str) -> dict | None:
-    row = (await db.execute(
-        text("""
+    row = (
+        (
+            await db.execute(
+                text("""
             SELECT time, composite_score, l1_score, l2_score, l3_score, alert_level
             FROM risk_scores WHERE region = :region
             ORDER BY time DESC LIMIT 1
         """),
-        {"region": region},
-    )).mappings().first()
+                {"region": region},
+            )
+        )
+        .mappings()
+        .first()
+    )
     return dict(row) if row else None
 
 
 async def _fetch_prev_risk(db: AsyncSession, region: str) -> dict | None:
     """전주 위험도 (최신에서 2번째 row)."""
-    row = (await db.execute(
-        text("""
+    row = (
+        (
+            await db.execute(
+                text("""
             SELECT time, composite_score, l1_score, l2_score, l3_score, alert_level
             FROM risk_scores WHERE region = :region
             ORDER BY time DESC LIMIT 1 OFFSET 1
         """),
-        {"region": region},
-    )).mappings().first()
+                {"region": region},
+            )
+        )
+        .mappings()
+        .first()
+    )
     return dict(row) if row else None
 
 
 async def _fetch_all_regions_latest(db: AsyncSession) -> list[dict]:
     """17개 시·도 최신 composite 점수 조회."""
-    rows = (await db.execute(
-        text("""
+    rows = (
+        (
+            await db.execute(
+                text("""
             SELECT DISTINCT ON (region) region, composite_score, alert_level
             FROM risk_scores
             ORDER BY region, time DESC
         """),
-    )).mappings().all()
-    return [{"region": r["region"], "composite": float(r["composite_score"] or 0),
-             "level": str(r["alert_level"] or "GREEN")} for r in rows]
+            )
+        )
+        .mappings()
+        .all()
+    )
+    return [
+        {
+            "region": r["region"],
+            "composite": float(r["composite_score"] or 0),
+            "level": str(r["alert_level"] or "GREEN"),
+        }
+        for r in rows
+    ]
 
 
 async def _fetch_latest_report(db: AsyncSession, region: str) -> dict | None:
-    row = (await db.execute(
-        text("""
+    row = (
+        (
+            await db.execute(
+                text("""
             SELECT region, alert_level, summary, recommendations, model_used, created_at, rag_sources
             FROM alert_reports WHERE region = :region
             ORDER BY created_at DESC LIMIT 1
         """),
-        {"region": region},
-    )).mappings().first()
+                {"region": region},
+            )
+        )
+        .mappings()
+        .first()
+    )
     return dict(row) if row else None
 
 
@@ -515,12 +553,35 @@ async def _build_pdf_story(
 
     # 스타일 정의
     styles = getSampleStyleSheet()
-    base = ParagraphStyle("base", parent=styles["Normal"], fontName=_FONT, fontSize=10, leading=15, textColor=colors.HexColor("#111827"))
-    h1 = ParagraphStyle("h1", parent=base, fontName=_FONT_B, fontSize=20, leading=26, textColor=colors.HexColor(C_PRIMARY), spaceAfter=4)
-    h2 = ParagraphStyle("h2", parent=base, fontName=_FONT_B, fontSize=14, leading=20, textColor=colors.HexColor(C_PRIMARY), spaceBefore=6, spaceAfter=4)
-    h3 = ParagraphStyle("h3", parent=base, fontName=_FONT_B, fontSize=11, leading=16, textColor=colors.HexColor("#1f2937"), spaceBefore=4)
+    base = ParagraphStyle(
+        "base", parent=styles["Normal"], fontName=_FONT, fontSize=10, leading=15, textColor=colors.HexColor("#111827")
+    )
+    h1 = ParagraphStyle(
+        "h1", parent=base, fontName=_FONT_B, fontSize=20, leading=26, textColor=colors.HexColor(C_PRIMARY), spaceAfter=4
+    )
+    h2 = ParagraphStyle(
+        "h2",
+        parent=base,
+        fontName=_FONT_B,
+        fontSize=14,
+        leading=20,
+        textColor=colors.HexColor(C_PRIMARY),
+        spaceBefore=6,
+        spaceAfter=4,
+    )
+    h3 = ParagraphStyle(
+        "h3",
+        parent=base,
+        fontName=_FONT_B,
+        fontSize=11,
+        leading=16,
+        textColor=colors.HexColor("#1f2937"),
+        spaceBefore=4,
+    )
     small = ParagraphStyle("small", parent=base, fontSize=8.5, leading=12, textColor=colors.HexColor("#6b7280"))
-    big_level = ParagraphStyle("big_level", parent=base, fontName=_FONT_B, fontSize=28, leading=36, textColor=colors.HexColor(level_color))
+    big_level = ParagraphStyle(
+        "big_level", parent=base, fontName=_FONT_B, fontSize=28, leading=36, textColor=colors.HexColor(level_color)
+    )
 
     story: list = []
 
@@ -533,21 +594,31 @@ async def _build_pdf_story(
 
     # ISO 주차
     week_table = Table(
-        [[Paragraph("<b>발행 주차</b>", base), Paragraph(f"<b>{iso_short}</b>", h3),
-          Paragraph("<b>한국식</b>", base), Paragraph(iso_long, base)]],
+        [
+            [
+                Paragraph("<b>발행 주차</b>", base),
+                Paragraph(f"<b>{iso_short}</b>", h3),
+                Paragraph("<b>한국식</b>", base),
+                Paragraph(iso_long, base),
+            ]
+        ],
         colWidths=[28 * mm, 38 * mm, 22 * mm, 82 * mm],
     )
-    week_table.setStyle(TableStyle([
-        ("BOX", (0, 0), (-1, -1), 0.6, colors.HexColor("#d1d5db")),
-        ("INNERGRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#e5e7eb")),
-        ("BACKGROUND", (0, 0), (0, 0), colors.HexColor("#eff6ff")),
-        ("BACKGROUND", (2, 0), (2, 0), colors.HexColor("#eff6ff")),
-        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("LEFTPADDING", (0, 0), (-1, -1), 6),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
-        ("TOPPADDING", (0, 0), (-1, -1), 6),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-    ]))
+    week_table.setStyle(
+        TableStyle(
+            [
+                ("BOX", (0, 0), (-1, -1), 0.6, colors.HexColor("#d1d5db")),
+                ("INNERGRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#e5e7eb")),
+                ("BACKGROUND", (0, 0), (0, 0), colors.HexColor("#eff6ff")),
+                ("BACKGROUND", (2, 0), (2, 0), colors.HexColor("#eff6ff")),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 6),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                ("TOPPADDING", (0, 0), (-1, -1), 6),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ]
+        )
+    )
     story.append(week_table)
     story.append(Spacer(1, 6 * mm))
 
@@ -559,9 +630,12 @@ async def _build_pdf_story(
     story.append(Paragraph("발행 기관: Urban Immune System (UIS) — 캡스톤 프로젝트팀", small))
     story.append(Paragraph(f"발행 일시: {now_kst}", small))
     story.append(Spacer(1, 4 * mm))
-    story.append(Paragraph(
-        "* 본 리포트는 AI가 자동 생성한 보조 의사결정 자료이며 임상·정책 의사결정에 활용 시 인간 전문가 검토가 필수입니다 (ISMS-P 2.9).",
-        small))
+    story.append(
+        Paragraph(
+            "* 본 리포트는 AI가 자동 생성한 보조 의사결정 자료이며 임상·정책 의사결정에 활용 시 인간 전문가 검토가 필수입니다 (ISMS-P 2.9).",
+            small,
+        )
+    )
     story.append(PageBreak())
 
     # ─── Page 2 — 핵심 지표 + 전주 대비 ─────────────────────────
@@ -580,63 +654,108 @@ async def _build_pdf_story(
         dc = _delta_color(cur, prev)
         return f'<font color="{dc}"><b>{ds}</b></font>'
 
-    header_style = ParagraphStyle("th", parent=base, fontName=_FONT_B, fontSize=9.5, leading=13, textColor=colors.HexColor("#1e3a8a"))
+    header_style = ParagraphStyle(
+        "th", parent=base, fontName=_FONT_B, fontSize=9.5, leading=13, textColor=colors.HexColor("#1e3a8a")
+    )
     metric_data = [
-        [Paragraph("<b>지표</b>", header_style), Paragraph("<b>현주</b>", header_style),
-         Paragraph("<b>전주</b>", header_style), Paragraph("<b>증감</b>", header_style), Paragraph("<b>경보레벨</b>", header_style)],
-        [Paragraph("Composite", base), Paragraph(f"<b>{composite:.2f}</b>", base),
-         Paragraph(f"{prev_comp:.2f}" if prev_comp is not None else "-", base),
-         Paragraph(_colored_delta(composite, prev_comp), base),
-         Paragraph(f'<font color="{level_color}"><b>{level}</b></font>', base)],
-        [Paragraph("L1 약국 OTC", base), Paragraph(f"{cur_l1:.2f}", base),
-         Paragraph(f"{prev_l1:.2f}" if prev_l1 is not None else "-", base),
-         Paragraph(_colored_delta(cur_l1, prev_l1), base), Paragraph("-", base)],
-        [Paragraph("L2 하수 바이오마커", base), Paragraph(f"{cur_l2:.2f}", base),
-         Paragraph(f"{prev_l2:.2f}" if prev_l2 is not None else "-", base),
-         Paragraph(_colored_delta(cur_l2, prev_l2), base), Paragraph("-", base)],
-        [Paragraph("L3 검색 트렌드", base), Paragraph(f"{cur_l3:.2f}", base),
-         Paragraph(f"{prev_l3:.2f}" if prev_l3 is not None else "-", base),
-         Paragraph(_colored_delta(cur_l3, prev_l3), base), Paragraph("-", base)],
+        [
+            Paragraph("<b>지표</b>", header_style),
+            Paragraph("<b>현주</b>", header_style),
+            Paragraph("<b>전주</b>", header_style),
+            Paragraph("<b>증감</b>", header_style),
+            Paragraph("<b>경보레벨</b>", header_style),
+        ],
+        [
+            Paragraph("Composite", base),
+            Paragraph(f"<b>{composite:.2f}</b>", base),
+            Paragraph(f"{prev_comp:.2f}" if prev_comp is not None else "-", base),
+            Paragraph(_colored_delta(composite, prev_comp), base),
+            Paragraph(f'<font color="{level_color}"><b>{level}</b></font>', base),
+        ],
+        [
+            Paragraph("L1 약국 OTC", base),
+            Paragraph(f"{cur_l1:.2f}", base),
+            Paragraph(f"{prev_l1:.2f}" if prev_l1 is not None else "-", base),
+            Paragraph(_colored_delta(cur_l1, prev_l1), base),
+            Paragraph("-", base),
+        ],
+        [
+            Paragraph("L2 하수 바이오마커", base),
+            Paragraph(f"{cur_l2:.2f}", base),
+            Paragraph(f"{prev_l2:.2f}" if prev_l2 is not None else "-", base),
+            Paragraph(_colored_delta(cur_l2, prev_l2), base),
+            Paragraph("-", base),
+        ],
+        [
+            Paragraph("L3 검색 트렌드", base),
+            Paragraph(f"{cur_l3:.2f}", base),
+            Paragraph(f"{prev_l3:.2f}" if prev_l3 is not None else "-", base),
+            Paragraph(_colored_delta(cur_l3, prev_l3), base),
+            Paragraph("-", base),
+        ],
     ]
     metric_table = Table(metric_data, colWidths=[46 * mm, 28 * mm, 28 * mm, 28 * mm, 40 * mm])
-    metric_table.setStyle(TableStyle([
-        ("BOX", (0, 0), (-1, -1), 0.8, colors.HexColor("#d1d5db")),
-        ("INNERGRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#e5e7eb")),
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#eff6ff")),
-        ("BACKGROUND", (0, 1), (0, -1), colors.HexColor("#f9fafb")),
-        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("LEFTPADDING", (0, 0), (-1, -1), 6),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
-        ("TOPPADDING", (0, 0), (-1, -1), 5),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
-    ]))
+    metric_table.setStyle(
+        TableStyle(
+            [
+                ("BOX", (0, 0), (-1, -1), 0.8, colors.HexColor("#d1d5db")),
+                ("INNERGRID", (0, 0), (-1, -1), 0.3, colors.HexColor("#e5e7eb")),
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#eff6ff")),
+                ("BACKGROUND", (0, 1), (0, -1), colors.HexColor("#f9fafb")),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 6),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                ("TOPPADDING", (0, 0), (-1, -1), 5),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+            ]
+        )
+    )
     story.append(metric_table)
     story.append(Spacer(1, 4 * mm))
 
     # 한 줄 요약
-    dominant = "L2 하수 신호" if cur_l2 >= max(cur_l1, cur_l3) else ("L1 약국 OTC" if cur_l1 >= cur_l3 else "L3 검색 트렌드")
+    dominant = (
+        "L2 하수 신호" if cur_l2 >= max(cur_l1, cur_l3) else ("L1 약국 OTC" if cur_l1 >= cur_l3 else "L3 검색 트렌드")
+    )
     delta_composite_str = _delta_str(composite, prev_comp)
-    story.append(Paragraph(
-        f"요약: composite {delta_composite_str} 변동, {dominant} 주도 | 발행일 {now_kst}",
-        ParagraphStyle("summary_line", parent=base, fontName=_FONT_B, fontSize=10, leading=14,
-                       textColor=colors.HexColor(C_PRIMARY), borderColor=colors.HexColor("#bfdbfe"),
-                       borderWidth=1, borderPadding=5, backColor=colors.HexColor("#eff6ff")),
-    ))
+    story.append(
+        Paragraph(
+            f"요약: composite {delta_composite_str} 변동, {dominant} 주도 | 발행일 {now_kst}",
+            ParagraphStyle(
+                "summary_line",
+                parent=base,
+                fontName=_FONT_B,
+                fontSize=10,
+                leading=14,
+                textColor=colors.HexColor(C_PRIMARY),
+                borderColor=colors.HexColor("#bfdbfe"),
+                borderWidth=1,
+                borderPadding=5,
+                backColor=colors.HexColor("#eff6ff"),
+            ),
+        )
+    )
     story.append(PageBreak())
 
     # ─── Page 3 — 시계열 차트 ────────────────────────────────────
     story.append(Paragraph("2. 3계층 신호 시계열 (최근 12주)", h2))
-    story.append(Paragraph(
-        "각 계층은 0–100 정규화. YELLOW(55–70) / ORANGE(70–85) / RED(85+) 음영 표시. "
-        "단일 계층만으로 경보 발령 금지 (Google Flu Trends 과대예측 교훈). 2개 이상 계층 교차검증 필요.",
-        small))
+    story.append(
+        Paragraph(
+            "각 계층은 0–100 정규화. YELLOW(55–70) / ORANGE(70–85) / RED(85+) 음영 표시. "
+            "단일 계층만으로 경보 발령 금지 (Google Flu Trends 과대예측 교훈). 2개 이상 계층 교차검증 필요.",
+            small,
+        )
+    )
     story.append(Spacer(1, 3 * mm))
     chart3_bytes = _chart_three_layer(composite_series, l1_series, l2_series, l3_series)
     story.append(Image(io.BytesIO(chart3_bytes), width=170 * mm, height=150 * mm))
     story.append(Spacer(1, 2 * mm))
-    story.append(Paragraph(
-        f"데이터 포인트: composite {len(composite_series)}점 · OTC {len(l1_series)}점 · 하수 {len(l2_series)}점 · 검색 {len(l3_series)}점",
-        small))
+    story.append(
+        Paragraph(
+            f"데이터 포인트: composite {len(composite_series)}점 · OTC {len(l1_series)}점 · 하수 {len(l2_series)}점 · 검색 {len(l3_series)}점",
+            small,
+        )
+    )
     story.append(PageBreak())
 
     # ─── Page 4 — 17개 시·도 현황 + Top 5 ───────────────────────
@@ -653,24 +772,35 @@ async def _build_pdf_story(
         for rd in sorted_regions:
             lvl = rd.get("level", "GREEN")
             lc = LEVEL_COLOR.get(lvl, "#374151")
-            region_rows.append([
-                Paragraph(rd["region"], ParagraphStyle("rbase", parent=base, fontSize=8.5, leading=12)),
-                Paragraph(f"{rd.get('composite', 0):.2f}", ParagraphStyle("rbase2", parent=base, fontSize=8.5, leading=12)),
-                Paragraph(f'<font color="{lc}"><b>{lvl}</b></font>', ParagraphStyle("rbase3", parent=base, fontSize=8.5, leading=12)),
-            ])
+            region_rows.append(
+                [
+                    Paragraph(rd["region"], ParagraphStyle("rbase", parent=base, fontSize=8.5, leading=12)),
+                    Paragraph(
+                        f"{rd.get('composite', 0):.2f}", ParagraphStyle("rbase2", parent=base, fontSize=8.5, leading=12)
+                    ),
+                    Paragraph(
+                        f'<font color="{lc}"><b>{lvl}</b></font>',
+                        ParagraphStyle("rbase3", parent=base, fontSize=8.5, leading=12),
+                    ),
+                ]
+            )
 
         region_table = Table(region_rows, colWidths=[80 * mm, 45 * mm, 45 * mm])
-        region_table.setStyle(TableStyle([
-            ("BOX", (0, 0), (-1, -1), 0.6, colors.HexColor("#d1d5db")),
-            ("INNERGRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#e5e7eb")),
-            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#eff6ff")),
-            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f9fafb")]),
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("LEFTPADDING", (0, 0), (-1, -1), 5),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 5),
-            ("TOPPADDING", (0, 0), (-1, -1), 3),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-        ]))
+        region_table.setStyle(
+            TableStyle(
+                [
+                    ("BOX", (0, 0), (-1, -1), 0.6, colors.HexColor("#d1d5db")),
+                    ("INNERGRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#e5e7eb")),
+                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#eff6ff")),
+                    ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f9fafb")]),
+                    ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                    ("LEFTPADDING", (0, 0), (-1, -1), 5),
+                    ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+                    ("TOPPADDING", (0, 0), (-1, -1), 3),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+                ]
+            )
+        )
         story.append(region_table)
         story.append(Spacer(1, 5 * mm))
 
@@ -688,7 +818,10 @@ async def _build_pdf_story(
     story.append(Paragraph(f"모델: {rep.get('model_used') or '-'} · 생성 시각: {rep.get('created_at') or '-'}", small))
     story.append(Spacer(1, 4 * mm))
 
-    summary_text = (rep.get("summary") or "alert_reports DB에 해당 지역 리포트가 없습니다. /api/v1/alerts/stream 호출 후 다시 시도하세요.").strip()
+    summary_text = (
+        rep.get("summary")
+        or "alert_reports DB에 해당 지역 리포트가 없습니다. /api/v1/alerts/stream 호출 후 다시 시도하세요."
+    ).strip()
     story.extend(_md_to_paragraphs(summary_text, base, h2, h3))
 
     # RAG 인용
@@ -723,40 +856,52 @@ async def _build_pdf_story(
     src_header_style = ParagraphStyle("srch", parent=base, fontName=_FONT_B, fontSize=9, leading=13)
     src_body_style = ParagraphStyle("srcb", parent=base, fontSize=8.5, leading=12)
     src_rows = [
-        [Paragraph(cell, src_header_style if row_idx == 0 else src_body_style)
-         for cell in row]
+        [Paragraph(cell, src_header_style if row_idx == 0 else src_body_style) for cell in row]
         for row_idx, row in enumerate(sources_data)
     ]
     src_table = Table(src_rows, colWidths=[42 * mm, 90 * mm, 38 * mm])
-    src_table.setStyle(TableStyle([
-        ("BOX", (0, 0), (-1, -1), 0.6, colors.HexColor("#d1d5db")),
-        ("INNERGRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#e5e7eb")),
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#eff6ff")),
-        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f9fafb")]),
-        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("LEFTPADDING", (0, 0), (-1, -1), 6),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
-        ("TOPPADDING", (0, 0), (-1, -1), 4),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-    ]))
+    src_table.setStyle(
+        TableStyle(
+            [
+                ("BOX", (0, 0), (-1, -1), 0.6, colors.HexColor("#d1d5db")),
+                ("INNERGRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#e5e7eb")),
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#eff6ff")),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f9fafb")]),
+                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 6),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                ("TOPPADDING", (0, 0), (-1, -1), 4),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+            ]
+        )
+    )
     story.append(src_table)
     story.append(Spacer(1, 6 * mm))
 
     story.append(Paragraph("[면책 사항]", h3))
-    story.append(Paragraph(
-        "본 리포트는 AI가 생성한 보조 의사결정 자료이며, 공중보건 정책 수립 시 인간 전문가(역학조사관, 보건당국)의 검토를 거쳐야 합니다. "
-        "(ISMS-P 2.9 / EU AI Act 준수)",
-        base))
+    story.append(
+        Paragraph(
+            "본 리포트는 AI가 생성한 보조 의사결정 자료이며, 공중보건 정책 수립 시 인간 전문가(역학조사관, 보건당국)의 검토를 거쳐야 합니다. "
+            "(ISMS-P 2.9 / EU AI Act 준수)",
+            base,
+        )
+    )
     story.append(Spacer(1, 3 * mm))
-    story.append(Paragraph(
-        "본 시스템의 신호는 확진 사례가 아닌 간접 지표(OTC 구매·하수 바이오마커·검색어 트렌드)에 기반하며, "
-        "임상 진단 또는 처방의 대체 수단으로 사용될 수 없습니다. "
-        "경보 발령은 항상 2개 이상 계층 교차검증을 전제로 합니다.",
-        small))
+    story.append(
+        Paragraph(
+            "본 시스템의 신호는 확진 사례가 아닌 간접 지표(OTC 구매·하수 바이오마커·검색어 트렌드)에 기반하며, "
+            "임상 진단 또는 처방의 대체 수단으로 사용될 수 없습니다. "
+            "경보 발령은 항상 2개 이상 계층 교차검증을 전제로 합니다.",
+            small,
+        )
+    )
     story.append(Spacer(1, 4 * mm))
-    story.append(Paragraph(
-        "UIS 캡스톤 프로젝트팀 — 팀원: 박진영(PM/ML) · 이경준(Backend) · 이우형(Data Engineer) · 김나영(Frontend) · 박정빈(DevOps/QA)",
-        small))
+    story.append(
+        Paragraph(
+            "UIS 캡스톤 프로젝트팀 — 팀원: 박진영(PM/ML) · 이경준(Backend) · 이우형(Data Engineer) · 김나영(Frontend) · 박정빈(DevOps/QA)",
+            small,
+        )
+    )
     story.append(Paragraph(f"생성 일시: {now_kst}", small))
 
     return story, now_kst, level
@@ -771,9 +916,12 @@ async def build_alert_pdf(region: str, db: AsyncSession) -> bytes:
 
     buf = io.BytesIO()
     doc = _UISDocTemplate(
-        buf, pagesize=A4,
-        leftMargin=18 * mm, rightMargin=18 * mm,
-        topMargin=22 * mm, bottomMargin=18 * mm,
+        buf,
+        pagesize=A4,
+        leftMargin=18 * mm,
+        rightMargin=18 * mm,
+        topMargin=22 * mm,
+        bottomMargin=18 * mm,
         title=f"UIS 감염병 주간 동향 — {region}",
         total_pages=6,
         level=level,
@@ -809,9 +957,12 @@ async def build_pdf(
 
     buf = io.BytesIO()
     doc = _UISDocTemplate(
-        buf, pagesize=A4,
-        leftMargin=18 * mm, rightMargin=18 * mm,
-        topMargin=22 * mm, bottomMargin=18 * mm,
+        buf,
+        pagesize=A4,
+        leftMargin=18 * mm,
+        rightMargin=18 * mm,
+        topMargin=22 * mm,
+        bottomMargin=18 * mm,
         title=f"UIS 감염병 주간 동향 — {region}",
         total_pages=6,
         level=level,
@@ -819,8 +970,12 @@ async def build_pdf(
     )
 
     story, now_kst, cur_level = await _build_pdf_story(
-        region, db,
-        risk=risk, prev_risk=prev_risk, rep=rep, all_regions=all_regions,
+        region,
+        db,
+        risk=risk,
+        prev_risk=prev_risk,
+        rep=rep,
+        all_regions=all_regions,
     )
 
     def _on_page(canvas, doc_inner):

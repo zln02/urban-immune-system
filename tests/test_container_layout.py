@@ -3,7 +3,7 @@ from pathlib import Path
 
 def test_pipeline_dockerfile_uses_package_layout() -> None:
     dockerfile = (Path(__file__).resolve().parents[1] / "pipeline" / "Dockerfile").read_text(encoding="utf-8")
-    assert 'COPY . ./pipeline/' in dockerfile
+    assert "COPY . ./pipeline/" in dockerfile
     assert 'python", "-m", "pipeline.collectors.scheduler"' in dockerfile
 
 

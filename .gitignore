@@ -142,3 +142,5 @@ admin/
 # Advisory package 빌드 산출물 (build_advisory_package.sh 가 재생성)
 docs/business/*.zip
 docs/business/advisory/*.tar.gz
+demo/
+.claude/

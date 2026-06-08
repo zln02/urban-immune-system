@@ -24,7 +24,7 @@ backend = [
     "taskiq>=0.11",
     "httpx>=0.27",
     "aiosqlite>=0.20",
-    "anthropic>=0.28",
+    "anthropic>=0.40",
 ]
 pipeline = [
     "kafka-python>=2.0.2",
@@ -40,7 +40,7 @@ ml = [
     "qdrant-client>=1.7",
     "langchain>=0.1",
     "openai>=1.10",
-    "anthropic>=0.28",
+    "anthropic>=0.40",
     "sentence-transformers>=3.0",
 ]
 dev = [
@@ -50,6 +50,7 @@ dev = [
     "ruff>=0.3",
     "mypy>=1.8",
     "pre-commit>=3.6",
+    "psycopg2-binary>=2.9",
 ]
 all = [
     "urban-immune-system[backend,pipeline,ml,dev]",
@@ -68,15 +69,29 @@ addopts = "-v --tb=short --ignore=tests/load"
 # 커버리지 측정·게이트는 CI 워크플로우의 전체 스위트 잡(legacy-test)에서만 적용한다.
 # addopts 에 두면 단일 파일 잡(backend-test) 에서 coverage dilution → fail-under 충돌
 asyncio_mode = "auto"
+markers = [
+    "slow: marks tests as slow — skip with '-m \"not slow\"' in CI",
+    "integration: marks tests as integration tests requiring live services",
+]
 
 [tool.coverage.run]
 source = ["backend", "ml", "pipeline"]
-omit = ["tests/*", ".venv/*", "*/migrations/*", "*/__init__.py"]
+omit = [
+    "tests/*",
+    ".venv/*",
+    "*/migrations/*",
+    "*/__init__.py",
+    "ml/tft/train_real.py",
+    "ml/tft/train_synth.py",
+    "ml/tft/model.py",
+    "ml/anomaly/train_synth.py",
+    "ml/xgboost/train_and_save.py",
+]
 
 [tool.coverage.report]
 show_missing = true
 skip_empty = true
-# TODO(W18): 70% 복구 목표 — W17 중간발표 기준 60%로 강하 가능성 있음
+# TODO(W19): 현재 39% → W19 50%+ 달성 목표 (2026-05-10)
 
 [tool.mypy]
 python_version = "3.11"

@@ -75,31 +75,71 @@ def _load_json(path: Path) -> dict:
 def _styles() -> dict[str, ParagraphStyle]:
     base = getSampleStyleSheet()["Normal"]
     return {
-        "title_kr": ParagraphStyle("title_kr", parent=base, fontName=_FONT_B, fontSize=20, leading=26, textColor=colors.HexColor(C_PRIMARY)),
-        "title_en": ParagraphStyle("title_en", parent=base, fontName=_FONT, fontSize=12, leading=16, textColor=colors.HexColor("#374151")),
-        "h1": ParagraphStyle("h1", parent=base, fontName=_FONT_B, fontSize=15, leading=20, spaceBefore=14, spaceAfter=8, textColor=colors.HexColor(C_PRIMARY)),
-        "h2": ParagraphStyle("h2", parent=base, fontName=_FONT_B, fontSize=12, leading=16, spaceBefore=10, spaceAfter=4, textColor=colors.HexColor("#1f2937")),
-        "body": ParagraphStyle("body", parent=base, fontName=_FONT, fontSize=10, leading=15, textColor=colors.HexColor("#1f2937")),
-        "small": ParagraphStyle("small", parent=base, fontName=_FONT, fontSize=8.5, leading=12, textColor=colors.HexColor("#4b5563")),
-        "caption": ParagraphStyle("caption", parent=base, fontName=_FONT, fontSize=8, leading=11, textColor=colors.HexColor("#6b7280"), alignment=1),
-        "ref": ParagraphStyle("ref", parent=base, fontName=_FONT, fontSize=8.5, leading=12.5, leftIndent=14, firstLineIndent=-14),
+        "title_kr": ParagraphStyle(
+            "title_kr", parent=base, fontName=_FONT_B, fontSize=20, leading=26, textColor=colors.HexColor(C_PRIMARY)
+        ),
+        "title_en": ParagraphStyle(
+            "title_en", parent=base, fontName=_FONT, fontSize=12, leading=16, textColor=colors.HexColor("#374151")
+        ),
+        "h1": ParagraphStyle(
+            "h1",
+            parent=base,
+            fontName=_FONT_B,
+            fontSize=15,
+            leading=20,
+            spaceBefore=14,
+            spaceAfter=8,
+            textColor=colors.HexColor(C_PRIMARY),
+        ),
+        "h2": ParagraphStyle(
+            "h2",
+            parent=base,
+            fontName=_FONT_B,
+            fontSize=12,
+            leading=16,
+            spaceBefore=10,
+            spaceAfter=4,
+            textColor=colors.HexColor("#1f2937"),
+        ),
+        "body": ParagraphStyle(
+            "body", parent=base, fontName=_FONT, fontSize=10, leading=15, textColor=colors.HexColor("#1f2937")
+        ),
+        "small": ParagraphStyle(
+            "small", parent=base, fontName=_FONT, fontSize=8.5, leading=12, textColor=colors.HexColor("#4b5563")
+        ),
+        "caption": ParagraphStyle(
+            "caption",
+            parent=base,
+            fontName=_FONT,
+            fontSize=8,
+            leading=11,
+            textColor=colors.HexColor("#6b7280"),
+            alignment=1,
+        ),
+        "ref": ParagraphStyle(
+            "ref", parent=base, fontName=_FONT, fontSize=8.5, leading=12.5, leftIndent=14, firstLineIndent=-14
+        ),
     }
 
 
 def _kv_table(rows: list[tuple[str, str]], col_widths=(60 * mm, 100 * mm)) -> Table:
     t = Table(rows, colWidths=list(col_widths))
-    t.setStyle(TableStyle([
-        ("FONT", (0, 0), (-1, -1), _FONT, 9.5),
-        ("FONT", (0, 0), (0, -1), _FONT_B, 9.5),
-        ("TEXTCOLOR", (0, 0), (0, -1), colors.HexColor("#374151")),
-        ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#f3f4f6")),
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("LEFTPADDING", (0, 0), (-1, -1), 6),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
-        ("TOPPADDING", (0, 0), (-1, -1), 4),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
-        ("LINEBELOW", (0, 0), (-1, -1), 0.3, colors.HexColor("#e5e7eb")),
-    ]))
+    t.setStyle(
+        TableStyle(
+            [
+                ("FONT", (0, 0), (-1, -1), _FONT, 9.5),
+                ("FONT", (0, 0), (0, -1), _FONT_B, 9.5),
+                ("TEXTCOLOR", (0, 0), (0, -1), colors.HexColor("#374151")),
+                ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#f3f4f6")),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 6),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+                ("TOPPADDING", (0, 0), (-1, -1), 4),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+                ("LINEBELOW", (0, 0), (-1, -1), 0.3, colors.HexColor("#e5e7eb")),
+            ]
+        )
+    )
     return t
 
 
@@ -112,8 +152,19 @@ def _chart_attention(metrics: dict) -> bytes:
     # encoder_variable_names 는 길이가 다를 수 있어 importance 와 매칭
     pairs = list(zip(names[: len(importance)], importance))
     pairs.sort(key=lambda x: x[1], reverse=True)
-    pairs = [p for p in pairs if p[0] not in {"encoder_length", "time_idx", "relative_time_idx",
-                                               "confirmed_future_center", "confirmed_future_scale", "confirmed_future"}]
+    pairs = [
+        p
+        for p in pairs
+        if p[0]
+        not in {
+            "encoder_length",
+            "time_idx",
+            "relative_time_idx",
+            "confirmed_future_center",
+            "confirmed_future_scale",
+            "confirmed_future",
+        }
+    ]
     pairs = pairs[:6]
 
     label_map = {
@@ -145,10 +196,12 @@ def _chart_lead_time(lead: dict) -> bytes:
     """3계층 선행시간 + Granger p-value 시각화."""
     leads = lead.get("signal_lead_weeks", {})
     granger = lead.get("granger_p", {})
-    layers = [("l1_otc", "OTC (L1)", C_PHARMACY),
-              ("l2_wastewater", "하수 (L2)", C_SEWAGE),
-              ("l3_search", "검색 (L3)", C_SEARCH),
-              ("composite", "Composite", C_PRIMARY)]
+    layers = [
+        ("l1_otc", "OTC (L1)", C_PHARMACY),
+        ("l2_wastewater", "하수 (L2)", C_SEWAGE),
+        ("l3_search", "검색 (L3)", C_SEARCH),
+        ("composite", "Composite", C_PRIMARY),
+    ]
 
     fig, ax = plt.subplots(figsize=(6.0, 2.8))
     names = [n for _, n, _ in layers]
@@ -159,8 +212,7 @@ def _chart_lead_time(lead: dict) -> bytes:
         p = granger.get(k)
         if p is not None:
             sig = "**" if p < 0.01 else ("*" if p < 0.05 else "ns")
-            ax.text(b.get_x() + b.get_width() / 2, b.get_height() + 0.15,
-                    f"p={p:.3f} {sig}", ha="center", fontsize=8.5)
+            ax.text(b.get_x() + b.get_width() / 2, b.get_height() + 0.15, f"p={p:.3f} {sig}", ha="center", fontsize=8.5)
     ax.set_ylabel("Lead Time (weeks)")
     ax.set_ylim(0, max(weeks) * 1.3 if weeks else 5)
     ax.spines["top"].set_visible(False)
@@ -180,17 +232,26 @@ def _cover(s: dict, week_label: str, generated_at: str) -> list:
         Paragraph("감염병 조기경보 주간 감시 보고서", s["title_kr"]),
         Paragraph("Weekly Surveillance Bulletin", s["title_en"]),
         Spacer(1, 8 * mm),
-        _kv_table([
-            ("보고 주차 / Reporting Week", week_label),
-            ("대상 병원체 / Target Pathogen", "Influenza (A/B 통합)"),
-            ("발행 / Issued", generated_at),
-            ("배포 등급 / Distribution", "Limited — KDCA · 협력 자문 패널"),
-            ("문서 분류 / Classification", "Surveillance Bulletin (non-medical-device)"),
-            ("판본 / Version", "v1.0 · 캡스톤 외부 자문용"),
-        ], col_widths=(70 * mm, 100 * mm)),
+        _kv_table(
+            [
+                ("보고 주차 / Reporting Week", week_label),
+                ("대상 병원체 / Target Pathogen", "Influenza (A/B 통합)"),
+                ("발행 / Issued", generated_at),
+                ("배포 등급 / Distribution", "Limited — KDCA · 협력 자문 패널"),
+                ("문서 분류 / Classification", "Surveillance Bulletin (non-medical-device)"),
+                ("판본 / Version", "v1.0 · 캡스톤 외부 자문용"),
+            ],
+            col_widths=(70 * mm, 100 * mm),
+        ),
         Spacer(1, 28 * mm),
-        Paragraph("본 보고서는 의료기기법 제2조의 의료기기에 해당하지 않으며, 임상 진단·치료를 목적으로 하지 않습니다. " * 1, s["small"]),
-        Paragraph("This report is not a medical device under the Korean Medical Devices Act and is not intended for clinical diagnosis or treatment.", s["small"]),
+        Paragraph(
+            "본 보고서는 의료기기법 제2조의 의료기기에 해당하지 않으며, 임상 진단·치료를 목적으로 하지 않습니다. " * 1,
+            s["small"],
+        ),
+        Paragraph(
+            "This report is not a medical device under the Korean Medical Devices Act and is not intended for clinical diagnosis or treatment.",
+            s["small"],
+        ),
         Spacer(1, 16 * mm),
         Paragraph("작성: Urban Immune System 캡스톤 팀 (PM 박진영) · 발행처: 서울과학기술대학교", s["small"]),
         PageBreak(),
@@ -211,15 +272,24 @@ def _executive_summary(s: dict, backtest: dict, lead: dict, anomaly: dict) -> li
         ),
         Spacer(1, 4 * mm),
         Paragraph("핵심 지표 / Key Metrics", s["h2"]),
-        _kv_table([
-            ("F1 Score (mean, 17 regions)", f"{summ.get('mean_f1', 0):.3f}"),
-            ("Precision (mean)", f"{summ.get('mean_precision', 0):.3f}"),
-            ("Recall (mean)", f"{summ.get('mean_recall', 0):.3f}"),
-            ("False Alarm Rate (Gate ON)", f"{summ.get('mean_far_with_gate', 0):.3f}"),
-            ("FAR Reduction (Gate Off → On)", f"{summ.get('far_delta', 0):+.3f}"),
-            ("Composite Lead Time (서울, 인플루엔자)", f"{lead.get('signal_lead_weeks', {}).get('composite', 0):.1f} weeks"),
-            ("Anomaly threshold (95p reconstruction error)", f"{anomaly.get('training', {}).get('threshold', 0):.4f}"),
-        ], col_widths=(85 * mm, 85 * mm)),
+        _kv_table(
+            [
+                ("F1 Score (mean, 17 regions)", f"{summ.get('mean_f1', 0):.3f}"),
+                ("Precision (mean)", f"{summ.get('mean_precision', 0):.3f}"),
+                ("Recall (mean)", f"{summ.get('mean_recall', 0):.3f}"),
+                ("False Alarm Rate (Gate ON)", f"{summ.get('mean_far_with_gate', 0):.3f}"),
+                ("FAR Reduction (Gate Off → On)", f"{summ.get('far_delta', 0):+.3f}"),
+                (
+                    "Composite Lead Time (서울, 인플루엔자)",
+                    f"{lead.get('signal_lead_weeks', {}).get('composite', 0):.1f} weeks",
+                ),
+                (
+                    "Anomaly threshold (95p reconstruction error)",
+                    f"{anomaly.get('training', {}).get('threshold', 0):.4f}",
+                ),
+            ],
+            col_widths=(85 * mm, 85 * mm),
+        ),
         Spacer(1, 4 * mm),
         Paragraph("정책적 함의 / Policy Implication", s["h2"]),
         Paragraph(
@@ -239,13 +309,19 @@ def _methodology(s: dict, tft: dict, anomaly: dict) -> list:
     story = [
         Paragraph("2. Methodology", s["h1"]),
         Paragraph("2.1 데이터 / Data Sources", s["h2"]),
-        _kv_table([
-            ("L1 OTC 약국", "네이버 쇼핑인사이트 API · 5 키워드 (감기약·해열제·종합감기약·타이레놀·판콜) · 주간 수집"),
-            ("L2 하수 바이오마커", "KOWAS 한국하수도감시시스템 PDF · 차트 픽셀 파싱 (RGB 범위 매칭)"),
-            ("L3 검색 트렌드", "네이버 DataLab API · 5 키워드 (독감 증상·인플루엔자·고열 원인·몸살 원인·타미플루)"),
-            ("AUX 기상", "기상청 초단기예보 API · 17개 시·도 시간별 기온"),
-            ("정답 라벨", "KDCA 감염병 신고 통계 — 인플루엔자 의사환자분율(ILI)·확진 건수"),
-        ], col_widths=(45 * mm, 130 * mm)),
+        _kv_table(
+            [
+                (
+                    "L1 OTC 약국",
+                    "네이버 쇼핑인사이트 API · 5 키워드 (감기약·해열제·종합감기약·타이레놀·판콜) · 주간 수집",
+                ),
+                ("L2 하수 바이오마커", "KOWAS 한국하수도감시시스템 PDF · 차트 픽셀 파싱 (RGB 범위 매칭)"),
+                ("L3 검색 트렌드", "네이버 DataLab API · 5 키워드 (독감 증상·인플루엔자·고열 원인·몸살 원인·타미플루)"),
+                ("AUX 기상", "기상청 초단기예보 API · 17개 시·도 시간별 기온"),
+                ("정답 라벨", "KDCA 감염병 신고 통계 — 인플루엔자 의사환자분율(ILI)·확진 건수"),
+            ],
+            col_widths=(45 * mm, 130 * mm),
+        ),
         Spacer(1, 4 * mm),
         Paragraph("2.2 신호 융합 / Signal Fusion", s["h2"]),
         Paragraph(
@@ -256,16 +332,19 @@ def _methodology(s: dict, tft: dict, anomaly: dict) -> list:
         ),
         Spacer(1, 4 * mm),
         Paragraph("2.3 예측 모델 — Temporal Fusion Transformer", s["h2"]),
-        _kv_table([
-            ("Architecture", "Temporal Fusion Transformer (Lim et al., 2021)"),
-            ("Encoder length", f"{cfg.get('max_encoder_length', 24)} weeks"),
-            ("Prediction length", f"{cfg.get('max_prediction_length', 3)} steps (7/14일)"),
-            ("Hidden size · Heads", "32 · 4 (D-5 안정화: 64→32 capacity 축소)"),
-            ("Regularization", "Dropout 0.25 · Weight decay 1e-4 · SWA"),
-            ("Best val_loss", f"{tft.get('best_val_loss', 0):.4f}"),
-            ("Model parameters", f"{tft.get('model_params', 0):,}"),
-            ("Training rows · Regions", f"{cfg.get('n_rows', 0):,} rows · {cfg.get('n_regions', 0)} regions"),
-        ], col_widths=(60 * mm, 110 * mm)),
+        _kv_table(
+            [
+                ("Architecture", "Temporal Fusion Transformer (Lim et al., 2021)"),
+                ("Encoder length", f"{cfg.get('max_encoder_length', 24)} weeks"),
+                ("Prediction length", f"{cfg.get('max_prediction_length', 3)} steps (7/14일)"),
+                ("Hidden size · Heads", "32 · 4 (D-5 안정화: 64→32 capacity 축소)"),
+                ("Regularization", "Dropout 0.25 · Weight decay 1e-4 · SWA"),
+                ("Best val_loss", f"{tft.get('best_val_loss', 0):.4f}"),
+                ("Model parameters", f"{tft.get('model_params', 0):,}"),
+                ("Training rows · Regions", f"{cfg.get('n_rows', 0):,} rows · {cfg.get('n_regions', 0)} regions"),
+            ],
+            col_widths=(60 * mm, 110 * mm),
+        ),
         Spacer(1, 4 * mm),
         Paragraph("2.4 검증 — Walk-forward Cross-Validation", s["h2"]),
         Paragraph(
@@ -291,40 +370,50 @@ def _results_forecasting(s: dict, backtest: dict) -> list:
     regions = backtest.get("regions", {})
     rows = [["지역 / Region", "F1", "Precision", "Recall", "FAR (Gate)", "Lead (wk)"]]
     for name, r in list(regions.items())[:17]:
-        rows.append([
-            name,
-            f"{r.get('f1', 0):.3f}",
-            f"{r.get('precision', 0):.3f}",
-            f"{r.get('recall', 0):.3f}",
-            f"{r.get('false_alarm_rate', 0):.3f}",
-            f"{r.get('lead_weeks', 0)}",
-        ])
-    rows.append(["Mean (n=17)",
-                 f"{summ.get('mean_f1', 0):.3f}",
-                 f"{summ.get('mean_precision', 0):.3f}",
-                 f"{summ.get('mean_recall', 0):.3f}",
-                 f"{summ.get('mean_far_with_gate', 0):.3f}",
-                 "—"])
+        rows.append(
+            [
+                name,
+                f"{r.get('f1', 0):.3f}",
+                f"{r.get('precision', 0):.3f}",
+                f"{r.get('recall', 0):.3f}",
+                f"{r.get('false_alarm_rate', 0):.3f}",
+                f"{r.get('lead_weeks', 0)}",
+            ]
+        )
+    rows.append(
+        [
+            "Mean (n=17)",
+            f"{summ.get('mean_f1', 0):.3f}",
+            f"{summ.get('mean_precision', 0):.3f}",
+            f"{summ.get('mean_recall', 0):.3f}",
+            f"{summ.get('mean_far_with_gate', 0):.3f}",
+            "—",
+        ]
+    )
 
     table = Table(rows, colWidths=[42 * mm, 22 * mm, 26 * mm, 22 * mm, 28 * mm, 22 * mm])
-    table.setStyle(TableStyle([
-        ("FONT", (0, 0), (-1, -1), _FONT, 9),
-        ("FONT", (0, 0), (-1, 0), _FONT_B, 9),
-        ("FONT", (0, -1), (-1, -1), _FONT_B, 9),
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1e3a8a")),
-        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-        ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#fef3c7")),
-        ("ALIGN", (1, 1), (-1, -1), "RIGHT"),
-        ("ALIGN", (0, 0), (-1, 0), "CENTER"),
-        ("LINEBELOW", (0, 0), (-1, 0), 1, colors.HexColor("#1e3a8a")),
-        ("LINEBELOW", (0, 1), (-1, -2), 0.25, colors.HexColor("#e5e7eb")),
-        ("LINEABOVE", (0, -1), (-1, -1), 0.8, colors.HexColor("#1e3a8a")),
-        ("ROWBACKGROUNDS", (0, 1), (-1, -2), [colors.white, colors.HexColor("#f9fafb")]),
-        ("LEFTPADDING", (0, 0), (-1, -1), 5),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 5),
-        ("TOPPADDING", (0, 0), (-1, -1), 3.5),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 3.5),
-    ]))
+    table.setStyle(
+        TableStyle(
+            [
+                ("FONT", (0, 0), (-1, -1), _FONT, 9),
+                ("FONT", (0, 0), (-1, 0), _FONT_B, 9),
+                ("FONT", (0, -1), (-1, -1), _FONT_B, 9),
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1e3a8a")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+                ("BACKGROUND", (0, -1), (-1, -1), colors.HexColor("#fef3c7")),
+                ("ALIGN", (1, 1), (-1, -1), "RIGHT"),
+                ("ALIGN", (0, 0), (-1, 0), "CENTER"),
+                ("LINEBELOW", (0, 0), (-1, 0), 1, colors.HexColor("#1e3a8a")),
+                ("LINEBELOW", (0, 1), (-1, -2), 0.25, colors.HexColor("#e5e7eb")),
+                ("LINEABOVE", (0, -1), (-1, -1), 0.8, colors.HexColor("#1e3a8a")),
+                ("ROWBACKGROUNDS", (0, 1), (-1, -2), [colors.white, colors.HexColor("#f9fafb")]),
+                ("LEFTPADDING", (0, 0), (-1, -1), 5),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+                ("TOPPADDING", (0, 0), (-1, -1), 3.5),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 3.5),
+            ]
+        )
+    )
     story = [
         Paragraph("3. Results — Forecasting Performance", s["h1"]),
         Paragraph(
@@ -432,18 +521,20 @@ def _appendix(s: dict, tft: dict) -> list:
     pred = tft.get("prediction_summary", {})
     story = [
         Paragraph("Appendix A. Model Hyperparameters", s["h1"]),
-        _kv_table([
-            ("Pathogen", str(cfg.get("pathogen", "influenza"))),
-            ("Data source", str(cfg.get("data_source", "real_db"))),
-            ("Feature columns", ", ".join(cfg.get("feature_cols", []))),
-            ("Target", str(cfg.get("target_col", "confirmed_future"))),
-            ("min_weeks_per_region", str(cfg.get("min_weeks_per_region", 30))),
-            ("max_epochs", str(cfg.get("max_epochs", 50))),
-            ("batch_size", str(cfg.get("batch_size", 32))),
-            ("Mean prediction (h=1, 2, 3)",
-             ", ".join(f"{x:.2f}" for x in pred.get("mean_pred_per_horizon", []))),
-            ("Best checkpoint", str(tft.get("best_checkpoint", "—")).replace(str(REPO_ROOT), "$REPO")),
-        ], col_widths=(55 * mm, 115 * mm)),
+        _kv_table(
+            [
+                ("Pathogen", str(cfg.get("pathogen", "influenza"))),
+                ("Data source", str(cfg.get("data_source", "real_db"))),
+                ("Feature columns", ", ".join(cfg.get("feature_cols", []))),
+                ("Target", str(cfg.get("target_col", "confirmed_future"))),
+                ("min_weeks_per_region", str(cfg.get("min_weeks_per_region", 30))),
+                ("max_epochs", str(cfg.get("max_epochs", 50))),
+                ("batch_size", str(cfg.get("batch_size", 32))),
+                ("Mean prediction (h=1, 2, 3)", ", ".join(f"{x:.2f}" for x in pred.get("mean_pred_per_horizon", []))),
+                ("Best checkpoint", str(tft.get("best_checkpoint", "—")).replace(str(REPO_ROOT), "$REPO")),
+            ],
+            col_widths=(55 * mm, 115 * mm),
+        ),
         Spacer(1, 6 * mm),
         Paragraph("Appendix B. Reproducibility", s["h1"]),
         Paragraph(
@@ -482,9 +573,12 @@ def build_advisory_pdf(output_path: Path, week_label: str | None = None) -> Path
     s = _styles()
     buf = io.BytesIO()
     doc = SimpleDocTemplate(
-        buf, pagesize=A4,
-        leftMargin=20 * mm, rightMargin=20 * mm,
-        topMargin=22 * mm, bottomMargin=18 * mm,
+        buf,
+        pagesize=A4,
+        leftMargin=20 * mm,
+        rightMargin=20 * mm,
+        topMargin=22 * mm,
+        bottomMargin=18 * mm,
         title="UIS Surveillance Bulletin",
         author="Urban Immune System Capstone Team",
         subject=f"Weekly Surveillance Bulletin {week_label}",
@@ -514,9 +608,13 @@ def build_advisory_pdf(output_path: Path, week_label: str | None = None) -> Path
 
 
 def main() -> None:
+    logging.basicConfig(level=logging.INFO)
     parser = argparse.ArgumentParser(description="Advisory Surveillance Bulletin PDF 생성")
-    parser.add_argument("--output", default="docs/business/advisory/10_surveillance_bulletin.pdf",
-                        help="출력 PDF 경로 (repo 상대경로 또는 절대경로)")
+    parser.add_argument(
+        "--output",
+        default="docs/business/advisory/10_surveillance_bulletin.pdf",
+        help="출력 PDF 경로 (repo 상대경로 또는 절대경로)",
+    )
     parser.add_argument("--week", default=None, help="ISO 주차 라벨 (기본: 현재 주)")
     args = parser.parse_args()
 
@@ -524,8 +622,7 @@ def main() -> None:
     if not out.is_absolute():
         out = REPO_ROOT / out
     result = build_advisory_pdf(out, week_label=args.week)
-    print(f"✓ Advisory PDF 생성: {result}")
-    print(f"  size = {result.stat().st_size:,} bytes")
+    logger.info("Advisory PDF 생성: %s (size=%d bytes)", result, result.stat().st_size)
 
 
 if __name__ == "__main__":

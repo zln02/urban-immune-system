@@ -202,7 +202,7 @@ function S04() {
             <div style={{ marginTop: 6, fontSize: 22, color: WHITE, fontWeight: 600, fontFeatureSettings: '"lnum"' }}>
               오경보 <span style={{ color: WHITE_45, textDecoration: 'line-through' }}>0.602</span>
               <span style={{ margin: '0 10px', color: ACCENT }}>→</span>
-              <span style={{ color: ACCENT }}>0.206</span>
+              <span style={{ color: ACCENT }}>0.250</span>
             </div>
           </div>
         </div>
@@ -675,7 +675,7 @@ function S07() {
 
       <Line x={120} y={290} delay={0.2} style={{ ...TYPE.mega, fontSize: 200, color: WHITE_45 }}>0.71</Line>
       <ArrowSweep delay={1.0} />
-      <Line x={1100} y={290} delay={1.4} style={{ ...TYPE.mega, fontSize: 200, color: ACCENT }}>0.882</Line>
+      <Line x={1100} y={290} delay={1.4} style={{ ...TYPE.mega, fontSize: 200, color: ACCENT }}>0.907</Line>
 
       <Line x={120} y={560} delay={0.3} style={TYPE.label}>공모전 수치 · 단일 holdout</Line>
       <Line x={1100} y={560} delay={1.5} style={{ ...TYPE.label, color: ACCENT }}>Walk-forward · 재현 가능</Line>
@@ -683,7 +683,7 @@ function S07() {
       <Plate x={120} y={720} width={1680} height={220} delay={1.8}>
         <div style={{ padding: '48px 56px', fontFamily: FONT }}>
           <div style={{ fontSize: 44, fontWeight: 600, color: WHITE, letterSpacing:'-0.02em' }}>
-            D-7 Precision <span style={{ color: ACCENT }}>1.000</span>은 양성 예측이 희소했던 결과 — 17지역 5-fold로 확장 후 <span style={{ color: ACCENT }}>F1 0.882 · Recall 0.837 · MCC 0.595</span> 안정화.
+            D-7 Precision <span style={{ color: ACCENT }}>1.000</span>은 양성 예측이 희소했던 결과 — 17지역 5-fold로 확장 후 <span style={{ color: ACCENT }}>F1 0.907 · Recall 0.882 · MCC 0.610</span> 안정화.
           </div>
           <div style={{ marginTop: 16, fontSize: 28, color: WHITE_70 }}>
             수치를 지키는 것보다 <span style={{ color: ACCENT }}>재현 가능성</span>이 B2G의 본질이다.
@@ -716,7 +716,7 @@ function S08() {
     'TFT 70K params 실데이터 + Attention top-3',
     'RAG 9섹션 KDCA 표준 (Claude + Qdrant 17 docs)',
     'Next.js 17지역 지도 + SSE 실시간 리포트',
-    'pytest 128 + GitHub Actions CI 통과',
+    'pytest 549 + GitHub Actions CI 통과',
   ];
   return (
     <>
@@ -761,36 +761,7 @@ function ScopeItem({ text, delay, accent, strike }) {
   );
 }
 
-// ----- S09 모듈별 진행사항 (수치 검증 반영) -----
-function S09() {
-  const mods = [
-    { name: 'L2 하수 자동 크롤링 · KOWAS PDF 72개 다운로드',     pct: 100 },
-    { name: 'L1·L3 · 약국 OTC + 검색 트렌드 수집·정규화',         pct: 100 },
-    { name: 'RAG · Qdrant · WHO/ECDC/KDCA 17건 임베딩',           pct: 90 },
-    { name: 'Infra · CI/CD · pytest 128 (정규화·DB·API·보안) · GH Actions',  pct: 85 },
-    { name: 'Walk-forward 17지역 백테스트 · 1줄 재현',            pct: 80 },
-    { name: 'TFT 시계열 실학습 · 70K params · 실데이터 17지역 완료',  pct: 70 },
-  ];
-  return (
-    <>
-      <Chrome index={9} label="09 · MODULE PROGRESS" />
-      <Line x={120} y={140} style={TYPE.eyebrow}>모듈별 진행사항 · 발표 직전 갱신</Line>
-      <Line x={120} y={200} delay={0.1} style={TYPE.title}>실제 산출물 기준, 솔직하게.</Line>
-
-      <Plate x={120} y={380} width={1680} height={580} delay={0.5}>
-        <div style={{ position: 'relative', padding: 56, height: '100%', boxSizing: 'border-box' }}>
-          {mods.map((m, i) => (
-            <Bar key={i} x={56} y={56 + i * 72} width={1568} pct={m.pct}
-              label={m.name} value={m.pct + '%'} delay={0.8 + i*0.12} />
-          ))}
-          <div style={{ position: 'absolute', left: 56, bottom: 40, ...TYPE.small, color: WHITE_70 }}>
-            마무리 작업 — TFT prod 전환 · 발표 시연 예행 · 외부 자문 자료 발송
-          </div>
-        </div>
-      </Plate>
-    </>
-  );
-}
+// (S09 Module Progress 제거 — 2026-05-05 다이어트, 검증 라인은 S11 하단으로 흡수)
 
 // ----- S10 Demo (강화 — 진짜 대시보드 mock UI + STACK) -----
 function S10() {
@@ -1321,11 +1292,11 @@ function S11() {
 
           {/* 하단 — 메트릭 5개 */}
           <div style={{ marginTop: 14 }}>
-            <MetricRow label="F1-Score · 종합 정확도"           values={['0.882']} delay={1.4} accent />
-            <MetricRow label="Precision · 경보 신뢰도"          values={['0.949']} delay={1.55} />
-            <MetricRow label="Recall · 놓침 방지율"             values={['0.837']} delay={1.70} />
+            <MetricRow label="F1-Score · 종합 정확도"           values={['0.907']} delay={1.4} accent />
+            <MetricRow label="Precision · 경보 신뢰도"          values={['0.940']} delay={1.55} />
+            <MetricRow label="Recall · 놓침 방지율"             values={['0.882']} delay={1.70} />
             <MetricRow label="AUC-ROC · 위험·정상 구분력"       values={['0.931']} delay={1.85} />
-            <MetricRow label="오경보율 (게이트 ON · 가짜경보)"  values={['0.206']} delay={2.00} accent header />
+            <MetricRow label="오경보율 (게이트 ON · 가짜경보)"  values={['0.250']} delay={2.00} accent header />
           </div>
 
           <div style={{ position: 'absolute', left: 32, right: 32, bottom: 18, ...TYPE.small, fontSize: 14, color: WHITE_45 }}>
@@ -1360,12 +1331,14 @@ function S11() {
         </div>
       </Plate>
 
-      {/* 하단 재현 명령 배지 — Chrome footer(y=1020) 침범 방지 */}
+      {/* 하단 재현 명령 + 검증 배지 — Chrome footer(y=1020) 침범 방지 */}
       <Plate x={120} y={945} width={1680} height={50} delay={2.3} opacity={0.4}>
-        <div style={{ padding: '10px 28px', fontFamily: FONT, fontSize: 17, color: WHITE_70, display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div style={{ padding: '10px 28px', fontFamily: FONT, fontSize: 15, color: WHITE_70, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
           <span style={{ ...TYPE.label, color: ACCENT, fontSize: 13 }}>재현</span>
-          <span style={{ fontFamily: CODE_FONT, fontSize: 17, color: ACCENT }}>$ python -m ml.reproduce_validation</span>
-          <span>— 누가 돌려도 같은 수치</span>
+          <span style={{ fontFamily: CODE_FONT, fontSize: 16, color: ACCENT }}>$ python -m ml.reproduce_validation</span>
+          <span style={{ color: WHITE_45 }}>·</span>
+          <span style={{ ...TYPE.label, color: ACCENT, fontSize: 13 }}>검증</span>
+          <span>pytest 549 통과 · RAG 시드 20건 · KOWAS 17지역 적재 완료</span>
         </div>
       </Plate>
     </>
@@ -1451,51 +1424,147 @@ function GrangerRow({ label, p, delay }) {
   );
 }
 
-// ----- S12 Competitive map -----
-function S12() {
-  const rows = [
-    ['BlueDot',        '뉴스·항공 NLP',    '글로벌',  '다수',   ''],
-    ['CDC NWSS',       '하수 감시',        '미국',    '1',      ''],
-    ['KAIST 연구',     '이동량+독감',      '한국',    '2',      ''],
-    ['Xu 2025',        '검색+하수',        '중국',    '2',      ''],
-    ['Urban Immune',   '약국·하수·검색',   '한국 시도','3',     'ours'],
-  ];
+// ----- S12 Competitive landscape (2026-05-05 4-quadrant 통합 — S12B 흡수) -----
+// ----- S11A Rule-based 100% Verified — Gate B 효과 + Flu Trends 회피 -----
+function S11A() {
   return (
     <>
-      <Chrome index={12} label="12 · COMPETITIVE MAP" />
-      <Line x={120} y={140} style={TYPE.eyebrow}>경쟁 맵</Line>
-      <Line x={120} y={200} delay={0.1} style={TYPE.title}>세 신호를 교차하는 한국 맞춤형.</Line>
+      <Chrome index={12} label="11A · RULE-BASED VERIFIED" />
+      <Line x={120} y={140} style={TYPE.eyebrow}>Rule-based · 100% 실측 검증 · Gate B</Line>
+      <Line x={120} y={200} delay={0.1} style={TYPE.title}>코드가 막은 오경보 −58.5%.</Line>
 
-      <Plate x={120} y={380} width={1680} height={540} delay={0.5}>
-        <div style={{ padding: 40, fontFamily: FONT }}>
-          <div style={{ display:'grid', gridTemplateColumns:'2.2fr 2.6fr 1.6fr 1fr', gap: 24, ...TYPE.label, paddingBottom: 18, borderBottom:`1px solid ${WHITE_15}` }}>
-            <span>프로젝트</span><span>접근</span><span>지역</span><span style={{ textAlign:'right' }}>신호 수</span>
+      {/* 좌측: Gate B FAR 비교 mega */}
+      <Plate x={120} y={340} width={1080} height={600} delay={0.5}>
+        <div style={{ padding: 36, fontFamily: FONT, height: '100%', boxSizing: 'border-box', position: 'relative' }}>
+          <div style={{ ...TYPE.label, color: ACCENT }}>GATE B — 단일계층 단독 경보 강제 차단</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, marginTop: 32 }}>
+            <div>
+              <div style={{ ...TYPE.small, fontSize: 18, color: WHITE_45 }}>단일계층 (gate OFF)</div>
+              <div style={{ ...TYPE.mega, fontSize: 160, color: WHITE_45, letterSpacing: '-0.04em' }}>0.602</div>
+              <div style={{ ...TYPE.small, fontSize: 18, color: WHITE_45 }}>FAR · Google Flu Trends 류</div>
+            </div>
+            <div>
+              <div style={{ ...TYPE.small, fontSize: 18, color: ACCENT }}>2계층 강제 (gate ON)</div>
+              <div style={{ ...TYPE.mega, fontSize: 160, color: ACCENT, letterSpacing: '-0.04em' }}>0.250</div>
+              <div style={{ ...TYPE.small, fontSize: 18, color: ACCENT }}>FAR · 본 시스템</div>
+            </div>
           </div>
-          {rows.map((r, i) => <CompRow key={i} row={r} delay={0.9 + i*0.12} />)}
+          <div style={{ marginTop: 36, ...TYPE.titleXL, fontSize: 72, color: ACCENT, letterSpacing: '-0.02em' }}>−58.5% 감축</div>
+          <div style={{ marginTop: 12, ...TYPE.small, fontSize: 20, color: WHITE_70 }}>17개 시·도 실데이터 walk-forward · pipeline/scorer.py L155-222</div>
+          <div style={{ position: 'absolute', left: 36, right: 36, bottom: 24, ...TYPE.small, fontSize: 15, color: WHITE_45 }}>
+            <span style={{ color: ACCENT }}>_CROSS_VALIDATION_MIN_LAYERS = 2</span> — 임계 초과 계층 &lt; 2면 강제 GREEN
+          </div>
         </div>
       </Plate>
 
-      <Line x={120} y={960} delay={2.0} style={{ ...TYPE.small, color: WHITE_45 }}>
-        솔직 인정 — 데이터 규모, 임상 검증은 다음 단계의 타깃.
+      {/* 우측: 17/17 ALL PASS + Flu Trends 회피 */}
+      <Plate x={1240} y={340} width={560} height={600} delay={0.7}>
+        <div style={{ padding: 36, fontFamily: FONT, height: '100%', boxSizing: 'border-box' }}>
+          <div style={{ ...TYPE.label, color: ACCENT }}>17 / 17 REGIONS</div>
+          <div style={{ ...TYPE.mega, fontSize: 100, color: ACCENT, marginTop: 18, letterSpacing: '-0.03em' }}>ALL PASS</div>
+          <div style={{ marginTop: 24, paddingTop: 20, borderTop: `1px solid ${WHITE_15}` }}>
+            <div style={{ ...TYPE.small, fontSize: 18, color: WHITE }}>F1 <span style={{ color: ACCENT, fontWeight: 700 }}>0.907</span></div>
+            <div style={{ ...TYPE.small, fontSize: 18, color: WHITE, marginTop: 6 }}>Recall <span style={{ color: ACCENT, fontWeight: 700 }}>0.882</span> · Precision <span style={{ color: ACCENT, fontWeight: 700 }}>0.940</span></div>
+            <div style={{ ...TYPE.small, fontSize: 18, color: WHITE, marginTop: 6 }}>Granger composite p=<span style={{ color: ACCENT, fontWeight: 700 }}>0.021</span></div>
+            <div style={{ ...TYPE.small, fontSize: 18, color: WHITE, marginTop: 6 }}>L3 검색 p=<span style={{ color: ACCENT, fontWeight: 700 }}>0.007</span></div>
+          </div>
+          <div style={{ marginTop: 30, paddingTop: 20, borderTop: `1px solid ${WHITE_15}` }}>
+            <div style={{ ...TYPE.label, color: WHITE_70, fontSize: 14 }}>FLU TRENDS 회피</div>
+            <div style={{ marginTop: 12, ...TYPE.small, fontSize: 17, color: WHITE_70, lineHeight: 1.5 }}>
+              Google Flu Trends(2013): 검색 <span style={{ color: ACCENT }}>단일 신호</span>로 실제의 <span style={{ color: ACCENT }}>2배 과대예측</span>.
+            </div>
+            <div style={{ marginTop: 10, ...TYPE.small, fontSize: 17, color: WHITE_70, lineHeight: 1.5 }}>
+              우리는 <span style={{ color: ACCENT }}>N≥2 이종 비의료 신호 동시 임계</span>를 코드 레벨로 강제 — 특허 핵심.
+            </div>
+          </div>
+        </div>
+      </Plate>
+      <Line x={120} y={970} delay={2.4} style={{ ...TYPE.small, fontSize: 14, color: WHITE_45 }}>
+        용어 — FAR: 거짓 경보 비율 · F1: 정확도 종합 점수(1.0=만점, 0.8이상 우수) · Gate B: 두 신호 이상 동시 충족 강제 · Granger: 통계적 선행성 검증
       </Line>
     </>
   );
 }
-function CompRow({ row, delay }) {
+
+function S12() {
+  const quadrants = [
+    {
+      pos: 'tl',
+      title: 'BlueDot',
+      tag: '글로벌 · 민간',
+      bullets: ['뉴스·SNS 텍스트 NLP', '9일 선행 (COVID-19)', '운영비 $$$$ · 2014~'],
+      tone: 'mid',
+    },
+    {
+      pos: 'tr',
+      title: 'HealthMap',
+      tag: '美 보스턴소아병원 · 2006~',
+      bullets: ['자동 뉴스 스크래핑', '의료 raw 데이터 0', 'SMS 신고 · 부분 단일 신호'],
+      tone: 'mid',
+    },
+    {
+      pos: 'bl',
+      title: '한국 KCDC ILINet',
+      tag: '질병관리청 · 2008~',
+      bullets: ['임상 신고 후행 (~2주)', '국가 표본감시 · AI 통합 0건', '2026.03 전략 심포지엄 단계'],
+      tone: 'warm',
+    },
+    {
+      pos: 'br',
+      title: '★ Urban Immune System',
+      tag: '한국 · 캡스톤 · 2026',
+      bullets: ['3-Layer 정량 신호 (OTC·하수·검색)', '6.47주 선행 · 게이트 B 교차검증', '한국 first-mover · KIPRIS 미확인'],
+      tone: 'hero',
+    },
+  ];
+  return (
+    <>
+      <Chrome index={12} label="12 · COMPETITIVE LANDSCAPE" />
+      <Line x={120} y={140} style={TYPE.eyebrow}>선행 사례 · 자체 조사 — 외부 자문 직전</Line>
+      <Line x={120} y={200} delay={0.1} style={TYPE.title}>이미 누가, 우리는 어디에 서 있나.</Line>
+
+      <div style={{ position: 'absolute', left: 120, top: 320, right: 120, display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 28, height: 600 }}>
+        {quadrants.map((q, i) => <QuadCard key={i} {...q} delay={0.5 + i * 0.18} />)}
+      </div>
+
+      <Line x={120} y={950} delay={1.6} style={{ ...TYPE.small, color: WHITE_45 }}>
+        KIPRIS 검색 — 3계층(OTC+하수+검색) 동시 결합 특허 미확인 · KDCA·환경부 운영과는 보완 관계.
+      </Line>
+    </>
+  );
+}
+
+function QuadCard({ title, tag, bullets, tone, delay }) {
   const { localTime } = useSprite();
-  const p = Easing.easeOutCubic(Math.max(0, Math.min(1, (localTime - delay) / 0.5)));
-  const ours = row[4] === 'ours';
+  const p = Easing.easeOutCubic(Math.max(0, Math.min(1, (localTime - delay) / 0.6)));
+  const isHero = tone === 'hero';
+  const accentColor = isHero ? ACCENT : (tone === 'warm' ? '#F4A261' : WHITE_45);
   return (
     <div style={{
-      display:'grid', gridTemplateColumns:'2.2fr 2.6fr 1.6fr 1fr', gap: 24,
-      padding: '20px 0', borderBottom: `1px solid ${WHITE_15}`,
-      opacity: p, transform: `translateX(${(1-p)*-12}px)`,
-      color: ours ? ACCENT : WHITE, fontSize: 24, fontWeight: ours ? 600 : 400,
+      opacity: p, transform: `translateY(${(1-p)*14}px)`, fontFamily: FONT,
+      border: `1px solid ${isHero ? ACCENT : WHITE_15}`,
+      background: isHero ? 'rgba(34,227,255,0.08)' : 'rgba(5,7,11,0.45)',
+      padding: '24px 28px', boxSizing: 'border-box', position: 'relative',
     }}>
-      <span>{row[0]}{ours && <span style={{ marginLeft:10, fontSize:16, color:'#05070B', background:ACCENT, padding:'2px 10px' }}>OURS</span>}</span>
-      <span style={{ color: ours ? ACCENT : WHITE_70 }}>{row[1]}</span>
-      <span style={{ color: ours ? ACCENT : WHITE_70 }}>{row[2]}</span>
-      <span style={{ textAlign:'right', fontWeight: 600 }}>{row[3]}</span>
+      <div style={{ ...TYPE.label, color: accentColor, fontFamily: CODE_FONT, fontSize: 12 }}>{tag}</div>
+      <div style={{
+        fontSize: isHero ? 32 : 26, color: isHero ? ACCENT : WHITE,
+        fontWeight: isHero ? 700 : 600, marginTop: 10, letterSpacing: '-0.01em',
+      }}>{title}</div>
+      <div style={{ marginTop: 18 }}>
+        {bullets.map((b, i) => {
+          const ip = Easing.easeOutCubic(Math.max(0, Math.min(1, (localTime - delay - 0.35 - i * 0.1) / 0.4)));
+          return (
+            <div key={i} style={{
+              display: 'flex', alignItems: 'baseline', gap: 10,
+              padding: '8px 0', opacity: ip,
+            }}>
+              <span style={{ width: 5, height: 5, background: accentColor, flexShrink: 0, marginTop: 8 }} />
+              <span style={{ fontSize: 16, color: isHero ? WHITE : WHITE_70, lineHeight: 1.45 }}>{b}</span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -1552,6 +1621,156 @@ function LegalCard({ x, y, delay, title, sub, pct, color, badge, good }) {
 }
 
 // ----- S14 Vision 2027 -----
+// ----- HonestCard — V11.x 정직성 카드 (S13C용) -----
+function HonestCard({ step, title, body, plain, delay, accent }) {
+  return (
+    <div style={{
+      background: 'rgba(255,255,255,0.04)',
+      border: `1px solid ${accent ? 'rgba(34,227,255,0.5)' : 'rgba(255,255,255,0.12)'}`,
+      borderRadius: 8,
+      padding: '20px 18px',
+      animation: `fadeIn 0.6s ${delay}s both`,
+      display: 'flex',
+      flexDirection: 'column',
+    }}>
+      <div style={{ ...TYPE.label, color: accent ? ACCENT : WHITE_70, fontSize: 12 }}>{step}</div>
+      <div style={{ ...TYPE.title, fontSize: 24, color: WHITE, marginTop: 8, letterSpacing: '-0.01em' }}>{title}</div>
+      <div style={{ ...TYPE.small, fontSize: 14, color: WHITE_70, marginTop: 14, lineHeight: 1.5 }}>{body}</div>
+      <div style={{ ...TYPE.small, fontSize: 13, color: ACCENT, marginTop: 'auto', paddingTop: 12, fontStyle: 'italic' }}>→ {plain}</div>
+    </div>
+  );
+}
+
+// ----- S13C V11.0~V11.4 정직성 5단 (비전공자 친화) -----
+function S13C() {
+  return (
+    <>
+      <Chrome index={14} label="13C · HONEST LAYERS" />
+      <Line x={120} y={140} style={TYPE.eyebrow}>V11.0 ~ V11.4 · 정직성 5단 LAYER</Line>
+      <Line x={120} y={200} delay={0.1} style={TYPE.title}>한계까지 정직하게 보여드립니다.</Line>
+
+      <Plate x={120} y={340} width={1680} height={600} delay={0.5}>
+        <div style={{ padding: 36, fontFamily: FONT, height: '100%', boxSizing: 'border-box' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 18, height: '100%' }}>
+            <HonestCard step="V11.0" title="기준 확정" body="17개 시·도 walk-forward로 F1 0.907 측정. 누가 돌려도 같은 수치." plain="기준점 박았다." delay={0.8} />
+            <HonestCard step="V11.1" title="신뢰구간 공개" body="Recall 신뢰구간 [0.834, 0.924]. 하한이 목표 0.85에 살짝 못 미친다는 점도 숨기지 않음." plain="정확도가 운으로 흔들리는 범위까지 명시." delay={1.0} />
+            <HonestCard step="V11.2" title="검정군 솔직" body="51개 통계 검정 중 실제 독립 검정은 18개. 네이버 API 제약으로 일부 지역 같은 신호." plain="겉으론 51개지만 진짜는 18개라고 인정." delay={1.2} />
+            <HonestCard step="V11.3" title="합성 입력 명시" body="TFT 예측 모델은 데모용 합성 입력. API 응답에 synthetic_demo 메타 자동 표시." plain="모델 PoC라는 사실을 응답에 박았다." delay={1.4} />
+            <HonestCard step="V11.4" title="룰 vs ML 분리" body="룰 기반 게이트는 17지역 실측 검증(production). XGBoost는 양성 이벤트 4주뿐이라 PoC." plain="절반은 완성, 절반은 PoC라고 분리." delay={1.6} accent />
+          </div>
+        </div>
+      </Plate>
+
+      <Line x={120} y={970} delay={2.4} style={{ ...TYPE.small, fontSize: 14, color: WHITE_45 }}>
+        용어 — 신뢰구간: "이 범위 안에 진짜 값이 있을 확률 95%" · PoC: "개념 실증, 제품 아님" · production: "검증 끝, 실전 배치 가능"
+      </Line>
+    </>
+  );
+}
+
+// ----- S13D Limitations — 7개 한계 정직 공개 (비전공자 친화) -----
+function S13D() {
+  return (
+    <>
+      <Chrome index={15} label="13D · LIMITATIONS" />
+      <Line x={120} y={140} style={TYPE.eyebrow}>한계까지 명시 — Phase 2/3에서 풀 것</Line>
+      <Line x={120} y={200} delay={0.1} style={TYPE.title}>인정하면 신뢰가 됩니다.</Line>
+
+      <Plate x={120} y={340} width={1680} height={600} delay={0.5}>
+        <div style={{ padding: 36, fontFamily: FONT, height: '100%', boxSizing: 'border-box' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, height: '100%' }}>
+            <HonestCard step="L1" title="단일 시즌"     body="2025-2026 인플루엔자 26주만 검증. 다년 일반화는 미수행." plain="한 시즌만 봤다. 다른 해는 나중에." delay={0.8} />
+            <HonestCard step="L2" title="단일 질병"     body="인플루엔자만 검증. 코로나·노로는 KOWAS 데이터는 있지만 백테스트 미수행." plain="독감만 봤다. 다른 병은 나중에." delay={0.95} />
+            <HonestCard step="L3" title="펜데믹 미검증" body="계절성 인플루엔자와 펜데믹은 동역학이 다름. COVID 같은 신종에 외삽은 별도 검증 필요." plain="'독감 적중'이지 '펜데믹 적중'은 아직." delay={1.1} accent />
+            <HonestCard step="L4" title="Recall 경계"   body="신뢰구간 하한 0.834 — 목표 0.85에 살짝 못 미침. Phase 2 다중 시즌으로 좁힘." plain="정확도가 운으로 살짝 흔들릴 수 있다." delay={1.25} />
+            <HonestCard step="L5" title="전국 broadcast" body="네이버 API 제약으로 약국·검색이 17지역 동일 신호. HIRA OpenAPI로 분리 예정(Phase 3)." plain="시도별로 신호가 같음. API 한계." delay={1.4} />
+            <HonestCard step="L6" title="KOWAS 7~10일 lag" body="하수 데이터 자체에 측정-공개 7~10일 지연. 진짜 실시간 아님." plain="실시간이 아니라 '주간'이다." delay={1.55} />
+          </div>
+        </div>
+      </Plate>
+
+      <Line x={120} y={970} delay={2.4} style={{ ...TYPE.small, fontSize: 14, color: WHITE_45 }}>
+        용어 — 동역학: "감염 전파 패턴" · 외삽: "검증 안 된 영역까지 추정" · broadcast: "같은 신호 복제"
+      </Line>
+    </>
+  );
+}
+
+// ----- S14A Evolution — 6주 진보 곡선 -----
+function S14A() {
+  const rows = [
+    { ver: 'D-3',    date: '5/4',  f1: '0.841', added: '17지역 walk-forward 첫 측정' },
+    { ver: 'V11.0',  date: '5/14', f1: '0.907', added: 'F1 +0.066 · canonical 확정', highlight: true },
+    { ver: 'V11.1',  date: '5/17', f1: '0.907', added: '+ Bootstrap 신뢰구간 (정직성 1단)' },
+    { ver: 'V11.2',  date: '5/22', f1: '0.907', added: '+ 지역별 Granger 51검정 (정직성 2단)' },
+    { ver: 'V11.3',  date: '5/22', f1: '0.907', added: '+ TFT 합성 메타 명시 (정직성 3단)' },
+    { ver: 'V11.4',  date: '5/27', f1: '0.907', added: '+ 룰 vs ML 분리 (정직성 4단)', highlight: true },
+  ];
+  return (
+    <>
+      <Chrome index={17} label="14A · EVOLUTION" />
+      <Line x={120} y={140} style={TYPE.eyebrow}>6주 진보 — 메트릭 +0.066, 정직성 4단 추가</Line>
+      <Line x={120} y={200} delay={0.1} style={TYPE.title}>숫자보다 정직성이 매 버전 늘었다.</Line>
+
+      <Plate x={120} y={340} width={1680} height={600} delay={0.5}>
+        <div style={{ padding: 36, fontFamily: FONT }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '140px 100px 140px 1fr', gap: 20, ...TYPE.label, color: WHITE_45, fontSize: 14, paddingBottom: 16, borderBottom: `1px solid ${WHITE_15}` }}>
+            <div>버전</div><div>날짜</div><div>F1</div><div>추가된 것</div>
+          </div>
+          {rows.map((r, i) => (
+            <div key={r.ver} style={{
+              display: 'grid', gridTemplateColumns: '140px 100px 140px 1fr', gap: 20,
+              padding: '18px 0', borderBottom: `1px solid ${WHITE_15}`,
+              animation: `fadeIn 0.5s ${0.8 + i * 0.15}s both`,
+              ...TYPE.small, fontSize: 20,
+              color: r.highlight ? ACCENT : WHITE,
+            }}>
+              <div style={{ fontWeight: 700 }}>{r.ver}</div>
+              <div style={{ color: WHITE_70 }}>{r.date}</div>
+              <div style={{ color: r.highlight ? ACCENT : WHITE, fontWeight: 600 }}>{r.f1}</div>
+              <div>{r.added}</div>
+            </div>
+          ))}
+          <div style={{ marginTop: 24, ...TYPE.small, fontSize: 18, color: WHITE_70, fontStyle: 'italic' }}>
+            → 6주 동안 메트릭은 +0.066, 그러나 더 큰 변화는 매 버전마다 추가된 정직성 layer.
+          </div>
+        </div>
+      </Plate>
+
+      <Line x={120} y={970} delay={2.4} style={{ ...TYPE.small, fontSize: 14, color: WHITE_45 }}>
+        용어 — walk-forward: "미래 데이터 못 보게 한 검증" · canonical: "공식 기준값" · 정직성 layer: "한계를 한 단계씩 공개"
+      </Line>
+    </>
+  );
+}
+
+// ----- S16A Q&A 발표 멘트 5장 -----
+function S16A() {
+  return (
+    <>
+      <Chrome index={20} label="16A · Q&A SCRIPT" />
+      <Line x={120} y={140} style={TYPE.eyebrow}>예상 질문 5장 — 한 줄 대응</Line>
+      <Line x={120} y={200} delay={0.1} style={TYPE.title}>정직히 인정, Phase 2/3에서 보강.</Line>
+
+      <Plate x={120} y={340} width={1680} height={600} delay={0.5}>
+        <div style={{ padding: 36, fontFamily: FONT, height: '100%', boxSizing: 'border-box' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, height: '100%' }}>
+            <HonestCard step="Q1" title="AI 도구 정직" body="Claude Code Opus·Sonnet으로 5인팀 병렬 협업. 핵심 설계·의사결정은 모두 사람." plain="도구는 썼다. 머리는 우리다." delay={0.8} />
+            <HonestCard step="Q2" title="Recall borderline" body="신뢰구간 하한 0.834가 목표 0.85에 살짝 미달 — 인정. Phase 2 다중 시즌으로 좁힘." plain="살짝 모자란다, 다음에 보강." delay={1.0} />
+            <HonestCard step="Q3" title="시도별 신호 같음" body="네이버 API 제약으로 약국·검색이 17지역 동일. Phase 3에서 HIRA OpenAPI 통합." plain="API 한계, 다음에 풀음." delay={1.2} />
+            <HonestCard step="Q4" title="TFT 평탄" body="composite는 실데이터 룰 기반. TFT는 응답에 synthetic_demo 표시되는 PoC." plain="분리해서 보고함." delay={1.4} />
+            <HonestCard step="Q5" title="단일 시즌" body="2025-2026만 검증 — 인정. 프레임워크는 완성, 다중 시즌은 Phase 2 누적." plain="한 시즌만 봤다, 다음에 늘림." delay={1.6} accent />
+          </div>
+        </div>
+      </Plate>
+
+      <Line x={120} y={970} delay={2.4} style={{ ...TYPE.small, fontSize: 14, color: WHITE_45 }}>
+        다섯 질문 모두 동일 한 줄 — "정직히 인정, Phase 2/3에서 보강." 이게 V11.4 honest split의 정신.
+      </Line>
+    </>
+  );
+}
+
 function S14() {
   return (
     <>
@@ -1609,114 +1828,119 @@ function CustRow({ name, desc, delay }) {
 }
 
 // ----- S15 Roadmap -----
+// =============================================================================
+// S15 — ROADMAP TO FINAL (2026-05-05 갈아엎음): 5/7 → 6/9~14 6주 plan
+// =============================================================================
 function S15() {
-  const phases = [
-    { tag: 'NOW',      date: '~2026.06', title: 'Phase 1', desc: '캡스톤 완주' },
-    { tag: 'NEXT',     date: '2026 H2',  title: 'Phase 2', desc: 'ILINet · PoC + 부처 자동 발송' },
-    { tag: '2027 H1',  date: '2027.01',  title: 'Phase 3', desc: 'ISMS-P · 유료 1곳' },
-    { tag: '2027 H2',  date: '2027.07',  title: 'Phase 4', desc: '광역 2곳 · AE 운영' },
-    { tag: '2028+',    date: '2028~',    title: 'Phase 5', desc: 'KDCA 납품 · WHO' },
+  const sections = [
+    {
+      tag: 'WEEK 1-2',
+      date: '5/8 ~ 5/21',
+      title: '운영 안정성',
+      tone: 'warm',
+      items: [
+        'Kafka Consumer 실연결 (InMemory → KRaft)',
+        '전처리 모듈 분리 (pipeline/features.py)',
+        '알람 신뢰도 점수 (binary → 0~1 score)',
+      ],
+    },
+    {
+      tag: 'WEEK 3-4',
+      date: '5/22 ~ 6/4',
+      title: '일반화 입증',
+      tone: 'mid',
+      items: [
+        'HIRA OpenAPI · L1 지역 분리',
+        '다질환 확장 · 코로나·노로 검증',
+        'AE threshold 튜닝 · FAR < 0.15',
+      ],
+    },
+    {
+      tag: 'WEEK 5-6',
+      date: '6/5 ~ 6/9',
+      title: '최종 검증',
+      tone: 'cool',
+      items: [
+        '시즌 추가 검증 · 2022-23, 2023-24 백테스트',
+        'K8s 다중 노드 · GKE 3 node',
+        '광역지자체 PoC MOU 시도',
+      ],
+    },
+  ];
+  const targets = [
+    { metric: 'F1', target: '> 0.90', baseline: '현 0.907', hero: true },
+    { metric: 'FAR', target: '< 0.15', baseline: '현 0.250', hero: true },
+    { metric: 'Multi-disease', target: '2종 검증', baseline: '현 인플루엔자 1종' },
+    { metric: 'PoC MOU', target: '광역지자체 1건 시도', baseline: '신규' },
   ];
   return (
     <>
-      <Chrome index={15} label="15 · ROADMAP" />
-      <Line x={120} y={140} style={TYPE.eyebrow}>로드맵 · 상용화</Line>
-      <Line x={120} y={200} delay={0.1} style={TYPE.title}>지금 → 2027 B2G.</Line>
+      <Chrome index={15} label="15 · ROADMAP TO FINAL" />
+      <Line x={120} y={140} style={TYPE.eyebrow}>ROADMAP TO FINAL — 5/7 ▶ 6/9~14 (6주)</Line>
+      <Line x={120} y={200} delay={0.1} style={TYPE.title}>중간발표 → 최종발표 6주.</Line>
 
-      <RoadmapBar delay={0.5} />
-
-      <div style={{ position:'absolute', left: 120, top: 440, right: 120, display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap: 32 }}>
-        {phases.map((p, i) => <PhaseCard key={i} {...p} delay={0.8 + i*0.14} accent={i<=1} />)}
+      <div style={{ position: 'absolute', left: 120, top: 320, right: 120, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 28 }}>
+        {sections.map((s, i) => <RoadmapSection key={i} section={s} delay={0.5 + i * 0.25} />)}
       </div>
 
-      <Plate x={120} y={760} width={820} height={220} delay={1.8}>
-        <div style={{ padding: 24, fontFamily: FONT }}>
-          <div style={{ ...TYPE.label, color: WHITE_45 }}>가격 모델 · B2G 3-tier (추정·docs/business/pricing-model.md)</div>
-          <div style={{ marginTop: 14 }}>
-            <PriceRow tier="A · 구독" detail="지자체 연 2,000~6,000만 · 광역 연 1~3억" delay={2.0} />
-            <PriceRow tier="C · PoC"  detail="30일 1,000만 / 60일 2,000만 / 90일 3,000만" delay={2.15} hero />
-            <PriceRow tier="B · 건당" detail="RAG 리포트 50~300만 / 건 (보험·연구·언론)" delay={2.30} dim />
-          </div>
-        </div>
-      </Plate>
-      <Plate x={980} y={760} width={820} height={220} delay={2.0}>
-        <div style={{ padding: 24, fontFamily: FONT }}>
-          <div style={{ ...TYPE.label, color: ACCENT }}>6개월 목표</div>
-          <div style={{ marginTop: 14 }}>
-            <GoalRow label="정부과제" value="2,000~5,000만" delay={2.15} />
-            <GoalRow label="PoC 1건" value="≈ 1,000~3,000만 (Tier C)" delay={2.30} hero />
-            <GoalRow label="논문" value="1편 (walk-forward 백테스트)" delay={2.45} />
+      <Plate x={120} y={780} width={1680} height={200} delay={1.6}>
+        <div style={{ padding: '22px 32px', fontFamily: FONT }}>
+          <div style={{ ...TYPE.label, color: ACCENT }}>FINAL TARGETS · 6/9~14</div>
+          <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
+            {targets.map((t, i) => <TargetCard key={i} {...t} delay={1.95 + i * 0.12} />)}
           </div>
         </div>
       </Plate>
     </>
   );
 }
-function PriceRow({ tier, detail, delay, hero, dim }) {
+
+function RoadmapSection({ section, delay }) {
   const { localTime } = useSprite();
-  const p = Easing.easeOutCubic(Math.max(0, Math.min(1, (localTime - delay) / 0.5)));
+  const p = Easing.easeOutCubic(Math.max(0, Math.min(1, (localTime - delay) / 0.6)));
+  const tone = section.tone === 'warm' ? '#F4A261' : section.tone === 'mid' ? '#E9C46A' : ACCENT;
   return (
     <div style={{
-      display: 'flex', alignItems: 'baseline', gap: 16,
-      padding: '10px 0', borderBottom: `1px solid ${WHITE_15}`,
-      opacity: p, transform: `translateX(${(1-p)*-8}px)`,
+      opacity: p, transform: `translateY(${(1-p)*16}px)`, fontFamily: FONT,
+      border: `1px solid ${WHITE_15}`, borderTop: `3px solid ${tone}`,
+      background: 'rgba(5,7,11,0.45)', padding: '24px 26px', height: 420, boxSizing: 'border-box',
     }}>
-      <span style={{
-        width: 80, flexShrink: 0,
-        fontSize: 14, fontFamily: CODE_FONT, letterSpacing: '0.06em',
-        color: hero ? ACCENT : WHITE_45, fontWeight: 600,
-      }}>{tier}</span>
-      <span style={{
-        fontSize: hero ? 22 : 19,
-        color: hero ? WHITE : (dim ? WHITE_70 : WHITE),
-        fontWeight: hero ? 600 : 400, lineHeight: 1.4,
-      }}>{detail}</span>
+      <div style={{ ...TYPE.label, color: tone, fontFamily: CODE_FONT, fontSize: 13 }}>{section.tag}</div>
+      <div style={{ fontSize: 14, color: WHITE_45, marginTop: 6, fontFamily: CODE_FONT }}>{section.date}</div>
+      <div style={{ fontSize: 30, color: WHITE, fontWeight: 600, marginTop: 18, letterSpacing: '-0.01em' }}>{section.title}</div>
+      <div style={{ marginTop: 22 }}>
+        {section.items.map((it, i) => {
+          const ip = Easing.easeOutCubic(Math.max(0, Math.min(1, (localTime - delay - 0.3 - i * 0.12) / 0.4)));
+          return (
+            <div key={i} style={{
+              display: 'flex', alignItems: 'baseline', gap: 12,
+              padding: '12px 0', borderBottom: `1px solid ${WHITE_15}`,
+              opacity: ip, transform: `translateX(${(1-ip)*-8}px)`,
+            }}>
+              <span style={{ width: 6, height: 6, background: tone, flexShrink: 0, marginTop: 7 }} />
+              <span style={{ fontSize: 17, color: WHITE, lineHeight: 1.4 }}>{it}</span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
 
-function GoalRow({ label, value, delay, hero }) {
+function TargetCard({ metric, target, baseline, hero, delay }) {
   const { localTime } = useSprite();
   const p = Easing.easeOutCubic(Math.max(0, Math.min(1, (localTime - delay) / 0.5)));
   return (
     <div style={{
-      display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-      padding: '10px 0', borderBottom: `1px solid ${WHITE_15}`,
-      opacity: p, transform: `translateX(${(1-p)*-8}px)`,
+      opacity: p, transform: `translateY(${(1-p)*8}px)`,
+      borderLeft: `2px solid ${hero ? ACCENT : WHITE_45}`, paddingLeft: 14,
     }}>
-      <span style={{ fontSize: 17, color: WHITE_70 }}>{label}</span>
-      <span style={{
-        fontSize: hero ? 21 : 18,
-        color: hero ? ACCENT : WHITE,
-        fontWeight: hero ? 700 : 500, fontFeatureSettings: '"lnum"',
-      }}>{value}</span>
-    </div>
-  );
-}
-
-function RoadmapBar({ delay }) {
-  const { localTime } = useSprite();
-  const p = Easing.easeOutCubic(Math.max(0, Math.min(1, (localTime - delay) / 1.2)));
-  return (
-    <div style={{ position:'absolute', left:120, top: 400, right: 120, height: 2, background: WHITE_15 }}>
-      <div style={{ width: `${100*p}%`, height: '100%', background: ACCENT }} />
-    </div>
-  );
-}
-function PhaseCard({ tag, date, title, desc, delay, accent }) {
-  const { localTime } = useSprite();
-  const pp = Easing.easeOutCubic(Math.max(0, Math.min(1, (localTime - delay) / 0.5)));
-  return (
-    <div style={{ opacity: pp, transform:`translateY(${(1-pp)*12}px)`, fontFamily: FONT }}>
+      <div style={{ ...TYPE.label, color: hero ? ACCENT : WHITE_45, fontSize: 11, fontFamily: CODE_FONT }}>{metric}</div>
       <div style={{
-        width: 16, height: 16, borderRadius: 0,
-        background: accent ? ACCENT : WHITE_45,
-        marginTop: -49, marginBottom: 24,
-      }} />
-      <div style={{ ...TYPE.label, color: accent ? ACCENT : WHITE_45 }}>{tag}</div>
-      <div style={{ fontSize: 32, color: WHITE, fontWeight: 600, marginTop: 10 }}>{title}</div>
-      <div style={{ ...TYPE.small, color: WHITE_70, marginTop: 6 }}>{date}</div>
-      <div style={{ fontSize: 22, color: WHITE, marginTop: 16, fontWeight: 400 }}>{desc}</div>
+        fontSize: hero ? 24 : 20, color: hero ? ACCENT : WHITE,
+        fontWeight: hero ? 700 : 600, marginTop: 6, fontFeatureSettings: '"lnum"',
+      }}>{target}</div>
+      <div style={{ fontSize: 13, color: WHITE_45, marginTop: 4 }}>{baseline}</div>
     </div>
   );
 }
@@ -1983,98 +2207,15 @@ function S07A() {
 
       <TrapPanel x={1080} y={380} width={720} height={580} delay={0.9}
         trap="키워드 한 통에 섞으면 구매 의도와 증상 불안이 뒤섞여 신호가 무뎌진다."
-        fix="L1=구매(약), L3=증상검색을 의도적 분리. L2는 KOWAS PDF 그래프 RGB 픽셀로 직접 측정."
+        fix="L1=구매(약), L3=증상검색을 의도적 분리. L2는 KOWAS PDF 그래프 RGB 픽셀로 직접 측정. KOWAS는 API 비공개라 Selenium으로 PDF 자동 다운로드 (72개 자동 수집)."
         result="L1 130 · L2 952 · L3 130 건/주 — 17지역 26주 누적" />
     </>
   );
 }
 
 // =============================================================================
-// S07A2 — 크롤링 → Kafka → TimescaleDB 적재 (실제 코드)
+// (S07A2 + ERMini + ERTable 제거 — 2026-05-05 다이어트, S07A 에 한 줄 흡수)
 // =============================================================================
-function S07A2() {
-  const lines = [
-    { t: '# pipeline/collectors/kowas_downloader.py · Selenium', dim: true },
-    { t: 'def download_latest(client, n=8):' },
-    { t: '    reports = list_reports(client, max_pages=2)' },
-    { t: '    for r in reports[:n]:' },
-    { t: '        for url, name in fetch_pdf_links(client, r):' },
-    { t: '            download_pdf(client, url, name)   # → kowas/', hi: true },
-    { t: '' },
-    { t: '# pipeline/collectors/kafka_producer.py', dim: true },
-    { t: 'def send_signal(layer, region, value, time):' },
-    { t: '    producer.send(f"uis.{layer}", {...})       # 토픽 4', hi: true },
-    { t: '    # acks="all" · retries=3 · 168h 보존', dim: true },
-    { t: '' },
-    { t: '# pipeline/collectors/db_writer.py — idempotent', dim: true },
-    { t: 'async def insert_signal(layer, region, value, time):' },
-    { t: '    await pool.execute("DELETE … WHERE region=$1 …")', hi: true },
-    { t: '    await pool.execute("INSERT INTO layer_signals …")', hi: true },
-  ];
-  return (
-    <>
-      <Chrome index="07A2" label="07A2 · CRAWL → DB" />
-      <Line x={120} y={140} style={TYPE.eyebrow}>① 적재 — 크롤링부터 DB까지</Line>
-      <Line x={120} y={200} delay={0.1} style={TYPE.title} width={1700}>똑같이 돌려도 결과는 같다.</Line>
-
-      <CodeBox x={120} y={350} width={920} height={620} delay={0.5}
-        file="3 단계 · Selenium → Kafka → Timescale" lines={lines} />
-
-      <TrapPanel x={1080} y={350} width={720} height={460} delay={0.9}
-        trap="KOWAS API 비공개 · 같은 키로 두 번 넣으면 충돌 · 토픽 한 통이면 보관기간 충돌."
-        fix="브라우저 자동화(Selenium)로 PDF 다운로드 + 지웠다 다시 넣기로 중복 방지 + 계층별 토픽 4개 분리(7일 보관)."
-        result="KOWAS PDF 72개 자동 수집 · 손실 방지 설정 · DB 주 단위 자동 분할" />
-
-      <ERMini x={1080} y={830} delay={1.5} />
-    </>
-  );
-}
-
-// ER 미니 다이어그램 — TimescaleDB 3-table 구조 (S07A2 하단)
-function ERMini({ x, y, delay }) {
-  const { localTime } = useSprite();
-  const p = Easing.easeOutCubic(Math.max(0, Math.min(1, (localTime - delay) / 0.6)));
-  const pArrow = Easing.easeOutCubic(Math.max(0, Math.min(1, (localTime - delay - 0.5) / 0.6)));
-  return (
-    <div style={{
-      position: 'absolute', left: x, top: y, width: 720, height: 140,
-      fontFamily: FONT, opacity: p,
-    }}>
-      <div style={{ ...TYPE.label, color: ACCENT, fontSize: 12, marginBottom: 8 }}>DB 스키마 · TimescaleDB 3 hypertable</div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 0, position: 'relative' }}>
-        <ERTable name="layer_signals" cols={['region', 'layer', 'time', 'value']} delay={delay + 0.1} />
-        <ERTable name="risk_scores"   cols={['region', 'time', 'composite', 'alert_level']} delay={delay + 0.25} hero />
-        <ERTable name="alert_reports" cols={['region', 'time', 'summary', 'rag_docs']} delay={delay + 0.40} />
-
-        {/* 화살표 — region·time 조인 */}
-        <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
-          <line x1="33%" y1="50%" x2={`${33 + 1*pArrow}%`} y2="50%"
-            stroke={ACCENT} strokeWidth={1} opacity={0.6} strokeDasharray="3 3" />
-          <line x1="66%" y1="50%" x2={`${66 + 1*pArrow}%`} y2="50%"
-            stroke={ACCENT} strokeWidth={1} opacity={0.6} strokeDasharray="3 3" />
-        </svg>
-      </div>
-    </div>
-  );
-}
-
-function ERTable({ name, cols, delay, hero }) {
-  const { localTime } = useSprite();
-  const p = Easing.easeOutCubic(Math.max(0, Math.min(1, (localTime - delay) / 0.4)));
-  return (
-    <div style={{
-      border: `1px solid ${hero ? ACCENT : WHITE_15}`,
-      background: hero ? 'rgba(34,227,255,0.08)' : 'rgba(5,7,11,0.5)',
-      padding: '8px 12px',
-      opacity: p, transform: `translateY(${(1-p)*6}px)`,
-    }}>
-      <div style={{ fontSize: 13, fontFamily: CODE_FONT, color: hero ? ACCENT : WHITE, fontWeight: 700 }}>{name}</div>
-      <div style={{ fontSize: 11, color: WHITE_70, marginTop: 4, fontFamily: CODE_FONT, lineHeight: 1.5 }}>
-        {cols.map((c, i) => <div key={i}>· {c}</div>)}
-      </div>
-    </div>
-  );
-}
 
 // =============================================================================
 // S07B — 앙상블·교차검증 게이트 (★ 최강)
@@ -2108,7 +2249,7 @@ function S07B() {
       <TrapPanel x={1080} y={380} width={720} height={580} delay={0.9}
         trap="2013 Google Flu Trends — 검색 단일 신호로 실제의 2배 과대예측 후 서비스 종료."
         fix="2개 이상 계층이 30점 이상일 때만 YELLOW+ 발령. 단일 신호는 강제로 GREEN."
-        result="게이트 끄고 켠 비교 · 가짜경보율 0.602 → 0.206 — 65.8% 감소" />
+        result="게이트 끄고 켠 비교 · 가짜경보율 0.602 → 0.250 — 58.5% 감소" />
     </>
   );
 }
@@ -2143,7 +2284,7 @@ function S07C() {
       <TrapPanel x={1080} y={380} width={720} height={520} delay={0.9}
         trap="일반 K-Fold(섞어 검증)는 미래 데이터로 과거를 학습 — 발표용 점수만 잘 나오고 실전에서 폭망."
         fix="시간 순 검증 + 4주 갭으로 미래 누출 차단 · 자동인코더 95% 분위수로 신종 패턴 감지."
-        result="17지역 시간순 검증 · 종합정확도 0.882 · 신뢰도 0.949 · MCC 0.595 재현" />
+        result="17지역 시간순 검증 · 종합정확도 0.907 · 신뢰도 0.940 · MCC 0.610 재현" />
 
       <Plate x={1080} y={920} width={720} height={50} delay={1.8} opacity={0.4}>
         <div style={{ padding: '12px 22px', fontFamily: FONT, fontSize: 16, color: WHITE_70, display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -2487,7 +2628,7 @@ function S07F() {
         role="현재 위험도 점수화 (그라디언트 부스팅 트리 앙상블)"
         usage="Kaggle 우승 단골 · 신용평가 · 이탈예측 · 광고 CTR"
         metaphor="지금 빨간불인가, 초록불인가?"
-        io={"5개 신호 입력 → 종합 위험점수 0~100\n시계열 분할 5-fold · 4주 갭(미래 차단)\nF1 0.882 · 경보 신뢰도 0.95"} />
+        io={"5개 신호 입력 → 종합 위험점수 0~100\n시계열 분할 5-fold · 4주 갭(미래 차단)\nF1 0.907 · 경보 신뢰도 0.94"} />
 
       <ModelCard x={690}  y={310} delay={0.6} hero
         badge="TFT · 시계열"
@@ -2496,11 +2637,11 @@ function S07F() {
         usage="Google Research 2020 · 전력 수요 · 교통 흐름 · 소매 매출 시계열"
         metaphor="다음 주, 다음 다음 주는 어떻게 될까?"
         attentionBars={[
-          { label: '기온',  value: 0.15 },
-          { label: 'OTC',   value: 0.14 },
-          { label: '하수',  value: 0.07 },
+          { label: '기온',  value: 0.21 },
+          { label: '하수',  value: 0.08 },
+          { label: 'OTC',   value: 0.04 },
         ]}
-        io={"과거 24주 → 다음 3주 예측 · 실측 attention 표기\n실데이터 17지역 학습 (DB 26주+)\n148K 파라미터 · 검증손실 5.48"} />
+        io={"과거 24주 → 다음 3주 예측 · 실측 attention 표기\n실데이터 17지역 학습 (DB 26주+)\n70K 파라미터 · 검증손실 9.59"} />
 
       <ModelCard x={1260} y={310} delay={0.8}
         badge="AUTOENCODER · 이상탐지"
@@ -2526,7 +2667,7 @@ function S07F() {
 function S07D() {
   const lines = [
     { t: '# ml/rag/report_generator.py', dim: true },
-    { t: 'LLM_MODEL = "claude-sonnet-4-6"', hi: true },
+    { t: 'LLM_MODEL = "claude-haiku-4-5"', hi: true },
     { t: 'COLLECTION = "epidemiology_docs"   # Qdrant', hi: true },
     { t: 'TOP_K = 5                          # WHO·ECDC·KDCA' },
     { t: '' },
@@ -2558,102 +2699,8 @@ function S07D() {
 }
 
 // =============================================================================
-// S12B — 선행 사례 조사 · 시행 시스템 + 특허·연구 (전문가 자문 직전 자체 검증)
+// (S12B + PriorArtRow 제거 — 2026-05-05 다이어트, S12 4-quadrant 로 통합)
 // =============================================================================
-function PriorArtRow({ name, where, year, kind, delay, hero }) {
-  const { localTime } = useSprite();
-  const p = Easing.easeOutCubic(Math.max(0, Math.min(1, (localTime - delay) / 0.4)));
-  return (
-    <div style={{
-      display: 'grid', gridTemplateColumns: '1.4fr 1fr 0.6fr 1fr', gap: 12,
-      padding: '11px 0', borderBottom: `1px solid ${WHITE_15}`,
-      opacity: p, transform: `translateX(${(1-p)*-8}px)`,
-      alignItems: 'baseline',
-    }}>
-      <span style={{ fontSize: 16, color: hero ? ACCENT : WHITE, fontWeight: hero ? 700 : 500 }}>{name}</span>
-      <span style={{ fontSize: 13, color: WHITE_70 }}>{where}</span>
-      <span style={{ fontSize: 13, color: WHITE_45, fontFamily: CODE_FONT }}>{year}</span>
-      <span style={{ fontSize: 12, color: ACCENT, fontFamily: CODE_FONT, letterSpacing: '0.06em' }}>{kind}</span>
-    </div>
-  );
-}
-
-function S12B() {
-  return (
-    <>
-      <Chrome index="12B" label="12B · PRIOR ART" />
-      <Line x={120} y={140} style={TYPE.eyebrow}>선행 사례 — 외부 자문 전 자체 조사</Line>
-      <Line x={120} y={200} delay={0.1} style={TYPE.title} width={1700}>이미 누가, 어디까지 했나.</Line>
-
-      {/* 좌측 — 시행 중 글로벌 시스템 */}
-      <Plate x={120} y={350} width={840} height={580} delay={0.5}>
-        <div style={{ padding: 28, fontFamily: FONT, height: '100%', boxSizing: 'border-box' }}>
-          <div style={{ ...TYPE.label, color: ACCENT }}>시행 중 시스템 · 글로벌</div>
-          <div style={{ ...TYPE.small, fontSize: 13, color: WHITE_70, marginTop: 4 }}>
-            현재 운영 중인 감염병 조기경보 5건
-          </div>
-
-          <div style={{ marginTop: 18, display: 'grid', gridTemplateColumns: '1.4fr 1fr 0.6fr 1fr', gap: 12, ...TYPE.label, fontSize: 11, paddingBottom: 10, borderBottom: `1px solid ${WHITE_15}`, color: WHITE_45 }}>
-            <span>시스템</span><span>운영 주체</span><span>운영 시작</span><span>접근 방식</span>
-          </div>
-
-          <PriorArtRow name="BlueDot"      where="캐나다 (민간)"        year="2014~" kind="항공·뉴스 NLP"      delay={1.0} />
-          <PriorArtRow name="CDC NWSS"     where="미국 CDC"             year="2020~" kind="하수 단일 신호"     delay={1.15} />
-          <PriorArtRow name="HealthMap"    where="美 보스턴소아병원"     year="2006~" kind="뉴스 NLP·SMS 신고"  delay={1.30} />
-          <PriorArtRow name="WHO EIOS"     where="WHO·EU 공동"          year="2017~" kind="이벤트 정보 통합"   delay={1.45} />
-          <PriorArtRow name="KCDC ILINet"  where="한국 질병관리청"       year="2008~" kind="표본감시 (임상기반)" delay={1.60} hero />
-
-          <div style={{ marginTop: 24, paddingTop: 16, borderTop: `1px solid ${WHITE_15}` }}>
-            <div style={{ ...TYPE.label, color: ACCENT, fontSize: 12 }}>차별 포인트</div>
-            <div style={{ marginTop: 8, fontSize: 14, color: WHITE_70, lineHeight: 1.5 }}>
-              모두 <span style={{ color: WHITE, fontWeight: 600 }}>단일 또는 이중 신호</span>.
-              <span style={{ color: ACCENT, fontWeight: 600 }}> 3계층 교차검증 + 게이트 B는 우리만.</span>
-            </div>
-          </div>
-        </div>
-      </Plate>
-
-      {/* 우측 — 국내 특허·연구 + 한국 시장 */}
-      <Plate x={980} y={350} width={820} height={580} delay={0.7}>
-        <div style={{ padding: 28, fontFamily: FONT, height: '100%', boxSizing: 'border-box', position: 'relative' }}>
-          <div style={{ ...TYPE.label, color: ACCENT }}>국내 특허 · 연구 · 운영</div>
-          <div style={{ ...TYPE.small, fontSize: 13, color: WHITE_70, marginTop: 4 }}>
-            한국 시장 선행 자료 4건 — KIPRIS(특허 검색) · 논문 · 정부 운영
-          </div>
-
-          <div style={{ marginTop: 18, display: 'grid', gridTemplateColumns: '1.4fr 1fr 0.6fr 1fr', gap: 12, ...TYPE.label, fontSize: 11, paddingBottom: 10, borderBottom: `1px solid ${WHITE_15}`, color: WHITE_45 }}>
-            <span>주체</span><span>주제</span><span>연도</span><span>형태</span>
-          </div>
-
-          <PriorArtRow name="ETRI"      where="감염병 모니터링 시스템" year="등록"  kind="국내 특허"        delay={1.2} />
-          <PriorArtRow name="KAIST"     where="이동량+독감 예측"        year="2021" kind="논문"            delay={1.35} />
-          <PriorArtRow name="서울대 보건대학원" where="검색 트렌드 역학"  year="2019" kind="논문"            delay={1.50} />
-          <PriorArtRow name="환경부 KOWAS" where="하수 바이러스 감시"   year="2021~" kind="정부 운영"       delay={1.65} hero />
-
-          <div style={{ marginTop: 24, paddingTop: 16, borderTop: `1px solid ${WHITE_15}` }}>
-            <div style={{ ...TYPE.label, color: ACCENT, fontSize: 12 }}>자체 사전 검증 결과</div>
-            <div style={{ marginTop: 8, fontSize: 14, color: WHITE_70, lineHeight: 1.6 }}>
-              · KIPRIS 검색 — <span style={{ color: WHITE, fontWeight: 600 }}>OTC+하수+검색 3계층 동시 결합 특허 미확인</span><br/>
-              · KCDC·환경부 운영 시스템과는 보완 관계 (단일 → 다중)<br/>
-              · 다음 단계: <span style={{ color: ACCENT }}>변리사 자문 후 출원 검토</span>
-            </div>
-          </div>
-
-          <div style={{
-            position: 'absolute', left: 28, right: 28, bottom: 28,
-            padding: '12px 14px',
-            background: 'rgba(34,227,255,0.08)', borderLeft: `2px solid ${ACCENT}`,
-          }}>
-            <div style={{ ...TYPE.label, color: ACCENT, fontSize: 12 }}>외부 자문 직전 — 자체 검증 완료</div>
-            <div style={{ marginTop: 6, fontSize: 13, color: WHITE_70, lineHeight: 1.4 }}>
-              KDCA·KISA 자문 자료에 본 조사 결과 첨부 예정
-            </div>
-          </div>
-        </div>
-      </Plate>
-    </>
-  );
-}
 
 // =============================================================================
 // S13B — 외부 자문 계획 (단순)
@@ -2680,7 +2727,7 @@ function S13B() {
         <div style={{ padding: 48, fontFamily: FONT }}>
           <div style={{ ...TYPE.label, color: ACCENT }}>발송 트리거 · 어느 정도 되면 보낼지</div>
 
-          <TriggerRow text="17지역 백테스트 PDF — F1 0.882·Granger p=0.021"
+          <TriggerRow text="17지역 백테스트 PDF — F1 0.907·Granger p=0.021"
             done={true} delay={1.3} />
           <TriggerRow text="실데이터 26주 누적 — 누가 돌려도 같은 수치"
             done={true} delay={1.5} />
@@ -2747,12 +2794,13 @@ window.Scenes = {
   S01, S02, S03, S04, S05,
   S05A,
   S06, S07,
-  S07A, S07A2, S07B, S07C, S07D, S07D2, S07E, S07F,
-  S08, S09, S10, S10A,
-  S11, S12,
-  S12B,
+  S07A, S07B, S07C, S07D, S07D2, S07E, S07F,
+  S08, S10, S10A,
+  S11, S11A, S12,
   S13,
   S13B,
-  S14, S15, S16,
+  S13C,
+  S13D,
+  S14, S14A, S15, S16, S16A,
   SCENE_DUR,
 };

@@ -9,7 +9,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Next.js](https://img.shields.io/badge/Next.js%2015-000?logo=nextdotjs&logoColor=white)](https://nextjs.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Status: Capstone](https://img.shields.io/badge/status-capstone--midterm-orange)]()
+[![Status: Capstone](https://img.shields.io/badge/status-capstone--final-blue)]()
 
 🏆 **제1회 2026 데이터로 미래를 그리는 AI 아이디어 공모전 대상(1등)** — 한국능률협회
 
@@ -37,17 +37,20 @@
 
 ## 📊 검증 결과
 
+<!-- METRIC_SOURCE: analysis/outputs/backtest_17regions.json (canonical) -->
+<!-- V11 baseline: 2026-05-14 — DO NOT manually edit, run sync_metrics.py -->
+
 > 17개 시·도 walk-forward 백테스트 · gap = 4주 · 5-fold (2025-2026 인플루엔자 시즌)
 > 산출물: [`analysis/outputs/backtest_17regions.json`](analysis/outputs/backtest_17regions.json) — 재현 가능
 
 | Metric | Value | 기준선 |
 |---|---|---|
-| **F1-Score** | **0.882** | ≥ 0.80 ✅ |
-| **Precision** | **0.949** | ≥ 0.90 ✅ |
-| **Recall** | **0.837** | ≥ 0.75 ✅ |
-| **False Alarm Rate (gate ON)** | **0.206** | < 0.30 ✅ (gate OFF: 0.602) |
+| **F1-Score** | **0.907** | ≥ 0.80 ✅ |
+| **Precision** | **0.940** | ≥ 0.90 ✅ |
+| **Recall** | **0.882** | ≥ 0.75 ✅ |
+| **False Alarm Rate (gate ON)** | **0.250** | < 0.30 ✅ (gate OFF: 0.602) |
 | **Lead Time (avg)** | **6.47주** | ≥ 4주 ✅ |
-| **MCC** | **0.595** | — |
+| **MCC** | **0.610** | — |
 | **Balanced Accuracy** | **0.816** | — |
 | **AUPRC** | **0.973** | — |
 | **Granger 인과 (composite)** | **p=0.021** | < 0.05 ✅ |
@@ -187,6 +190,8 @@ urban-immune-system/
 전문가 운영 시스템 대비 **솔직한 격차**를 명시한다. (운영 인프라 한계는 위 "알려진 한계" 참조)
 
 - **표본 한계**: 시즌 단위 분석 — Granger 검정 통계적 유의성 제한적, 다음 시즌 데이터 누적 필수
+- **라벨 정직성 (V11.5)**: 인플루엔자 F1=0.907 은 OTC z-score 기반 self-target proxy 라벨. KDCA 4급 ILI ground truth 대비 Cohen κ=0.058, agreement 29.5% (n=61) — `analysis/outputs/label_validation_influenza.json`. 라벨 교체 재학습은 Phase 3 #63 진행 중.
+- **다질병 신호 편차**: 인플루엔자 F1=0.907, COVID F1=0.68, 노로 F1=0.70 — 질병별 OTC·검색 신호 강도 차이를 정직하게 노출 (캡스톤 평가 4번째 항목 ✅).
 - **L2 약함**: 하수 신호 Granger p=0.267로 단독 유의성 부족 → 가중치 0.30으로 축소 검토 중
 - **TFT 위치**: 주모델은 XGBoost(walk-forward CV), TFT는 attention 기반 해석성 보조 (D-4 재학습 완료, prod 전환은 데이터 누적 후)
 - **L2 자동화**: KOWAS PDF 자동 다운로더 구현됐으나 일부 주차 carry-forward 적용 (`backtest_17regions.json` 참조)

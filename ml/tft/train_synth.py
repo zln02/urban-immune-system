@@ -13,6 +13,7 @@ CLI:
   python -m ml.tft.train_synth                  # 기본: 5 epoch, 1 region
   python -m ml.tft.train_synth --epochs 20      # 더 길게
 """
+
 from __future__ import annotations
 
 import argparse
@@ -46,8 +47,8 @@ GROUP_COL = "region"
 TIME_IDX_COL = "time_idx"
 LEAD_WEEKS = 2  # t+2주 후 확진자 예측
 
-MAX_ENCODER = 24       # 24주 과거 입력
-MAX_PREDICTION = 3     # 1/2/3주 후 예측 (= 7/14/21일)
+MAX_ENCODER = 24  # 24주 과거 입력
+MAX_PREDICTION = 3  # 1/2/3주 후 예측 (= 7/14/21일)
 
 
 def _make_dataframe(n_weeks: int = 104, n_regions: int = 1, seed: int = 42) -> pd.DataFrame:
@@ -149,13 +150,15 @@ def _attention_summary(model: TemporalFusionTransformer, dataset: TimeSeriesData
         per_variable = var_t.mean(dim=(0, 1)).tolist() if var_t.ndim >= 3 else var_t.mean().tolist()
 
         # 한국어 1줄 요약: 실제 피처 변수만 필터링 후 top-3
-        importance_values = per_variable[0] if (
-            isinstance(per_variable, list) and per_variable and isinstance(per_variable[0], list)
-        ) else per_variable
+        importance_values = (
+            per_variable[0]
+            if (isinstance(per_variable, list) and per_variable and isinstance(per_variable[0], list))
+            else per_variable
+        )
 
         feature_pairs = [
             (var, importance_values[i])
-            for i, var in enumerate(_ENCODER_VAR_ORDER[:len(importance_values)])
+            for i, var in enumerate(_ENCODER_VAR_ORDER[: len(importance_values)])
             if var in _FEATURE_VARS
         ]
         feature_pairs.sort(key=lambda x: x[1], reverse=True)
@@ -262,12 +265,14 @@ def main() -> int:
     if loss_csv.exists():
         m = pd.read_csv(loss_csv)
         for _, r in m.iterrows():
-            loss_curve.append({
-                "epoch": int(r["epoch"]) if not pd.isna(r.get("epoch")) else None,
-                "step": int(r["step"]) if not pd.isna(r.get("step")) else None,
-                "train_loss": float(r["train_loss_step"]) if not pd.isna(r.get("train_loss_step")) else None,
-                "val_loss": float(r["val_loss"]) if not pd.isna(r.get("val_loss")) else None,
-            })
+            loss_curve.append(
+                {
+                    "epoch": int(r["epoch"]) if not pd.isna(r.get("epoch")) else None,
+                    "step": int(r["step"]) if not pd.isna(r.get("step")) else None,
+                    "train_loss": float(r["train_loss_step"]) if not pd.isna(r.get("train_loss_step")) else None,
+                    "val_loss": float(r["val_loss"]) if not pd.isna(r.get("val_loss")) else None,
+                }
+            )
 
     # 검증 예측 + 점 비교
     pred = model.predict(val_loader, mode="prediction")

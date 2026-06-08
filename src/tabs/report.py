@@ -31,8 +31,8 @@ def render_report_tab(region: str) -> None:
                     <h3>감염병 조기경보 — {region}</h3>
                     <p>발령: {issued_at} · 경보단계: {level} · 종합점수: {score}</p>
                 </div>
-                <p>{alert['summary']}</p>
-                <div class="recommend-box"><strong>권고사항</strong><br>{alert.get('recommendations', '')}</div>
+                <p>{alert["summary"]}</p>
+                <div class="recommend-box"><strong>권고사항</strong><br>{alert.get("recommendations", "")}</div>
             </div>
             """,
             unsafe_allow_html=True,

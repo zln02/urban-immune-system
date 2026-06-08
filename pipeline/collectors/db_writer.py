@@ -4,6 +4,7 @@ Kafka Consumer 없이 layer_signals 테이블에 직접 비동기 INSERT한다.
 발표 데모 단순화 옵션 (pipeline/CLAUDE.md 참조):
   cron + DB INSERT 방식으로 Kafka 파이프라인을 대체.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -94,7 +95,10 @@ async def insert_signal(
     except Exception as exc:
         logger.error(
             "layer_signals INSERT 실패 (layer=%s pathogen=%s region=%s): %s",
-            layer, pathogen, region, exc,
+            layer,
+            pathogen,
+            region,
+            exc,
         )
         raise
 
@@ -124,8 +128,7 @@ async def delete_signal_range(
         )
     deleted = int(result.split()[-1]) if result else 0
     if deleted:
-        logger.info("멱등성 DELETE: layer=%s source=%s ≥%s → %d행 제거",
-                    layer, source, start_ts.date(), deleted)
+        logger.info("멱등성 DELETE: layer=%s source=%s ≥%s → %d행 제거", layer, source, start_ts.date(), deleted)
     return deleted
 
 
@@ -138,24 +141,33 @@ def insert_signal_sync(
 ) -> None:
     """insert_signal()의 동기 래퍼. 비동기 루프가 없는 수집기에서 호출한다.
 
-    이미 실행 중인 이벤트 루프가 있으면 run_until_complete,
-    없으면 asyncio.run()을 사용한다.
-
     Args:
         region: 지역명
         layer: 계층 코드 ('otc' | 'wastewater' | 'search' | 'weather')
         value: 정규화 지수 (0-100)
         raw_value: 원시 측정값 (선택)
         source: 데이터 출처 식별자 (선택)
+
+    Notes:
+        asyncio.run()은 매 호출마다 새 이벤트 루프를 생성·폐기한다.
+        _pool 싱글톤은 생성된 루프에 귀속되므로, 루프가 달라지면
+        "Future attached to a different loop" 오류가 발생한다.
+        호출 전 _pool을 None으로 리셋하여 항상 현재 루프에서 새 풀을 생성한다.
     """
+    global _pool
+    # 이전 asyncio.run()이 만든 루프가 닫힌 경우 _pool이 stale해짐.
+    # 새 루프에서 실행되기 전에 싱글톤을 리셋하여 재생성을 강제한다.
+    if _pool is not None:
+        try:
+            pool_loop = _pool._loop  # type: ignore[union-attr]
+            if pool_loop is None or pool_loop.is_closed():
+                _pool = None
+        except Exception:
+            _pool = None
     coro = insert_signal(region, layer, value, raw_value=raw_value, source=source)
     try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            # 이미 실행 중인 루프 안에서 호출된 경우 (드문 케이스)
-            loop.run_until_complete(coro)
-        else:
-            loop.run_until_complete(coro)
-    except RuntimeError:
-        # 이벤트 루프가 없거나 닫힌 경우
         asyncio.run(coro)
+    except RuntimeError:
+        # 이미 실행 중인 이벤트 루프가 있는 경우 (드문 케이스)
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(coro)

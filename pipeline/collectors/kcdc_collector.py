@@ -14,6 +14,7 @@ CLI 사용법:
 수집 필드:
     region, disease, iso_week, week_start, case_count, per_100k
 """
+
 from __future__ import annotations
 
 import argparse
@@ -77,23 +78,23 @@ REGIONS_17: list[str] = list({v for v in KCDC_REGION_MAP.values()})
 
 # 지역별 인구 (2024년 행정안전부 기준, 명)
 REGION_POPULATION: dict[str, int] = {
-    "서울특별시":    9_604_000,
-    "부산광역시":    3_333_000,
-    "대구광역시":    2_380_000,
-    "인천광역시":    2_977_000,
-    "광주광역시":    1_451_000,
-    "대전광역시":    1_463_000,
-    "울산광역시":    1_107_000,
-    "세종특별자치시":  390_000,
-    "경기도":       13_568_000,
+    "서울특별시": 9_604_000,
+    "부산광역시": 3_333_000,
+    "대구광역시": 2_380_000,
+    "인천광역시": 2_977_000,
+    "광주광역시": 1_451_000,
+    "대전광역시": 1_463_000,
+    "울산광역시": 1_107_000,
+    "세종특별자치시": 390_000,
+    "경기도": 13_568_000,
     "강원특별자치도": 1_540_000,
-    "충청북도":      1_605_000,
-    "충청남도":      2_135_000,
-    "전라북도":      1_777_000,
-    "전라남도":      1_821_000,
-    "경상북도":      2_601_000,
-    "경상남도":      3_308_000,
-    "제주특별자치도":   676_000,
+    "충청북도": 1_605_000,
+    "충청남도": 2_135_000,
+    "전라북도": 1_777_000,
+    "전라남도": 1_821_000,
+    "경상북도": 2_601_000,
+    "경상남도": 3_308_000,
+    "제주특별자치도": 676_000,
 }
 
 # ──────────────────────── 내장 아카이브 데이터 ────────────────────────────
@@ -105,13 +106,13 @@ _NATIONAL_ARCHIVE: dict[str, dict[str, Any]] = {
     # iso_week : {week_start, national_case_count (추정), ili_rate}
     # ILI(인플루엔자 의사환자) 비율: 외래환자 1,000명당
     # case_count: ILI율 × 추정 외래환자수 / 1000 (전국 추산)
-    "2025-W40": {"week_start": "2025-09-29", "case_count":  18_200, "ili_rate":  2.1},
-    "2025-W41": {"week_start": "2025-10-06", "case_count":  22_400, "ili_rate":  2.6},
-    "2025-W42": {"week_start": "2025-10-13", "case_count":  28_100, "ili_rate":  3.3},
-    "2025-W43": {"week_start": "2025-10-20", "case_count":  41_300, "ili_rate":  4.8},
-    "2025-W44": {"week_start": "2025-10-27", "case_count":  52_800, "ili_rate":  6.1},
-    "2025-W45": {"week_start": "2025-11-03", "case_count":  71_200, "ili_rate":  8.3},
-    "2025-W46": {"week_start": "2025-11-10", "case_count":  98_700, "ili_rate": 11.5},
+    "2025-W40": {"week_start": "2025-09-29", "case_count": 18_200, "ili_rate": 2.1},
+    "2025-W41": {"week_start": "2025-10-06", "case_count": 22_400, "ili_rate": 2.6},
+    "2025-W42": {"week_start": "2025-10-13", "case_count": 28_100, "ili_rate": 3.3},
+    "2025-W43": {"week_start": "2025-10-20", "case_count": 41_300, "ili_rate": 4.8},
+    "2025-W44": {"week_start": "2025-10-27", "case_count": 52_800, "ili_rate": 6.1},
+    "2025-W45": {"week_start": "2025-11-03", "case_count": 71_200, "ili_rate": 8.3},
+    "2025-W46": {"week_start": "2025-11-10", "case_count": 98_700, "ili_rate": 11.5},
     "2025-W47": {"week_start": "2025-11-17", "case_count": 134_500, "ili_rate": 15.7},
     "2025-W48": {"week_start": "2025-11-24", "case_count": 172_300, "ili_rate": 20.1},
     "2025-W49": {"week_start": "2025-12-01", "case_count": 198_600, "ili_rate": 23.2},
@@ -123,77 +124,77 @@ _NATIONAL_ARCHIVE: dict[str, dict[str, Any]] = {
     "2026-W03": {"week_start": "2026-01-12", "case_count": 148_500, "ili_rate": 17.3},
     "2026-W04": {"week_start": "2026-01-19", "case_count": 131_200, "ili_rate": 15.3},
     "2026-W05": {"week_start": "2026-01-26", "case_count": 112_800, "ili_rate": 13.2},
-    "2026-W06": {"week_start": "2026-02-02", "case_count":  94_300, "ili_rate": 11.0},
-    "2026-W07": {"week_start": "2026-02-09", "case_count":  78_600, "ili_rate":  9.2},
-    "2026-W08": {"week_start": "2026-02-16", "case_count":  62_400, "ili_rate":  7.3},
-    "2026-W09": {"week_start": "2026-02-23", "case_count":  49_800, "ili_rate":  5.8},
-    "2026-W10": {"week_start": "2026-03-02", "case_count":  38_200, "ili_rate":  4.5},
-    "2026-W11": {"week_start": "2026-03-09", "case_count":  29_600, "ili_rate":  3.5},
-    "2026-W12": {"week_start": "2026-03-16", "case_count":  23_100, "ili_rate":  2.7},
-    "2026-W13": {"week_start": "2026-03-23", "case_count":  18_800, "ili_rate":  2.2},
-    "2026-W14": {"week_start": "2026-03-30", "case_count":  15_700, "ili_rate":  1.8},
-    "2026-W15": {"week_start": "2026-04-06", "case_count":  12_900, "ili_rate":  1.5},
-    "2026-W16": {"week_start": "2026-04-13", "case_count":  11_200, "ili_rate":  1.3},
+    "2026-W06": {"week_start": "2026-02-02", "case_count": 94_300, "ili_rate": 11.0},
+    "2026-W07": {"week_start": "2026-02-09", "case_count": 78_600, "ili_rate": 9.2},
+    "2026-W08": {"week_start": "2026-02-16", "case_count": 62_400, "ili_rate": 7.3},
+    "2026-W09": {"week_start": "2026-02-23", "case_count": 49_800, "ili_rate": 5.8},
+    "2026-W10": {"week_start": "2026-03-02", "case_count": 38_200, "ili_rate": 4.5},
+    "2026-W11": {"week_start": "2026-03-09", "case_count": 29_600, "ili_rate": 3.5},
+    "2026-W12": {"week_start": "2026-03-16", "case_count": 23_100, "ili_rate": 2.7},
+    "2026-W13": {"week_start": "2026-03-23", "case_count": 18_800, "ili_rate": 2.2},
+    "2026-W14": {"week_start": "2026-03-30", "case_count": 15_700, "ili_rate": 1.8},
+    "2026-W15": {"week_start": "2026-04-06", "case_count": 12_900, "ili_rate": 1.5},
+    "2026-W16": {"week_start": "2026-04-13", "case_count": 11_200, "ili_rate": 1.3},
     # 이전 절기 (backfill 60주를 위한 2025 전반기)
     "2025-W01": {"week_start": "2024-12-30", "case_count": 156_400, "ili_rate": 18.3},
     "2025-W02": {"week_start": "2025-01-06", "case_count": 142_300, "ili_rate": 16.6},
     "2025-W03": {"week_start": "2025-01-13", "case_count": 121_800, "ili_rate": 14.2},
     "2025-W04": {"week_start": "2025-01-20", "case_count": 108_200, "ili_rate": 12.6},
-    "2025-W05": {"week_start": "2025-01-27", "case_count":  93_400, "ili_rate": 10.9},
-    "2025-W06": {"week_start": "2025-02-03", "case_count":  79_600, "ili_rate":  9.3},
-    "2025-W07": {"week_start": "2025-02-10", "case_count":  65_200, "ili_rate":  7.6},
-    "2025-W08": {"week_start": "2025-02-17", "case_count":  52_100, "ili_rate":  6.1},
-    "2025-W09": {"week_start": "2025-02-24", "case_count":  41_800, "ili_rate":  4.9},
-    "2025-W10": {"week_start": "2025-03-03", "case_count":  33_400, "ili_rate":  3.9},
-    "2025-W11": {"week_start": "2025-03-10", "case_count":  26_200, "ili_rate":  3.1},
-    "2025-W12": {"week_start": "2025-03-17", "case_count":  21_100, "ili_rate":  2.5},
-    "2025-W13": {"week_start": "2025-03-24", "case_count":  17_800, "ili_rate":  2.1},
-    "2025-W14": {"week_start": "2025-03-31", "case_count":  14_600, "ili_rate":  1.7},
-    "2025-W15": {"week_start": "2025-04-07", "case_count":  12_300, "ili_rate":  1.4},
-    "2025-W16": {"week_start": "2025-04-14", "case_count":  10_800, "ili_rate":  1.3},
-    "2025-W17": {"week_start": "2025-04-21", "case_count":   9_600, "ili_rate":  1.1},
-    "2025-W18": {"week_start": "2025-04-28", "case_count":   9_100, "ili_rate":  1.1},
-    "2025-W19": {"week_start": "2025-05-05", "case_count":   8_700, "ili_rate":  1.0},
-    "2025-W20": {"week_start": "2025-05-12", "case_count":   8_200, "ili_rate":  1.0},
-    "2025-W21": {"week_start": "2025-05-19", "case_count":   7_900, "ili_rate":  0.9},
-    "2025-W22": {"week_start": "2025-05-26", "case_count":   7_600, "ili_rate":  0.9},
-    "2025-W23": {"week_start": "2025-06-02", "case_count":   7_400, "ili_rate":  0.9},
-    "2025-W24": {"week_start": "2025-06-09", "case_count":   7_200, "ili_rate":  0.8},
-    "2025-W25": {"week_start": "2025-06-16", "case_count":   7_100, "ili_rate":  0.8},
-    "2025-W26": {"week_start": "2025-06-23", "case_count":   7_000, "ili_rate":  0.8},
-    "2025-W27": {"week_start": "2025-06-30", "case_count":   7_200, "ili_rate":  0.8},
-    "2025-W28": {"week_start": "2025-07-07", "case_count":   7_800, "ili_rate":  0.9},
-    "2025-W29": {"week_start": "2025-07-14", "case_count":   8_900, "ili_rate":  1.0},
-    "2025-W30": {"week_start": "2025-07-21", "case_count":  10_200, "ili_rate":  1.2},
-    "2025-W31": {"week_start": "2025-07-28", "case_count":  11_800, "ili_rate":  1.4},
-    "2025-W32": {"week_start": "2025-08-04", "case_count":  13_100, "ili_rate":  1.5},
-    "2025-W33": {"week_start": "2025-08-11", "case_count":  13_800, "ili_rate":  1.6},
-    "2025-W34": {"week_start": "2025-08-18", "case_count":  14_200, "ili_rate":  1.7},
-    "2025-W35": {"week_start": "2025-08-25", "case_count":  14_600, "ili_rate":  1.7},
-    "2025-W36": {"week_start": "2025-09-01", "case_count":  15_100, "ili_rate":  1.8},
-    "2025-W37": {"week_start": "2025-09-08", "case_count":  15_800, "ili_rate":  1.8},
-    "2025-W38": {"week_start": "2025-09-15", "case_count":  16_400, "ili_rate":  1.9},
-    "2025-W39": {"week_start": "2025-09-22", "case_count":  17_200, "ili_rate":  2.0},
+    "2025-W05": {"week_start": "2025-01-27", "case_count": 93_400, "ili_rate": 10.9},
+    "2025-W06": {"week_start": "2025-02-03", "case_count": 79_600, "ili_rate": 9.3},
+    "2025-W07": {"week_start": "2025-02-10", "case_count": 65_200, "ili_rate": 7.6},
+    "2025-W08": {"week_start": "2025-02-17", "case_count": 52_100, "ili_rate": 6.1},
+    "2025-W09": {"week_start": "2025-02-24", "case_count": 41_800, "ili_rate": 4.9},
+    "2025-W10": {"week_start": "2025-03-03", "case_count": 33_400, "ili_rate": 3.9},
+    "2025-W11": {"week_start": "2025-03-10", "case_count": 26_200, "ili_rate": 3.1},
+    "2025-W12": {"week_start": "2025-03-17", "case_count": 21_100, "ili_rate": 2.5},
+    "2025-W13": {"week_start": "2025-03-24", "case_count": 17_800, "ili_rate": 2.1},
+    "2025-W14": {"week_start": "2025-03-31", "case_count": 14_600, "ili_rate": 1.7},
+    "2025-W15": {"week_start": "2025-04-07", "case_count": 12_300, "ili_rate": 1.4},
+    "2025-W16": {"week_start": "2025-04-14", "case_count": 10_800, "ili_rate": 1.3},
+    "2025-W17": {"week_start": "2025-04-21", "case_count": 9_600, "ili_rate": 1.1},
+    "2025-W18": {"week_start": "2025-04-28", "case_count": 9_100, "ili_rate": 1.1},
+    "2025-W19": {"week_start": "2025-05-05", "case_count": 8_700, "ili_rate": 1.0},
+    "2025-W20": {"week_start": "2025-05-12", "case_count": 8_200, "ili_rate": 1.0},
+    "2025-W21": {"week_start": "2025-05-19", "case_count": 7_900, "ili_rate": 0.9},
+    "2025-W22": {"week_start": "2025-05-26", "case_count": 7_600, "ili_rate": 0.9},
+    "2025-W23": {"week_start": "2025-06-02", "case_count": 7_400, "ili_rate": 0.9},
+    "2025-W24": {"week_start": "2025-06-09", "case_count": 7_200, "ili_rate": 0.8},
+    "2025-W25": {"week_start": "2025-06-16", "case_count": 7_100, "ili_rate": 0.8},
+    "2025-W26": {"week_start": "2025-06-23", "case_count": 7_000, "ili_rate": 0.8},
+    "2025-W27": {"week_start": "2025-06-30", "case_count": 7_200, "ili_rate": 0.8},
+    "2025-W28": {"week_start": "2025-07-07", "case_count": 7_800, "ili_rate": 0.9},
+    "2025-W29": {"week_start": "2025-07-14", "case_count": 8_900, "ili_rate": 1.0},
+    "2025-W30": {"week_start": "2025-07-21", "case_count": 10_200, "ili_rate": 1.2},
+    "2025-W31": {"week_start": "2025-07-28", "case_count": 11_800, "ili_rate": 1.4},
+    "2025-W32": {"week_start": "2025-08-04", "case_count": 13_100, "ili_rate": 1.5},
+    "2025-W33": {"week_start": "2025-08-11", "case_count": 13_800, "ili_rate": 1.6},
+    "2025-W34": {"week_start": "2025-08-18", "case_count": 14_200, "ili_rate": 1.7},
+    "2025-W35": {"week_start": "2025-08-25", "case_count": 14_600, "ili_rate": 1.7},
+    "2025-W36": {"week_start": "2025-09-01", "case_count": 15_100, "ili_rate": 1.8},
+    "2025-W37": {"week_start": "2025-09-08", "case_count": 15_800, "ili_rate": 1.8},
+    "2025-W38": {"week_start": "2025-09-15", "case_count": 16_400, "ili_rate": 1.9},
+    "2025-W39": {"week_start": "2025-09-22", "case_count": 17_200, "ili_rate": 2.0},
 }
 
 # 지역 비율 (서울=전국의 약 18.6%, 실측 기반)
 _REGION_SHARE: dict[str, float] = {
-    "서울특별시":    0.186,
-    "경기도":        0.262,
-    "부산광역시":    0.064,
-    "대구광역시":    0.046,
-    "인천광역시":    0.057,
-    "광주광역시":    0.028,
-    "대전광역시":    0.028,
-    "울산광역시":    0.021,
+    "서울특별시": 0.186,
+    "경기도": 0.262,
+    "부산광역시": 0.064,
+    "대구광역시": 0.046,
+    "인천광역시": 0.057,
+    "광주광역시": 0.028,
+    "대전광역시": 0.028,
+    "울산광역시": 0.021,
     "세종특별자치시": 0.008,
     "강원특별자치도": 0.030,
-    "충청북도":      0.031,
-    "충청남도":      0.041,
-    "전라북도":      0.034,
-    "전라남도":      0.035,
-    "경상북도":      0.050,
-    "경상남도":      0.064,
+    "충청북도": 0.031,
+    "충청남도": 0.041,
+    "전라북도": 0.034,
+    "전라남도": 0.035,
+    "경상북도": 0.050,
+    "경상남도": 0.064,
     "제주특별자치도": 0.013,
 }
 
@@ -223,9 +224,7 @@ def _build_archive_records(
         entry = _NATIONAL_ARCHIVE[iso_week]
         national_count = entry["case_count"]
         week_start_str = entry["week_start"]
-        week_start_dt = datetime.strptime(week_start_str, "%Y-%m-%d").replace(
-            tzinfo=timezone.utc
-        )
+        week_start_dt = datetime.strptime(week_start_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
 
         for region in regions:
             share = _REGION_SHARE.get(region, 0.02)
@@ -263,10 +262,7 @@ async def _fetch_from_api(
         logger.info("DATA_GO_KR_API_KEY 미설정 — API 수집 건너뜀")
         return None
 
-    base_url = (
-        "https://openapi.data.go.kr/openapi/service/rest/"
-        "InfluenzaInfstatisticInfoService/getWeeklyInfState"
-    )
+    base_url = "https://openapi.data.go.kr/openapi/service/rest/InfluenzaInfstatisticInfoService/getWeeklyInfState"
     end_date = datetime.now(timezone.utc)
     start_date = end_date - timedelta(weeks=weeks)
 
@@ -291,6 +287,7 @@ async def _fetch_from_api(
 
         records: list[dict[str, Any]] = []
         for item in items:
+
             def _get(tag: str) -> str:
                 el = item.find(tag)
                 return el.text.strip() if el is not None and el.text else ""
@@ -302,9 +299,7 @@ async def _fetch_from_api(
                 year, week_num = int(yw[:4]), int(yw[4:])
                 iso_week = f"{year}-W{week_num:02d}"
                 # ISO 주의 월요일 계산
-                week_start_dt = datetime.strptime(f"{year}-W{week_num:02d}-1", "%Y-W%W-%w").replace(
-                    tzinfo=timezone.utc
-                )
+                week_start_dt = datetime.strptime(f"{year}-W{week_num:02d}-1", "%Y-W%W-%w").replace(tzinfo=timezone.utc)
             else:
                 continue
 
@@ -374,9 +369,13 @@ def collect_weekly_confirmed(
 # ──────────────────────── DB 적재 ─────────────────────────────────────────
 async def _insert_records(records: list[dict[str, Any]]) -> int:
     """confirmed_cases 테이블에 주간 확진자 데이터를 UPSERT한다."""
-    db_url = os.getenv("DATABASE_URL", "postgresql://uis_user:uis_dev_placeholder_20260414@localhost:5432/urban_immune")
-    if db_url.startswith("postgresql+asyncpg://"):
-        db_url = db_url.replace("postgresql+asyncpg://", "postgresql://", 1)
+    raw_url = os.getenv(
+        "DATABASE_URL", "postgresql://uis_user:uis_dev_placeholder_20260414@localhost:5432/urban_immune"
+    )
+    # asyncpg는 'postgresql://' 또는 'postgres://' 만 지원 — SQLAlchemy 스킴 변환
+    db_url = raw_url.replace("postgresql+asyncpg://", "postgresql://", 1).replace(
+        "postgres+asyncpg://", "postgresql://", 1
+    )
 
     pool = await asyncpg.create_pool(dsn=db_url, min_size=1, max_size=3)
     inserted = 0
@@ -441,16 +440,21 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     records = collect_weekly_confirmed(disease=args.disease, weeks=args.weeks)
-    print(f"\n수집 완료: {len(records)}개 레코드")
+    logger.info("수집 완료: %d개 레코드", len(records))
     if records:
-        print(f"기간: {records[0]['iso_week']} ~ {records[-1]['iso_week']}")
+        logger.info("기간: %s ~ %s", records[0]["iso_week"], records[-1]["iso_week"])
         seoul_records = [r for r in records if r["region"] == "서울특별시"]
         if seoul_records:
             peak = max(seoul_records, key=lambda x: x["case_count"])
-            print(f"서울 peak: {peak['iso_week']} ({peak['case_count']:,}명, {peak['per_100k']:.1f}/10만)")
+            logger.info(
+                "서울 peak: %s (%s명, %.1f/10만)",
+                peak["iso_week"],
+                f"{peak['case_count']:,}",
+                peak["per_100k"],
+            )
 
     if not args.dry_run:
         n = insert_confirmed_sync(records)
-        print(f"DB 적재 완료: {n}개 rows")
+        logger.info("DB 적재 완료: %d개 rows", n)
     else:
-        print("[dry-run] DB 저장 건너뜀")
+        logger.info("[dry-run] DB 저장 건너뜀")

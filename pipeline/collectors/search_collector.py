@@ -12,6 +12,7 @@
   - 전국 56주 시계열을 17지역에 복제, backfill_layer 내부 멱등성 DELETE 적용
   - scheduler.py 의 weekly job 으로 통합됨 (매주 월 09:05)
 """
+
 from __future__ import annotations
 
 

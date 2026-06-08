@@ -33,12 +33,13 @@ from pathlib import Path
 from typing import Any
 
 import matplotlib
+
 matplotlib.use("Agg")  # 헤드리스 서버 렌더링
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-import matplotlib.font_manager as fm
-import numpy as np
 import asyncpg
+import matplotlib.font_manager as fm
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
+import numpy as np
 
 # 한글 폰트 설정 (NanumGothic)
 _NANUM_PATH = "/usr/share/fonts/truetype/nanum/NanumGothic.ttf"
@@ -262,7 +263,6 @@ def map_confirmed_to_weeks(
     confirmed_cases.time 은 주 시작일(월요일) 기준이므로
     가장 가까운 주차에 매핑한다.
     """
-    from datetime import date
 
     week_map: dict[str, int] = {}
 
@@ -402,7 +402,8 @@ async def run_backtest(region: str = REGION) -> dict[str, Any]:
 
         composite   = compute_composite(l1, l2, l3)
         # scorer.py determine_alert_level 재사용 (직접 import)
-        alert_level = determine_alert_level(composite, l1, l2, l3)
+        # region 전달 → 지역별 Gate B threshold 적용 (약신호 지역 완화)
+        alert_level = determine_alert_level(composite, l1, l2, l3, region=region)
         confirmed_cnt = confirmed_map.get(iso_week, 0)
 
         if confirmed_cnt > peak_cases:
