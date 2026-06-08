@@ -101,6 +101,7 @@ def _build_features(
     df: pd.DataFrame,
     threshold: float,
     target_mode: str = "level",
+    kdca_labels: dict[tuple[int, int], int] | None = None,
 ) -> tuple[pd.DataFrame, list[str]]:
     """피처 + 라벨 빌드.
 
@@ -108,6 +109,10 @@ def _build_features(
         target_mode:
           'level'      → L2(t+2주) ≥ thr  (기존, proxy)
           'transition' → L2(t) < thr AND L2(t+2주) ≥ thr (음→양 전환만 양성)
+        kdca_labels:
+          None 이면 위 self-proxy 라벨 사용. dict 면 KDCA ILI ground truth 로 교체.
+          키: (iso_year, iso_week) at t+LEAD_WEEKS · 값: 0/1 label
+          → 행 t 의 alert_future = KDCA label at week (t+LEAD_WEEKS). 매칭 없는 행 drop.
     """
     out = []
     for region, g in df.groupby("region"):
@@ -115,7 +120,13 @@ def _build_features(
         if len(g) < LEAD_WEEKS + 6:
             continue
         g["l2_future"] = g["l2_wastewater"].shift(-LEAD_WEEKS)
-        if target_mode == "transition":
+        if kdca_labels is not None:
+            future_time = g["time"] + pd.Timedelta(weeks=LEAD_WEEKS)
+            future_iso = future_time.apply(
+                lambda t: (int(t.isocalendar().year), int(t.isocalendar().week))
+            )
+            g["alert_future"] = future_iso.map(kdca_labels)
+        elif target_mode == "transition":
             was_below = (g["l2_wastewater"] < threshold).astype(int)
             future_above = (g["l2_future"] >= threshold).astype(int)
             g["alert_future"] = (was_below & future_above).astype(int)
@@ -213,15 +224,20 @@ def _walk_forward(g: pd.DataFrame, features: list[str], min_n: int = 20,
 
 async def run_pathogen(pathogen: str, threshold: float, db_url: str,
                        prob_threshold: float = 0.5,
-                       target_mode: str = "level") -> dict:
-    logger.info("=== %s backtest (target=%s, alert=%s, prob=%s, lead=%d주) ===",
-                pathogen, target_mode, threshold, prob_threshold, LEAD_WEEKS)
+                       target_mode: str = "level",
+                       kdca_labels: dict[tuple[int, int], int] | None = None) -> dict:
+    label_src = "KDCA_ILI" if kdca_labels is not None else f"self-proxy ({target_mode})"
+    logger.info("=== %s backtest (target=%s, alert=%s, prob=%s, lead=%d주, labels=%s) ===",
+                pathogen, target_mode, threshold, prob_threshold, LEAD_WEEKS, label_src)
     raw = await _fetch_signals(db_url, pathogen)
     logger.info("DataFrame: %d행 × %d지역, 기간 %s ~ %s",
                 len(raw), raw["region"].nunique(), raw["time"].min(), raw["time"].max())
 
-    df_feat, features = _build_features(raw, threshold, target_mode=target_mode)
-    pos_rate = float(df_feat["alert_future"].mean())
+    df_feat, features = _build_features(raw, threshold, target_mode=target_mode,
+                                        kdca_labels=kdca_labels)
+    df_feat = df_feat.dropna(subset=["alert_future"]).copy()
+    df_feat["alert_future"] = df_feat["alert_future"].astype(int)
+    pos_rate = float(df_feat["alert_future"].mean()) if len(df_feat) else 0.0
     logger.info("피처 빌드: %d행, 피처 %d개, 양성 비율=%.2f%%",
                 len(df_feat), len(features), pos_rate * 100)
 
@@ -419,6 +435,11 @@ async def main() -> int:
     parser.add_argument("--prob", type=float, default=0.5, help="classification probability threshold")
     parser.add_argument("--target", choices=["level", "transition"], default="level",
                         help="level=기존 proxy, transition=음→양 전환만 양성 (proxy 한계 회피)")
+    parser.add_argument("--labels-from-kdca", type=str, default=None,
+                        help="KDCA 표본감시 CSV 디렉토리 경로. 지정 시 self-proxy 대신 "
+                             "KDCA ILI ground truth 라벨로 학습 (influenza 전용).")
+    parser.add_argument("--ili-threshold", type=float, default=5.8,
+                        help="KDCA ILI 유행 임계 (per 1000). 2024-25절기 기본 5.8.")
     parser.add_argument("--output", type=str, default=None)
     args = parser.parse_args()
 
@@ -431,10 +452,36 @@ async def main() -> int:
         logger.error("DATABASE_URL 환경변수 없음")
         return 2
 
-    result = await run_pathogen(args.pathogen, threshold, db_url,
-                                prob_threshold=args.prob, target_mode=args.target)
+    kdca_labels: dict[tuple[int, int], int] | None = None
+    if args.labels_from_kdca:
+        if args.pathogen != "influenza":
+            logger.error("--labels-from-kdca 는 influenza pathogen 전용 "
+                         "(KDCA 표본감시는 인플루엔자만 지원)")
+            return 2
+        from pipeline.collectors.kdca_sentinel_parser import (
+            parse_all_seasons,
+            to_epidemic_label,
+        )
+        records = parse_all_seasons(args.labels_from_kdca)
+        if not records:
+            logger.error("KDCA CSV 없음: %s", args.labels_from_kdca)
+            return 2
+        labels_list = to_epidemic_label(records, threshold=args.ili_threshold)
+        kdca_labels = {(int(r["iso_year"]), int(r["iso_week"])): int(r["label"])
+                       for r in labels_list}
+        pos = sum(kdca_labels.values())
+        logger.info("KDCA 라벨 로드: %d 주차, 양성 %d (%.1f%%), 임계 ILI≥%.1f/1000",
+                    len(kdca_labels), pos, 100 * pos / max(1, len(kdca_labels)),
+                    args.ili_threshold)
 
-    suffix = "_transition" if args.target == "transition" else ""
+    result = await run_pathogen(args.pathogen, threshold, db_url,
+                                prob_threshold=args.prob, target_mode=args.target,
+                                kdca_labels=kdca_labels)
+
+    suffix = (
+        "_kdca" if args.labels_from_kdca
+        else ("_transition" if args.target == "transition" else "")
+    )
     out = (Path(args.output) if args.output else
            Path(__file__).parent / "outputs" /
            f"backtest_xgboost_{args.pathogen}{suffix}_17regions.json")
