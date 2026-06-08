@@ -18,14 +18,14 @@ import asyncio
 import json
 import logging
 import sys
-from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
 import matplotlib
+
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
+import matplotlib.pyplot as plt
 import numpy as np
 
 _NANUM = "/usr/share/fonts/truetype/nanum/NanumGothic.ttf"
