@@ -1277,15 +1277,15 @@ function S11() {
       <Line x={120} y={140} style={TYPE.eyebrow}>실측 성능 · 17지역 백테스트</Line>
       <Line x={120} y={200} delay={0.1} style={TYPE.title}>숫자를 있는 그대로.</Line>
 
-      {/* 좌측: 평균 6.47주 mega + 지역별 lead 막대 + 메트릭 5개 */}
+      {/* 좌측: 평균 6.76주 mega + 지역별 lead 막대 + 메트릭 5개 */}
       <Plate x={120} y={340} width={1120} height={600} delay={0.5}>
         <div style={{ padding: 32, fontFamily: FONT, position: 'relative', height: '100%', boxSizing: 'border-box' }}>
           {/* 상단 — mega + LeadDistribution 그리드 */}
           <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 28, alignItems: 'center' }}>
             <div>
-              <Line x={0} y={0} delay={0.9} style={{ position: 'static', ...TYPE.mega, fontSize: 150, color: ACCENT }}>6.47</Line>
+              <Line x={0} y={0} delay={0.9} style={{ position: 'static', ...TYPE.mega, fontSize: 150, color: ACCENT }}>6.76</Line>
               <div style={{ fontSize: 22, color: WHITE, fontWeight: 600, letterSpacing: '-0.01em', marginTop: 4 }}>주 선행 평균</div>
-              <div style={{ ...TYPE.small, fontSize: 16, color: WHITE_70, marginTop: 4 }}>임상 확진 피크보다 6.47주 전 YELLOW</div>
+              <div style={{ ...TYPE.small, fontSize: 16, color: WHITE_70, marginTop: 4 }}>임상 확진 피크보다 6.76주 전 YELLOW</div>
             </div>
             <LeadDistribution delay={1.1} />
           </div>
@@ -1463,10 +1463,14 @@ function S11A() {
           <div style={{ ...TYPE.label, color: ACCENT }}>17 / 17 REGIONS</div>
           <div style={{ ...TYPE.mega, fontSize: 100, color: ACCENT, marginTop: 18, letterSpacing: '-0.03em' }}>ALL PASS</div>
           <div style={{ marginTop: 24, paddingTop: 20, borderTop: `1px solid ${WHITE_15}` }}>
-            <div style={{ ...TYPE.small, fontSize: 18, color: WHITE }}>F1 <span style={{ color: ACCENT, fontWeight: 700 }}>0.907</span></div>
+            <div style={{ ...TYPE.small, fontSize: 18, color: WHITE }}>F1 <span style={{ color: ACCENT, fontWeight: 700 }}>0.907</span> <span style={{ color: WHITE_45, fontSize: 14 }}>(self-proxy)</span></div>
             <div style={{ ...TYPE.small, fontSize: 18, color: WHITE, marginTop: 6 }}>Recall <span style={{ color: ACCENT, fontWeight: 700 }}>0.882</span> · Precision <span style={{ color: ACCENT, fontWeight: 700 }}>0.940</span></div>
             <div style={{ ...TYPE.small, fontSize: 18, color: WHITE, marginTop: 6 }}>Granger composite p=<span style={{ color: ACCENT, fontWeight: 700 }}>0.021</span></div>
             <div style={{ ...TYPE.small, fontSize: 18, color: WHITE, marginTop: 6 }}>L3 검색 p=<span style={{ color: ACCENT, fontWeight: 700 }}>0.007</span></div>
+            <div style={{ marginTop: 10, padding: '8px 10px', background: 'rgba(34,227,255,0.08)', border: `1px solid rgba(34,227,255,0.35)`, borderRadius: 4 }}>
+              <div style={{ ...TYPE.label, fontSize: 11, color: ACCENT }}>V11.6 · KDCA 임상 라벨 재학습</div>
+              <div style={{ ...TYPE.small, fontSize: 16, color: WHITE, marginTop: 4 }}>F1 <span style={{ color: ACCENT, fontWeight: 700 }}>0.96</span> · Precision <span style={{ color: ACCENT, fontWeight: 700 }}>1.00</span> · FAR <span style={{ color: ACCENT, fontWeight: 700 }}>0.0</span></div>
+            </div>
           </div>
           <div style={{ marginTop: 30, paddingTop: 20, borderTop: `1px solid ${WHITE_15}` }}>
             <div style={{ ...TYPE.label, color: WHITE_70, fontSize: 14 }}>FLU TRENDS 회피</div>
@@ -1481,6 +1485,51 @@ function S11A() {
       </Plate>
       <Line x={120} y={970} delay={2.4} style={{ ...TYPE.small, fontSize: 14, color: WHITE_45 }}>
         용어 — FAR: 거짓 경보 비율 · F1: 정확도 종합 점수(1.0=만점, 0.8이상 우수) · Gate B: 두 신호 이상 동시 충족 강제 · Granger: 통계적 선행성 검증
+      </Line>
+    </>
+  );
+}
+
+// ----- PathogenCard — 다질병 비교 카드 (S11B용) -----
+function PathogenCard({ name, f1, subtitle, detail, delay, accent }) {
+  return (
+    <div style={{
+      background: 'rgba(255,255,255,0.04)',
+      border: `1px solid ${accent ? 'rgba(34,227,255,0.5)' : 'rgba(255,255,255,0.12)'}`,
+      borderRadius: 8,
+      padding: '28px 24px',
+      animation: `fadeIn 0.6s ${delay}s both`,
+      display: 'flex', flexDirection: 'column', height: '100%',
+    }}>
+      <div style={{ ...TYPE.label, color: accent ? ACCENT : WHITE_70, fontSize: 13 }}>{subtitle}</div>
+      <div style={{ ...TYPE.title, fontSize: 32, color: WHITE, marginTop: 8 }}>{name}</div>
+      <div style={{ ...TYPE.mega, fontSize: 140, color: accent ? ACCENT : WHITE, marginTop: 24, letterSpacing: '-0.04em' }}>{f1}</div>
+      <div style={{ ...TYPE.small, fontSize: 14, color: WHITE_45, marginTop: -8 }}>F1-Score</div>
+      <div style={{ ...TYPE.small, fontSize: 16, color: WHITE_70, marginTop: 'auto', paddingTop: 20, lineHeight: 1.5 }}>{detail}</div>
+    </div>
+  );
+}
+
+// ----- S11B 다질병 비교 — 캡스톤 평가 4번째 항목 ✅ -----
+function S11B() {
+  return (
+    <>
+      <Chrome index="11B" label="11B · MULTI-PATHOGEN" />
+      <Line x={120} y={140} style={TYPE.eyebrow}>다질병 확장 · 캡스톤 평가 4번째 항목 ✅</Line>
+      <Line x={120} y={200} delay={0.1} style={TYPE.title}>한 시스템, 세 질병 검증.</Line>
+
+      <Plate x={120} y={340} width={1680} height={600} delay={0.5}>
+        <div style={{ padding: 36, fontFamily: FONT, height: '100%', boxSizing: 'border-box' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, height: '100%' }}>
+            <PathogenCard name="인플루엔자" f1="0.907" subtitle="V11 self-proxy / V11.6 KDCA 0.96" detail="L1 OTC + L2 KOWAS + L3 검색 — 3종 신호 모두 강함. V11.6 임상 라벨 재학습 후 F1=0.96 확인." accent delay={0.8} />
+            <PathogenCard name="COVID-19" f1="0.68" subtitle="PR #71 / #72 baseline" detail="OTC 신호 약함 · 변이 다양성으로 분산. transition 타깃 도입으로 0.55 → 0.68 개선." delay={1.0} />
+            <PathogenCard name="노로바이러스" f1="0.70" subtitle="PR #73 transition target" detail="단기 폭발 패턴 (식중독·집단발병). transition 타깃이 level 타깃 대비 우위 입증." delay={1.2} />
+          </div>
+        </div>
+      </Plate>
+
+      <Line x={120} y={970} delay={2.4} style={{ ...TYPE.small, fontSize: 14, color: WHITE_45 }}>
+        한 모델 · 한 파이프라인 · 한 대시보드 — pathogen 셀렉터로 라이브 시연 (PR #70). 질병별 신호 강도 차이를 정직 노출.
       </Line>
     </>
   );
@@ -1513,7 +1562,7 @@ function S12() {
       pos: 'br',
       title: '★ Urban Immune System',
       tag: '한국 · 캡스톤 · 2026',
-      bullets: ['3-Layer 정량 신호 (OTC·하수·검색)', '6.47주 선행 · 게이트 B 교차검증', '한국 first-mover · KIPRIS 미확인'],
+      bullets: ['3-Layer 정량 신호 (OTC·하수·검색)', '6.76주 선행 · 게이트 B 교차검증', '한국 first-mover · KIPRIS 미확인'],
       tone: 'hero',
     },
   ];
@@ -1566,6 +1615,50 @@ function QuadCard({ title, tag, bullets, tone, delay }) {
         })}
       </div>
     </div>
+  );
+}
+
+// ----- IncidentStage — 사고 단계 카드 (S12A용) -----
+function IncidentStage({ stage, when, title, body, delay, accent }) {
+  return (
+    <div style={{
+      background: 'rgba(255,255,255,0.04)',
+      border: `1px solid ${accent ? 'rgba(34,227,255,0.5)' : 'rgba(255,255,255,0.12)'}`,
+      borderRadius: 8,
+      padding: '28px 24px',
+      animation: `fadeIn 0.6s ${delay}s both`,
+      display: 'flex', flexDirection: 'column', height: '100%',
+    }}>
+      <div style={{ ...TYPE.label, color: accent ? ACCENT : WHITE_70, fontSize: 13 }}>{stage}</div>
+      <div style={{ ...TYPE.label, color: WHITE_45, fontSize: 12, marginTop: 4 }}>{when}</div>
+      <div style={{ ...TYPE.title, fontSize: 24, color: WHITE, marginTop: 14, letterSpacing: '-0.01em' }}>{title}</div>
+      <div style={{ ...TYPE.small, fontSize: 15, color: WHITE_70, marginTop: 16, lineHeight: 1.55 }}>{body}</div>
+    </div>
+  );
+}
+
+// ----- S12A 운영 신뢰도 — Issue #63 silent-fail 사고 → 자동 탐지 → 영구 재방지 -----
+function S12A() {
+  return (
+    <>
+      <Chrome index="12A" label="12A · OPERATIONAL RELIABILITY" />
+      <Line x={120} y={140} style={TYPE.eyebrow}>운영 신뢰도 · Issue #63 silent-fail 복구</Line>
+      <Line x={120} y={200} delay={0.1} style={TYPE.title}>사고 → 자동 탐지 → 영구 재방지.</Line>
+
+      <Plate x={120} y={340} width={1680} height={600} delay={0.5}>
+        <div style={{ padding: 36, fontFamily: FONT, height: '100%', boxSizing: 'border-box' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, height: '100%' }}>
+            <IncidentStage stage="① 사고" when="5/23 ~ 5/26" title="수집기 17일 silent-fail" body="APScheduler 다운 → cron 미스파이어 → 17지역 OTC 데이터 stale. 사람이 모니터링했으면 한참 늦게 발견될 사고." delay={0.8} />
+            <IncidentStage stage="② 자동 탐지" when="5/28 (알람 첫 가동)" title="알람이 즉시 잡아냈다" body="ntfy 모바일 push + GitHub Issue 영구 기록 (label silent-fail, 중복방지). 사고 후 자동 탐지 — 사람보다 빠름." delay={1.0} accent />
+            <IncidentStage stage="③ 영구 재방지" when="복구 + misfire grace" title="다시는 같은 실수 안 함" body="misfire_grace_time=604800 (7일) + coalesce. 다음 스케줄러 다운에도 미스파이어 누적 후 자동 재실행. 17일 누적 정상 수집 확인." delay={1.2} />
+          </div>
+        </div>
+      </Plate>
+
+      <Line x={120} y={970} delay={2.4} style={{ ...TYPE.small, fontSize: 14, color: WHITE_45 }}>
+        운영 안전망 — 듀얼 알람 · 일일 백업 · health check 6h · misfire 재방지. B2G 납품 품질 기준 (p95&lt;500ms, coverage 74%) 충족.
+      </Line>
+    </>
   );
 }
 
@@ -1641,28 +1734,29 @@ function HonestCard({ step, title, body, plain, delay, accent }) {
   );
 }
 
-// ----- S13C V11.0~V11.4 정직성 5단 (비전공자 친화) -----
+// ----- S13C V11.0~V11.5 정직성 6단 (비전공자 친화) -----
 function S13C() {
   return (
     <>
       <Chrome index={14} label="13C · HONEST LAYERS" />
-      <Line x={120} y={140} style={TYPE.eyebrow}>V11.0 ~ V11.4 · 정직성 5단 LAYER</Line>
+      <Line x={120} y={140} style={TYPE.eyebrow}>V11.0 ~ V11.5 · 정직성 6단 LAYER</Line>
       <Line x={120} y={200} delay={0.1} style={TYPE.title}>한계까지 정직하게 보여드립니다.</Line>
 
       <Plate x={120} y={340} width={1680} height={600} delay={0.5}>
-        <div style={{ padding: 36, fontFamily: FONT, height: '100%', boxSizing: 'border-box' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 18, height: '100%' }}>
+        <div style={{ padding: 28, fontFamily: FONT, height: '100%', boxSizing: 'border-box' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 14, height: '100%' }}>
             <HonestCard step="V11.0" title="기준 확정" body="17개 시·도 walk-forward로 F1 0.907 측정. 누가 돌려도 같은 수치." plain="기준점 박았다." delay={0.8} />
             <HonestCard step="V11.1" title="신뢰구간 공개" body="Recall 신뢰구간 [0.834, 0.924]. 하한이 목표 0.85에 살짝 못 미친다는 점도 숨기지 않음." plain="정확도가 운으로 흔들리는 범위까지 명시." delay={1.0} />
             <HonestCard step="V11.2" title="검정군 솔직" body="51개 통계 검정 중 실제 독립 검정은 18개. 네이버 API 제약으로 일부 지역 같은 신호." plain="겉으론 51개지만 진짜는 18개라고 인정." delay={1.2} />
             <HonestCard step="V11.3" title="합성 입력 명시" body="TFT 예측 모델은 데모용 합성 입력. API 응답에 synthetic_demo 메타 자동 표시." plain="모델 PoC라는 사실을 응답에 박았다." delay={1.4} />
-            <HonestCard step="V11.4" title="룰 vs ML 분리" body="룰 기반 게이트는 17지역 실측 검증(production). XGBoost는 양성 이벤트 4주뿐이라 PoC." plain="절반은 완성, 절반은 PoC라고 분리." delay={1.6} accent />
+            <HonestCard step="V11.4" title="룰 vs ML 분리" body="룰 기반 게이트는 17지역 실측 검증(production). XGBoost는 양성 이벤트 4주뿐이라 PoC." plain="절반은 완성, 절반은 PoC라고 분리." delay={1.6} />
+            <HonestCard step="V11.5" title="KDCA 라벨 갭" body="F1 0.907은 self-proxy. KDCA 임상 ILI와 일치율 29.5%, Cohen κ 0.058 (≈random) — 라벨 정의 차이를 정량 공개." plain="실험 라벨과 임상 라벨이 달랐다고 인정." delay={1.8} accent />
           </div>
         </div>
       </Plate>
 
       <Line x={120} y={970} delay={2.4} style={{ ...TYPE.small, fontSize: 14, color: WHITE_45 }}>
-        용어 — 신뢰구간: "이 범위 안에 진짜 값이 있을 확률 95%" · PoC: "개념 실증, 제품 아님" · production: "검증 끝, 실전 배치 가능"
+        용어 — 신뢰구간: "이 범위 안에 진짜 값이 있을 확률 95%" · PoC: "개념 실증, 제품 아님" · production: "검증 끝, 실전 배치 가능" · Cohen κ: "두 라벨 일치도 (0=무작위, 1=완벽)"
       </Line>
     </>
   );
@@ -1704,12 +1798,14 @@ function S14A() {
     { ver: 'V11.1',  date: '5/17', f1: '0.907', added: '+ Bootstrap 신뢰구간 (정직성 1단)' },
     { ver: 'V11.2',  date: '5/22', f1: '0.907', added: '+ 지역별 Granger 51검정 (정직성 2단)' },
     { ver: 'V11.3',  date: '5/22', f1: '0.907', added: '+ TFT 합성 메타 명시 (정직성 3단)' },
-    { ver: 'V11.4',  date: '5/27', f1: '0.907', added: '+ 룰 vs ML 분리 (정직성 4단)', highlight: true },
+    { ver: 'V11.4',  date: '5/27', f1: '0.907', added: '+ 룰 vs ML 분리 (정직성 4단)' },
+    { ver: 'V11.5',  date: '6/5',  f1: '0.907', added: '+ KDCA 라벨 갭 정량 공개 (정직성 5단)' },
+    { ver: 'V11.6',  date: '6/8',  f1: '0.960', added: 'KDCA ground truth 재학습 · 임상 라벨 기준 F1=0.96', highlight: true },
   ];
   return (
     <>
       <Chrome index={17} label="14A · EVOLUTION" />
-      <Line x={120} y={140} style={TYPE.eyebrow}>6주 진보 — 메트릭 +0.066, 정직성 4단 추가</Line>
+      <Line x={120} y={140} style={TYPE.eyebrow}>9주 진보 — V11.6 KDCA 라벨 F1 0.96, 정직성 5단 추가</Line>
       <Line x={120} y={200} delay={0.1} style={TYPE.title}>숫자보다 정직성이 매 버전 늘었다.</Line>
 
       <Plate x={120} y={340} width={1680} height={600} delay={0.5}>
@@ -1731,8 +1827,8 @@ function S14A() {
               <div>{r.added}</div>
             </div>
           ))}
-          <div style={{ marginTop: 24, ...TYPE.small, fontSize: 18, color: WHITE_70, fontStyle: 'italic' }}>
-            → 6주 동안 메트릭은 +0.066, 그러나 더 큰 변화는 매 버전마다 추가된 정직성 layer.
+          <div style={{ marginTop: 18, ...TYPE.small, fontSize: 17, color: WHITE_70, fontStyle: 'italic' }}>
+            → 9주 동안 self-proxy F1 +0.066 → V11.6 KDCA 임상 라벨 기준 F1 0.96. 매 버전 정직성 layer +1.
           </div>
         </div>
       </Plate>
@@ -2796,7 +2892,7 @@ window.Scenes = {
   S06, S07,
   S07A, S07B, S07C, S07D, S07D2, S07E, S07F,
   S08, S10, S10A,
-  S11, S11A, S12,
+  S11, S11A, S11B, S12, S12A,
   S13,
   S13B,
   S13C,
