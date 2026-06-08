@@ -1277,15 +1277,15 @@ function S11() {
       <Line x={120} y={140} style={TYPE.eyebrow}>실측 성능 · 17지역 백테스트</Line>
       <Line x={120} y={200} delay={0.1} style={TYPE.title}>숫자를 있는 그대로.</Line>
 
-      {/* 좌측: 평균 6.47주 mega + 지역별 lead 막대 + 메트릭 5개 */}
+      {/* 좌측: 평균 6.76주 mega + 지역별 lead 막대 + 메트릭 5개 */}
       <Plate x={120} y={340} width={1120} height={600} delay={0.5}>
         <div style={{ padding: 32, fontFamily: FONT, position: 'relative', height: '100%', boxSizing: 'border-box' }}>
           {/* 상단 — mega + LeadDistribution 그리드 */}
           <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 28, alignItems: 'center' }}>
             <div>
-              <Line x={0} y={0} delay={0.9} style={{ position: 'static', ...TYPE.mega, fontSize: 150, color: ACCENT }}>6.47</Line>
+              <Line x={0} y={0} delay={0.9} style={{ position: 'static', ...TYPE.mega, fontSize: 150, color: ACCENT }}>6.76</Line>
               <div style={{ fontSize: 22, color: WHITE, fontWeight: 600, letterSpacing: '-0.01em', marginTop: 4 }}>주 선행 평균</div>
-              <div style={{ ...TYPE.small, fontSize: 16, color: WHITE_70, marginTop: 4 }}>임상 확진 피크보다 6.47주 전 YELLOW</div>
+              <div style={{ ...TYPE.small, fontSize: 16, color: WHITE_70, marginTop: 4 }}>임상 확진 피크보다 6.76주 전 YELLOW</div>
             </div>
             <LeadDistribution delay={1.1} />
           </div>
@@ -1490,6 +1490,51 @@ function S11A() {
   );
 }
 
+// ----- PathogenCard — 다질병 비교 카드 (S11B용) -----
+function PathogenCard({ name, f1, subtitle, detail, delay, accent }) {
+  return (
+    <div style={{
+      background: 'rgba(255,255,255,0.04)',
+      border: `1px solid ${accent ? 'rgba(34,227,255,0.5)' : 'rgba(255,255,255,0.12)'}`,
+      borderRadius: 8,
+      padding: '28px 24px',
+      animation: `fadeIn 0.6s ${delay}s both`,
+      display: 'flex', flexDirection: 'column', height: '100%',
+    }}>
+      <div style={{ ...TYPE.label, color: accent ? ACCENT : WHITE_70, fontSize: 13 }}>{subtitle}</div>
+      <div style={{ ...TYPE.title, fontSize: 32, color: WHITE, marginTop: 8 }}>{name}</div>
+      <div style={{ ...TYPE.mega, fontSize: 140, color: accent ? ACCENT : WHITE, marginTop: 24, letterSpacing: '-0.04em' }}>{f1}</div>
+      <div style={{ ...TYPE.small, fontSize: 14, color: WHITE_45, marginTop: -8 }}>F1-Score</div>
+      <div style={{ ...TYPE.small, fontSize: 16, color: WHITE_70, marginTop: 'auto', paddingTop: 20, lineHeight: 1.5 }}>{detail}</div>
+    </div>
+  );
+}
+
+// ----- S11B 다질병 비교 — 캡스톤 평가 4번째 항목 ✅ -----
+function S11B() {
+  return (
+    <>
+      <Chrome index="11B" label="11B · MULTI-PATHOGEN" />
+      <Line x={120} y={140} style={TYPE.eyebrow}>다질병 확장 · 캡스톤 평가 4번째 항목 ✅</Line>
+      <Line x={120} y={200} delay={0.1} style={TYPE.title}>한 시스템, 세 질병 검증.</Line>
+
+      <Plate x={120} y={340} width={1680} height={600} delay={0.5}>
+        <div style={{ padding: 36, fontFamily: FONT, height: '100%', boxSizing: 'border-box' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, height: '100%' }}>
+            <PathogenCard name="인플루엔자" f1="0.907" subtitle="V11 self-proxy / V11.6 KDCA 0.96" detail="L1 OTC + L2 KOWAS + L3 검색 — 3종 신호 모두 강함. V11.6 임상 라벨 재학습 후 F1=0.96 확인." accent delay={0.8} />
+            <PathogenCard name="COVID-19" f1="0.68" subtitle="PR #71 / #72 baseline" detail="OTC 신호 약함 · 변이 다양성으로 분산. transition 타깃 도입으로 0.55 → 0.68 개선." delay={1.0} />
+            <PathogenCard name="노로바이러스" f1="0.70" subtitle="PR #73 transition target" detail="단기 폭발 패턴 (식중독·집단발병). transition 타깃이 level 타깃 대비 우위 입증." delay={1.2} />
+          </div>
+        </div>
+      </Plate>
+
+      <Line x={120} y={970} delay={2.4} style={{ ...TYPE.small, fontSize: 14, color: WHITE_45 }}>
+        한 모델 · 한 파이프라인 · 한 대시보드 — pathogen 셀렉터로 라이브 시연 (PR #70). 질병별 신호 강도 차이를 정직 노출.
+      </Line>
+    </>
+  );
+}
+
 function S12() {
   const quadrants = [
     {
@@ -1517,7 +1562,7 @@ function S12() {
       pos: 'br',
       title: '★ Urban Immune System',
       tag: '한국 · 캡스톤 · 2026',
-      bullets: ['3-Layer 정량 신호 (OTC·하수·검색)', '6.47주 선행 · 게이트 B 교차검증', '한국 first-mover · KIPRIS 미확인'],
+      bullets: ['3-Layer 정량 신호 (OTC·하수·검색)', '6.76주 선행 · 게이트 B 교차검증', '한국 first-mover · KIPRIS 미확인'],
       tone: 'hero',
     },
   ];
@@ -1570,6 +1615,50 @@ function QuadCard({ title, tag, bullets, tone, delay }) {
         })}
       </div>
     </div>
+  );
+}
+
+// ----- IncidentStage — 사고 단계 카드 (S12A용) -----
+function IncidentStage({ stage, when, title, body, delay, accent }) {
+  return (
+    <div style={{
+      background: 'rgba(255,255,255,0.04)',
+      border: `1px solid ${accent ? 'rgba(34,227,255,0.5)' : 'rgba(255,255,255,0.12)'}`,
+      borderRadius: 8,
+      padding: '28px 24px',
+      animation: `fadeIn 0.6s ${delay}s both`,
+      display: 'flex', flexDirection: 'column', height: '100%',
+    }}>
+      <div style={{ ...TYPE.label, color: accent ? ACCENT : WHITE_70, fontSize: 13 }}>{stage}</div>
+      <div style={{ ...TYPE.label, color: WHITE_45, fontSize: 12, marginTop: 4 }}>{when}</div>
+      <div style={{ ...TYPE.title, fontSize: 24, color: WHITE, marginTop: 14, letterSpacing: '-0.01em' }}>{title}</div>
+      <div style={{ ...TYPE.small, fontSize: 15, color: WHITE_70, marginTop: 16, lineHeight: 1.55 }}>{body}</div>
+    </div>
+  );
+}
+
+// ----- S12A 운영 신뢰도 — Issue #63 silent-fail 사고 → 자동 탐지 → 영구 재방지 -----
+function S12A() {
+  return (
+    <>
+      <Chrome index="12A" label="12A · OPERATIONAL RELIABILITY" />
+      <Line x={120} y={140} style={TYPE.eyebrow}>운영 신뢰도 · Issue #63 silent-fail 복구</Line>
+      <Line x={120} y={200} delay={0.1} style={TYPE.title}>사고 → 자동 탐지 → 영구 재방지.</Line>
+
+      <Plate x={120} y={340} width={1680} height={600} delay={0.5}>
+        <div style={{ padding: 36, fontFamily: FONT, height: '100%', boxSizing: 'border-box' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, height: '100%' }}>
+            <IncidentStage stage="① 사고" when="5/23 ~ 5/26" title="수집기 17일 silent-fail" body="APScheduler 다운 → cron 미스파이어 → 17지역 OTC 데이터 stale. 사람이 모니터링했으면 한참 늦게 발견될 사고." delay={0.8} />
+            <IncidentStage stage="② 자동 탐지" when="5/28 (알람 첫 가동)" title="알람이 즉시 잡아냈다" body="ntfy 모바일 push + GitHub Issue 영구 기록 (label silent-fail, 중복방지). 사고 후 자동 탐지 — 사람보다 빠름." delay={1.0} accent />
+            <IncidentStage stage="③ 영구 재방지" when="복구 + misfire grace" title="다시는 같은 실수 안 함" body="misfire_grace_time=604800 (7일) + coalesce. 다음 스케줄러 다운에도 미스파이어 누적 후 자동 재실행. 17일 누적 정상 수집 확인." delay={1.2} />
+          </div>
+        </div>
+      </Plate>
+
+      <Line x={120} y={970} delay={2.4} style={{ ...TYPE.small, fontSize: 14, color: WHITE_45 }}>
+        운영 안전망 — 듀얼 알람 · 일일 백업 · health check 6h · misfire 재방지. B2G 납품 품질 기준 (p95&lt;500ms, coverage 74%) 충족.
+      </Line>
+    </>
   );
 }
 
@@ -2803,7 +2892,7 @@ window.Scenes = {
   S06, S07,
   S07A, S07B, S07C, S07D, S07D2, S07E, S07F,
   S08, S10, S10A,
-  S11, S11A, S12,
+  S11, S11A, S11B, S12, S12A,
   S13,
   S13B,
   S13C,
