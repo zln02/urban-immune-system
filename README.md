@@ -190,6 +190,8 @@ urban-immune-system/
 전문가 운영 시스템 대비 **솔직한 격차**를 명시한다. (운영 인프라 한계는 위 "알려진 한계" 참조)
 
 - **표본 한계**: 시즌 단위 분석 — Granger 검정 통계적 유의성 제한적, 다음 시즌 데이터 누적 필수
+- **라벨 정직성 (V11.5)**: 인플루엔자 F1=0.907 은 OTC z-score 기반 self-target proxy 라벨. KDCA 4급 ILI ground truth 대비 Cohen κ=0.058, agreement 29.5% (n=61) — `analysis/outputs/label_validation_influenza.json`. 라벨 교체 재학습은 Phase 3 #63 진행 중.
+- **다질병 신호 편차**: 인플루엔자 F1=0.907, COVID F1=0.68, 노로 F1=0.70 — 질병별 OTC·검색 신호 강도 차이를 정직하게 노출 (캡스톤 평가 4번째 항목 ✅).
 - **L2 약함**: 하수 신호 Granger p=0.267로 단독 유의성 부족 → 가중치 0.30으로 축소 검토 중
 - **TFT 위치**: 주모델은 XGBoost(walk-forward CV), TFT는 attention 기반 해석성 보조 (D-4 재학습 완료, prod 전환은 데이터 누적 후)
 - **L2 자동화**: KOWAS PDF 자동 다운로더 구현됐으나 일부 주차 carry-forward 적용 (`backtest_17regions.json` 참조)
