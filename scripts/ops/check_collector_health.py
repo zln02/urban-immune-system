@@ -8,12 +8,13 @@ Runs every 6h via cron. Dual safety net (mobile push + persistent record).
 localhost:5432 로 노출. DATABASE_URL(asyncpg) 을 psycopg2 DSN 으로 변환해 사용한다.
 """
 import os
-import sys
 import subprocess
-import psycopg2
-import requests
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
+
+import psycopg2
+import requests
 
 # Load .env
 env_file = Path("/home/wlsdud5035/urban-immune-system/.env")
@@ -35,6 +36,22 @@ THRESHOLDS = {
     'search':     192,
 }
 
+# region completeness 임계 — 최신 주에 적재돼야 하는 시·도 개수.
+# 2026-06-01 사건: otc 인플루엔자 backfill 이 6지역 silent miss → anomaly 11/17 거짓 detect.
+# 신선도(MAX time)는 부분 적재를 못 잡으므로 별도 체크.
+EXPECTED_REGIONS = 17
+# AUX(weather)는 전국 단일값이라 region completeness 체크 제외.
+COMPLETENESS_LAYERS = {'otc', 'wastewater', 'search'}
+
+# 17 시·도 표준명 (region completeness 누락 디버깅용)
+SIDO_ALL = {
+    "서울특별시", "부산광역시", "대구광역시", "인천광역시", "광주광역시",
+    "대전광역시", "울산광역시", "세종특별자치시", "경기도", "강원특별자치도",
+    "충청북도", "충청남도", "전라북도", "전라남도", "경상북도", "경상남도",
+    "제주특별자치도",
+}
+
+
 def check_layer(layer, threshold_hours):
     try:
         conn = psycopg2.connect(DB_DSN)
@@ -50,6 +67,33 @@ def check_layer(layer, threshold_hours):
         return elapsed, threshold_hours, elapsed > threshold_hours, last.isoformat()
     except Exception as e:
         return None, threshold_hours, True, f"db error: {e}"
+
+def check_layer_completeness(layer):
+    """최신 주(latest time)에 적재된 region 수가 EXPECTED_REGIONS 미만이면 부분 적재로 판정.
+
+    Returns: (regions_count, expected, is_incomplete, missing_regions_list_or_msg)
+    """
+    try:
+        conn = psycopg2.connect(DB_DSN)
+        cur = conn.cursor()
+        cur.execute(
+            """
+            SELECT region FROM layer_signals
+            WHERE layer = %s
+              AND time = (SELECT MAX(time) FROM layer_signals WHERE layer = %s)
+            """,
+            (layer, layer),
+        )
+        regions = {row[0] for row in cur.fetchall()}
+        conn.close()
+        if not regions:
+            return 0, EXPECTED_REGIONS, True, "no rows in latest week"
+        missing = sorted(SIDO_ALL - regions)
+        is_incomplete = len(regions) < EXPECTED_REGIONS
+        return len(regions), EXPECTED_REGIONS, is_incomplete, missing
+    except Exception as e:
+        return None, EXPECTED_REGIONS, True, f"db error: {e}"
+
 
 def send_ntfy(title, msg):
     if not NTFY_TOPIC:
@@ -99,6 +143,22 @@ def main():
                 alerts.append(f"❌ {layer}: {info}")
         else:
             healthy.append(f"✅ {layer}: {elapsed:.1f}h (within {thresh}h)")
+
+        # region completeness — 신선도와 독립적으로 검사 (부분 적재 catch)
+        if layer in COMPLETENESS_LAYERS:
+            count, expected, is_incomplete, missing = check_layer_completeness(layer)
+            if is_incomplete:
+                if count is None:
+                    alerts.append(f"❌ {layer} completeness: {missing}")
+                elif count == 0:
+                    alerts.append(f"❌ {layer} completeness: 0/{expected} regions in latest week")
+                else:
+                    miss_str = ", ".join(missing) if isinstance(missing, list) else str(missing)
+                    alerts.append(
+                        f"⚠️ {layer} partial insert: {count}/{expected} regions — missing: {miss_str}"
+                    )
+            else:
+                healthy.append(f"✅ {layer} completeness: {count}/{expected} regions")
 
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
