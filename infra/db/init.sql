@@ -20,6 +20,12 @@ SELECT create_hypertable('layer_signals', 'time', if_not_exists => TRUE);
 CREATE INDEX IF NOT EXISTS ix_layer_signals_layer_region ON layer_signals (layer, region, time DESC);
 CREATE INDEX IF NOT EXISTS ix_layer_signals_pathogen_time ON layer_signals (pathogen, time DESC);
 
+-- P0 (#79) 운영 DB audit 결과 L2 wastewater 1616 중복 발견 → UNIQUE 제약 추가.
+-- TimescaleDB hypertable 의 UNIQUE 는 dimension 컬럼(time) 을 반드시 포함해야 함.
+-- 운영 DB 마이그레이션 SQL: infra/db/migrations/20260609_dedup_layer_signals.sql 참조.
+CREATE UNIQUE INDEX IF NOT EXISTS uix_layer_signals_logical
+    ON layer_signals (layer, region, time, pathogen);
+
 -- 융합 리스크 점수
 CREATE TABLE IF NOT EXISTS risk_scores (
     id               BIGSERIAL,
