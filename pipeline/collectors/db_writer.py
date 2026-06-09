@@ -3,6 +3,16 @@
 Kafka Consumer 없이 layer_signals 테이블에 직접 비동기 INSERT한다.
 발표 데모 단순화 옵션 (pipeline/CLAUDE.md 참조):
   cron + DB INSERT 방식으로 Kafka 파이프라인을 대체.
+
+## Silent-fail #2 (2026-06-09) — Event loop is closed
+APScheduler BlockingScheduler 가 매 잡마다 새 event loop 를 `asyncio.run()` 으로
+생성한다. `_pool` 은 모듈 글로벌 싱글톤이라 이전 잡의 closed loop 에 bound 된
+asyncpg pool 객체가 남아있어, 다음 잡에서 `_pool.acquire()` 시 "Event loop is closed"
+에러로 INSERT 실패 (운영 wastewater 5/31 ~ 6/9, 9.1일 stale).
+
+해결: `_get_pool` 이 현재 event loop 와 `_pool._loop` 가 일치하는지 확인.
+불일치 또는 closed 면 새 pool 생성. weather (매시간) 잡은 빠르게 _pool 갱신돼
+영향 적었고 wastewater (매주 화) 만 silent fail.
 """
 
 from __future__ import annotations
@@ -14,6 +24,14 @@ import warnings
 from datetime import datetime, timezone
 
 import asyncpg
+from dotenv import load_dotenv
+
+# CLI 직접 실행 시 .env 자동 로드 (systemd 는 EnvironmentFile 로 별도 주입).
+# explicit path: pipeline/collectors/db_writer.py → 2 단계 상위 = repo root.
+from pathlib import Path as _Path
+_ENV_PATH = _Path(__file__).resolve().parents[2] / ".env"
+if _ENV_PATH.exists():
+    load_dotenv(_ENV_PATH)
 
 logger = logging.getLogger(__name__)
 
@@ -22,9 +40,34 @@ _DEFAULT_DB_URL = "postgresql://uis_user:changeme_local@localhost:5432/urban_imm
 _pool: asyncpg.Pool | None = None
 
 
+def _pool_is_alive(pool: asyncpg.Pool, current_loop: asyncio.AbstractEventLoop) -> bool:
+    """asyncpg pool 이 현재 event loop 에 bound 되어 있고 살아있는지 확인.
+
+    Silent-fail #2 (2026-06-09) 방지: APScheduler 매 잡마다 새 loop → 이전 loop 의
+    pool 은 closed loop 참조 → `.acquire()` 시 "Event loop is closed" 에러.
+    """
+    pool_loop = getattr(pool, "_loop", None)
+    if pool_loop is None:
+        return False
+    if pool_loop.is_closed():
+        return False
+    if pool_loop is not current_loop:
+        return False
+    return True
+
+
 async def _get_pool() -> asyncpg.Pool:
-    """asyncpg 커넥션 풀 싱글톤을 반환한다."""
+    """asyncpg 커넥션 풀 싱글톤 — loop-aware (#80 silent-fail #2 fix)."""
     global _pool
+    current_loop = asyncio.get_running_loop()
+    if _pool is not None and not _pool_is_alive(_pool, current_loop):
+        # 이전 잡의 closed loop pool 을 폐기 (close 안 됨, 그냥 reference 버림)
+        logger.warning(
+            "TimescaleDB 커넥션 풀 폐기: pool._loop is_closed=%s loop_changed=%s",
+            _pool._loop.is_closed() if _pool._loop else "no-loop",
+            _pool._loop is not current_loop if _pool._loop else "no-loop",
+        )
+        _pool = None
     if _pool is None:
         db_url = os.getenv("DATABASE_URL", _DEFAULT_DB_URL)
         # asyncpg는 'postgresql://' 또는 'postgres://' 만 지원
