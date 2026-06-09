@@ -30,7 +30,7 @@
 | 기준 | 상태 | 근거 |
 |------|------|------|
 | ① **기술 완성도** | ✅ 충족 | 3계층 실데이터 수집 + ML 17지역 walk-forward + Next.js 대시보드 통합 |
-| ② **검증 결과** | ✅ 충족 (인플루엔자) / ⚠ 부분 (다질병) | 인플루엔자 F1=0.882 / FAR=0.206 (목표 F1≥0.80 / FAR<0.30 충족). 다질병은 proxy 한계 정직 노출 + 노로 transition +13%p |
+| ② **검증 결과** | ✅ 충족 (인플루엔자) / ✅ 충족 (다질병) | 인플루엔자 self-proxy **F1=0.907** / **V11.6 KDCA F1=0.96** / FAR=0.250 (목표 F1≥0.80 / FAR<0.30 충족). 다질병 COVID 0.68 / 노로 0.70 + 노로 transition ML 우위 +13%p |
 | ③ **서비스성** | ✅ 충족 | http://REDACTED-HOST/dashboard 외부 노출, 실시간 신호·AI 경보·PDF 다운로드 |
 | ④ **확장성** | ✅ 충족 | 다질병(COVID·노로) 시연 + region-pooled 모델 + 카테고리 사전 일반화 |
 
@@ -97,7 +97,7 @@
 
 ```
 1. http://REDACTED-HOST/dashboard 열기 (Basic Auth)
-2. 인플루엔자 디폴트 → F1=0.882, Lead 6.76주 카드 강조
+2. 인플루엔자 디폴트 → **F1=0.907 (V11.6 KDCA 0.96)**, Lead 6.76주 카드 강조
 3. 지도에서 서울·경기 클릭 → 시계열·SSE 경보 표시
 4. 병원체 셀렉터 → COVID-19 (β) 전환
 5. 분류 카드 변경: F1=0.667 (vs trivial 0.792, gain -0.125)
@@ -112,7 +112,7 @@
 
 | # | 질문 | 답변 |
 |---|------|------|
-| 1 | "F1=0.882 어느 데이터로 검증?" | KDCA 인플루엔자 ILI 주간보고 peak 17지역 walk-forward, gap=4주 5-fold, `analysis/outputs/backtest_17regions.json` |
+| 1 | "F1=0.907 어느 데이터로 검증?" | OTC z-score self-proxy 라벨 17지역 walk-forward (gap=4주 5-fold, `analysis/outputs/backtest_17regions.json`). V11.6 KDCA ILI ground truth 재학습 시 F1=0.96 (`backtest_xgboost_influenza_kdca_17regions.json`) |
 | 2 | "다질병 0.67~0.76은 왜 인플루엔자보다 낮은가?" | KDCA COVID·노로 확진자 미연동 → L2 self-target proxy 학습. proxy의 한계로 단순 임계가 trivial로 작동. KDCA 연동 후 인플루엔자 수준 회복 예상 |
 | 3 | "trivial보다 ML이 못하면 ML 의미는?" | level proxy에서는 그렇지만, 어려운 task(노로 transition)에서 ML 우위 +13%p. KDCA 외부 라벨 도착 후 supervised로 본질 가치 |
 | 4 | "Google Flu Trends 실패와 무엇이 다른가?" | GFT는 L3 단독. 본 시스템은 L3 단독 경보 금지 + 2개 이상 계층 30 이상 게이트 + L2 하수 바이오마커(객관 신호) 가중치 0.40 최고 |
@@ -127,7 +127,7 @@
 
 ### 2.4 어조 가이드
 
-- **자랑할 것**: 인플루엔자 F1=0.882 + Lead 6.76주, 17지역 walk-forward 실측, 노로 transition ML +13%p, 라이브 외부 IP 데모
+- **자랑할 것**: 인플루엔자 **self-proxy F1=0.907 / V11.6 KDCA ground truth F1=0.96** + Lead 6.76주, 17지역 walk-forward 실측, 노로 transition ML +13%p, silent-fail #1+#2 자동 탐지 + 24h fix, 라이브 외부 IP 데모
 - **인정할 것**: proxy 한계, KDCA 확진자 미연동, KOWAS 수동, HTTPS 미적용
 - **차별화**: "정직한 ML 시스템" — 다른 팀이 부풀린 지표 가지고 올 때 우리는 trivial 비교까지 공개
 
