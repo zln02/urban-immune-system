@@ -1981,7 +1981,7 @@ function S15() {
 
       <Plate x={120} y={780} width={1680} height={200} delay={1.6}>
         <div style={{ padding: '22px 32px', fontFamily: FONT }}>
-          <div style={{ ...TYPE.label, color: ACCENT }}>FINAL TARGETS · 6/9~14</div>
+          <div style={{ ...TYPE.label, color: ACCENT }}>FINAL TARGETS · 6/17 ★</div>
           <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20 }}>
             {targets.map((t, i) => <TargetCard key={i} {...t} delay={1.95 + i * 0.12} />)}
           </div>
