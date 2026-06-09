@@ -23,12 +23,13 @@ import os
 import warnings
 from datetime import datetime, timezone
 
-import asyncpg
-from dotenv import load_dotenv
-
 # CLI 직접 실행 시 .env 자동 로드 (systemd 는 EnvironmentFile 로 별도 주입).
 # explicit path: pipeline/collectors/db_writer.py → 2 단계 상위 = repo root.
 from pathlib import Path as _Path
+
+import asyncpg
+from dotenv import load_dotenv
+
 _ENV_PATH = _Path(__file__).resolve().parents[2] / ".env"
 if _ENV_PATH.exists():
     load_dotenv(_ENV_PATH)
