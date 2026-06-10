@@ -126,6 +126,10 @@ async def insert_signal(
                 """
                 INSERT INTO layer_signals (time, layer, region, value, raw_value, source, pathogen)
                 VALUES ($1, $2, $3, $4, $5, $6, $7)
+                ON CONFLICT (layer, region, time, pathogen) DO UPDATE
+                SET value = EXCLUDED.value,
+                    raw_value = EXCLUDED.raw_value,
+                    source = EXCLUDED.source
                 """,
                 when,
                 layer,
@@ -135,7 +139,7 @@ async def insert_signal(
                 source,
                 pathogen,
             )
-        logger.debug("DB INSERT 완료 → %s/%s | %s | %.2f", layer, pathogen, region, value)
+        logger.debug("DB UPSERT 완료 → %s/%s | %s | %.2f", layer, pathogen, region, value)
     except Exception as exc:
         logger.error(
             "layer_signals INSERT 실패 (layer=%s pathogen=%s region=%s): %s",
