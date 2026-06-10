@@ -79,13 +79,15 @@ V11.5 의 라벨 갭에 대한 본 작업. `analysis/backtest_xgboost_multipath.
 | FAR | 0.250 | **0.000** | −0.250 |
 | MCC | 0.610 | **0.785** | +0.175 |
 | AUPRC | 0.973 | **0.990** | +0.017 |
-| Model gain vs trivial F1 | — | **+0.669** | (vs L2 임계 baseline 0.291) |
+| Model gain vs L2 임계 baseline | — | **+0.669** | (L2 임계 F1=0.291 — 약한 baseline) |
+| Model gain vs **always-positive** trivial | — | **+0.03~0.06** | (양성 82~87% → trivial F1=0.90~0.93) |
 
 **Per-region (단순 평균)**: F1=0.876, Recall=0.819, FAR=0.376, MCC=0.339
 **데이터**: 17 region × 61 주차 overlap → 1037 행 · 양성 비율 81.97% · pool n=765
 
 **Caveats (정직)**:
-- **양성 클래스 imbalance (82%)**: 2025-03 ~ 2026-06 (15개월) 의 2025-26 절기 유행기가 데이터의 60% 차지. trivial "always positive" 도 F1 약 0.85 수준 → 모델 진짜 gain 은 trivial L2 임계 (F1=0.29) 대비 +0.67.
+- **양성 클래스 imbalance (82~87%)** ⚠️ 발표 QA 핵심: 2025-26 절기 유행기가 데이터의 60% 차지. **always-positive trivial 분류기도 F1=0.90~0.93** (양성비율 p → F1=2p/(1+p)). 따라서 V11.6 F1=0.960 의 **always-positive 대비 순이득은 +0.03~0.06 에 불과**. "+0.669" 는 의도적으로 약한 L2 임계 baseline(F1=0.29)과 비교한 수치이므로, 발표·QA 에서는 반드시 always-positive 대비를 병기한다.
+  - **결론**: V11.6 F1=0.96/FAR=0.0 은 imbalance 산물(과적합·라벨 구조 의심) → **PPT 핵심 메트릭은 self-proxy F1=0.907 유지**, V11.6 은 "임상 라벨 재학습 시험 결과(F1≥0.90 확인)" 부주석으로만 사용.
 - **17 region broadcast**: KDCA 표본감시는 전국 단일 → 17지역 동일 라벨. 지역별 differential 측정은 HIRA OpenAPI L1 도입 후 가능.
 - **6 절기 누적 학습 X**: 현 DB (2025-03 ~ 2026-06) 와 overlap 되는 KDCA 절기만 사용 (2024-25 후반 + 2025-26). 5 절기 backfill 시 강건성 추가 확보.
 
