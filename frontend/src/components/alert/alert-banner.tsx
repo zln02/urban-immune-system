@@ -6,10 +6,9 @@ interface AlertBannerProps {
   alerts: AlertRecord[];
   t: Translations;
   lang: Lang;
-  confidence?: number;
 }
 
-export function AlertBanner({ alerts, t: _t, lang, confidence = 0.87 }: AlertBannerProps) {
+export function AlertBanner({ alerts, t: _t, lang }: AlertBannerProps) {
   // ORANGE+(level≥3) 부터 표시 — 보건당국 사전 대응 시간 확보 목적
   const critical = alerts.filter((a) => a.level >= 3);
   if (critical.length === 0) return null;
@@ -68,7 +67,7 @@ export function AlertBanner({ alerts, t: _t, lang, confidence = 0.87 }: AlertBan
           fontFamily: "var(--font-mono)",
         }}
       >
-        {breakdown} · {lang === "ko" ? "신뢰도" : "Conf"} {(confidence * 100).toFixed(0)}%
+        {breakdown}
       </span>
     </div>
   );
