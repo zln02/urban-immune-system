@@ -686,7 +686,7 @@ export default function DashboardPage() {
             </span>
           </div>
         ) : (
-          <AlertBanner alerts={activeAlerts} t={t} lang={lang} confidence={0.93} />
+          <AlertBanner alerts={activeAlerts} t={t} lang={lang} />
         )}
 
         <div
