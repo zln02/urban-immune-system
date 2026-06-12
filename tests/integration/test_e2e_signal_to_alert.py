@@ -1,4 +1,5 @@
 """통합 테스트: layer_signals INSERT → /api/v1/alerts/current GET 200 검증."""
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, patch
@@ -15,10 +16,13 @@ def _make_fake_session(rows_by_call: list):
     class _FakeResult:
         def __init__(self, rows):
             self._rows = rows
+
         def mappings(self):
             return self
+
         def all(self):
             return [_FakeMapping(r) for r in self._rows]
+
         def first(self):
             return _FakeMapping(self._rows[0]) if self._rows else None
 
@@ -42,22 +46,21 @@ async def test_signal_to_alert_returns_200_with_risk_score():
     """3계층 layer_signals 평균으로 composite_score 계산 → 200 확인."""
     # layer_signals 집계 결과 mock
     layer_rows = [
-        {"layer": "otc",        "value": 62.5},
+        {"layer": "otc", "value": 62.5},
         {"layer": "wastewater", "value": 71.0},
-        {"layer": "search",     "value": 48.3},
+        {"layer": "search", "value": 48.3},
     ]
     mock_session = _make_fake_session([layer_rows])
 
     async def _override_get_db():
         yield mock_session
 
-    with patch("backend.app.tasks.broker.startup", new_callable=AsyncMock), \
-         patch("backend.app.tasks.broker.shutdown", new_callable=AsyncMock), \
-         patch("backend.app.api.alerts.get_latest_alert",
-               new_callable=AsyncMock, return_value=None), \
-         patch("backend.app.api.alerts.get_latest_risk_score",
-               new_callable=AsyncMock, return_value=None):
-
+    with (
+        patch("backend.app.tasks.broker.startup", new_callable=AsyncMock),
+        patch("backend.app.tasks.broker.shutdown", new_callable=AsyncMock),
+        patch("backend.app.api.alerts.get_latest_alert", new_callable=AsyncMock, return_value=None),
+        patch("backend.app.api.alerts.get_latest_risk_score", new_callable=AsyncMock, return_value=None),
+    ):
         from starlette.testclient import TestClient
 
         from backend.app.database import get_db
@@ -99,9 +102,10 @@ async def test_regions_endpoint_returns_alerts_array():
     async def _override_get_db():
         yield mock_session
 
-    with patch("backend.app.tasks.broker.startup", new_callable=AsyncMock), \
-         patch("backend.app.tasks.broker.shutdown", new_callable=AsyncMock):
-
+    with (
+        patch("backend.app.tasks.broker.startup", new_callable=AsyncMock),
+        patch("backend.app.tasks.broker.shutdown", new_callable=AsyncMock),
+    ):
         from starlette.testclient import TestClient
 
         from backend.app.database import get_db

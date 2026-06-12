@@ -12,22 +12,3 @@ function resolveApiBase(): string {
 }
 export const API_BASE = resolveApiBase();
 
-async function apiFetch<T>(path: string): Promise<T> {
-  const url = path.startsWith("http") ? path : `${API_BASE}${path}`;
-  const res = await fetch(url, { cache: "no-store" });
-  if (!res.ok) throw new Error(`API error: ${res.status} ${path}`);
-  return res.json() as Promise<T>;
-}
-
-export const fetchSignalTimeseries = (url: string) => apiFetch<{ data?: { time: string; value: number }[]; series?: unknown[] }>(url);
-export const fetchCurrentAlert = (url: string) => apiFetch<Record<string, unknown>>(url);
-export const fetchLatestSignals = (url: string) => apiFetch<Record<string, unknown>>(url);
-export const fetchForecast = (url: string) => apiFetch<Record<string, unknown>>(url);
-
-export function timeseriesUrl(layer: "otc" | "wastewater" | "search", region: string, days = 365): string {
-  return `/api/v1/signals/timeseries?layer=${layer}&region=${encodeURIComponent(region)}&days=${days}`;
-}
-
-export function currentAlertUrl(region: string): string {
-  return `/api/v1/alerts/current?region=${encodeURIComponent(region)}`;
-}

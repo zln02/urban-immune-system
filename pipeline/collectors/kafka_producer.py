@@ -1,4 +1,5 @@
 """Kafka 프로듀서 유틸리티."""
+
 from __future__ import annotations
 
 import json
@@ -33,8 +34,12 @@ def get_producer() -> KafkaProducer:
 
 
 def send_signal(
-    topic: str, region: str, layer: str, value: float,
-    raw_value: float | None = None, source: str = "",
+    topic: str,
+    region: str,
+    layer: str,
+    value: float,
+    raw_value: float | None = None,
+    source: str = "",
 ) -> None:
     """정규화된 신호를 Kafka에 전송한다."""
     producer = get_producer()

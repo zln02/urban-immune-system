@@ -4,6 +4,7 @@ Claude API는 unittest.mock.AsyncMock으로 목킹한다.
 alert_level별 분기 로직(GREEN 스킵 / YELLOW·ORANGE·RED 생성)을 검증한다.
 감사로그(triggered_by, trigger_source) 및 XAI 메타데이터 컬럼도 검증한다.
 """
+
 from __future__ import annotations
 
 import json
@@ -23,6 +24,7 @@ from pipeline.report_trigger import (
 # ---------------------------------------------------------------------------
 # _build_report_prompt 테스트
 # ---------------------------------------------------------------------------
+
 
 def test_build_report_prompt_includes_all_signals() -> None:
     """프롬프트에 L1/L2/L3, composite, alert_level이 모두 포함되는지 검증."""
@@ -57,6 +59,7 @@ def test_build_report_prompt_na_fallback() -> None:
 # ALERT_LEVELS_TO_REPORT 분기 로직
 # ---------------------------------------------------------------------------
 
+
 def test_alert_levels_to_report_excludes_green() -> None:
     """GREEN이 보고 대상에서 제외되는지 검증."""
     assert "GREEN" not in ALERT_LEVELS_TO_REPORT
@@ -73,6 +76,7 @@ def test_alert_levels_to_report_includes_non_green() -> None:
 # _call_claude_haiku 테스트
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_call_claude_haiku_raises_without_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
     """ANTHROPIC_API_KEY 미설정 시 RuntimeError 발생을 검증."""
@@ -86,7 +90,10 @@ async def test_call_claude_haiku_returns_text(monkeypatch: pytest.MonkeyPatch) -
     """Claude API 호출이 성공하면 텍스트가 반환되는지 검증 (Mock 사용)."""
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key-mock")
 
+    # SDK 0.40+ TextBlock — .type="text" 와 .text 필드 가짐.
+    # ThinkingBlock/ToolUseBlock 과 구분 위해 .type 명시 필수.
     mock_content = MagicMock()
+    mock_content.type = "text"
     mock_content.text = "테스트 경보 리포트 내용입니다."
 
     mock_response = MagicMock()
@@ -109,6 +116,7 @@ async def test_call_claude_haiku_returns_text(monkeypatch: pytest.MonkeyPatch) -
 # ---------------------------------------------------------------------------
 # generate_latest_alert_report 분기 로직 테스트
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_generate_skips_when_no_risk_score(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -248,6 +256,7 @@ async def test_run_nightly_reports_continues_on_error() -> None:
 # 감사로그 + XAI 메타데이터 신규 테스트 (ISMS-P 2.9 대응)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_insert_alert_report_includes_audit_and_xai_columns() -> None:
     """_insert_alert_report가 감사로그·XAI 컬럼을 INSERT 쿼리에 올바르게 전달하는지 검증."""
@@ -376,9 +385,12 @@ async def test_generate_returns_xai_metadata_in_result(monkeypatch: pytest.Monke
     with (
         patch("pipeline.report_trigger._get_engine") as mock_engine_fn,
         patch("pipeline.report_trigger._fetch_latest_risk_score", new_callable=AsyncMock, return_value=fake_risk),
-        patch("pipeline.report_trigger._fetch_rag_context", return_value=[
-            {"metadata": {"topic": "flu_guideline", "source": "KCDC"}, "score": 0.91, "text": "테스트 가이드라인"},
-        ]),
+        patch(
+            "pipeline.report_trigger._fetch_rag_context",
+            return_value=[
+                {"metadata": {"topic": "flu_guideline", "source": "KCDC"}, "score": 0.91, "text": "테스트 가이드라인"},
+            ],
+        ),
         patch("pipeline.report_trigger._call_claude_haiku", new_callable=AsyncMock, return_value="YELLOW 경보 리포트"),
         patch("pipeline.report_trigger._insert_alert_report", new_callable=AsyncMock, return_value=77),
     ):

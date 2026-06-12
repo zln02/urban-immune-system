@@ -11,6 +11,7 @@ composite_score 를 계산하고 risk_scores 에 upsert 한다.
   단, YELLOW 이상은 2개 이상 계층이 30 이상이어야 한다.
   조건 미충족 시 GREEN 으로 강제 다운그레이드.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -62,6 +63,7 @@ _pool: asyncpg.Pool | None = None
 # 설정 로딩 — config.py 가중치 사용
 # ---------------------------------------------------------------------------
 
+
 def _load_weights() -> tuple[float, float, float]:
     """backend/app/config.py 에서 앙상블 가중치를 로드한다.
 
@@ -70,6 +72,7 @@ def _load_weights() -> tuple[float, float, float]:
     """
     try:
         from backend.app.config import settings
+
         return (
             settings.ensemble_weight_l1,
             settings.ensemble_weight_l2,
@@ -83,6 +86,7 @@ def _load_weights() -> tuple[float, float, float]:
 # ---------------------------------------------------------------------------
 # 결과 데이터 클래스
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class RiskScoreRow:
@@ -101,34 +105,90 @@ class RiskScoreRow:
 # 경보 레벨 계산
 # ---------------------------------------------------------------------------
 
+
+def _get_layer_threshold(region: str | None = None) -> float:
+    """지역별 Gate B layer threshold 를 반환한다.
+
+    regional_layer_thresholds 에 명시된 지역은 해당 threshold 사용,
+    그 외는 default_layer_threshold(30.0) 사용.
+
+    Args:
+        region: 지역명. None 이면 default 반환.
+
+    Returns:
+        해당 지역의 Gate B layer threshold
+    """
+    if region is None:
+        return _CROSS_VALIDATION_LAYER_THRESHOLD
+    try:
+        from backend.app.config import settings
+
+        return settings.regional_layer_thresholds.get(region, settings.default_layer_threshold)
+    except Exception as exc:
+        logger.warning("regional threshold 로드 실패, 기본값 30.0 사용: %s", exc)
+        return _CROSS_VALIDATION_LAYER_THRESHOLD
+
+
+def _get_composite_threshold(region: str | None = None) -> float:
+    """지역별 YELLOW 경보 composite 임계값을 반환한다.
+
+    regional_composite_thresholds 에 명시된 지역은 해당 값 사용,
+    그 외는 default_composite_threshold(30.0) 사용.
+
+    Args:
+        region: 지역명. None 이면 default(30.0) 반환.
+
+    Returns:
+        해당 지역의 composite YELLOW 임계값
+    """
+    if region is None:
+        return 30.0
+    try:
+        from backend.app.config import settings
+
+        return settings.regional_composite_thresholds.get(region, settings.default_composite_threshold)
+    except Exception as exc:
+        logger.warning("composite threshold 로드 실패, 기본값 30.0 사용: %s", exc)
+        return 30.0
+
+
 def determine_alert_level(
     composite: float,
     l1: float | None,
     l2: float | None,
     l3: float | None,
+    region: str | None = None,
 ) -> str:
     """composite_score 와 계층별 값으로 경보 레벨을 결정한다.
 
     게이트 B — 2계층 교차검증 강제:
       YELLOW 이상 발령은 L1/L2/L3 중 _CROSS_VALIDATION_MIN_LAYERS(2)개 이상이
-      _CROSS_VALIDATION_LAYER_THRESHOLD(30.0) 이상일 때만 가능.
-      단독 계층만 30+ 이면 GREEN 다운그레이드.
+      layer_threshold 이상일 때만 가능.
+      단독 계층만 threshold+ 이면 GREEN 다운그레이드.
+
+      region 이 주어지면 regional_composite_thresholds 에서 YELLOW 진입 임계값을,
+      regional_layer_thresholds 에서 게이트 B 계층 임계값을 각각 조회.
+      약신호 지역: 충청북도 composite≥20, 대구/경북 composite≥25, 그 외 30.
 
     Args:
         composite: 가중합 점수 (0-100)
         l1: OTC 정규화 점수 (None = 데이터 없음)
         l2: 하수도 정규화 점수 (None = 데이터 없음)
         l3: 검색트렌드 정규화 점수 (None = 데이터 없음)
+        region: 지역명 (선택). 지역별 threshold 적용에 사용.
 
     Returns:
         'GREEN' | 'YELLOW' | 'ORANGE' | 'RED'
     """
+    # 지역별 YELLOW 진입 composite 임계값 조회
+    yellow_threshold = _get_composite_threshold(region)
+
     # composite 기반 원래 레벨 결정
     if composite >= _RED_THRESHOLD:
         raw_level = "RED"
     elif composite >= 55:
         raw_level = "ORANGE"
-    elif composite >= 30:
+    elif composite >= yellow_threshold:
         raw_level = "YELLOW"
     else:
         raw_level = "GREEN"
@@ -137,17 +197,18 @@ def determine_alert_level(
     if raw_level == "GREEN":
         return "GREEN"
 
+    # 지역별 threshold 조회 (약신호 지역은 낮은 threshold 적용)
+    layer_threshold = _get_layer_threshold(region)
+
     # 게이트 B: _CROSS_VALIDATION_MIN_LAYERS 개 이상 계층이
-    # _CROSS_VALIDATION_LAYER_THRESHOLD 이상이어야 YELLOW+ 발령
-    above_threshold = sum(
-        1 for v in (l1, l2, l3)
-        if v is not None and v >= _CROSS_VALIDATION_LAYER_THRESHOLD
-    )
+    # layer_threshold 이상이어야 YELLOW+ 발령
+    above_threshold = sum(1 for v in (l1, l2, l3) if v is not None and v >= layer_threshold)
     if above_threshold < _CROSS_VALIDATION_MIN_LAYERS:
         logger.info(
-            "게이트B 차단 (%.1f+ 계층 %d개 < %d개) — %s → GREEN 다운그레이드 "
+            "게이트B 차단 region=%s (%.1f+ 계층 %d개 < %d개) — %s → GREEN 다운그레이드 "
             "(l1=%.1f l2=%.1f l3=%.1f composite=%.1f)",
-            _CROSS_VALIDATION_LAYER_THRESHOLD,
+            region or "unknown",
+            layer_threshold,
             above_threshold,
             _CROSS_VALIDATION_MIN_LAYERS,
             raw_level,
@@ -164,6 +225,7 @@ def determine_alert_level(
 # ---------------------------------------------------------------------------
 # DB 커넥션 풀
 # ---------------------------------------------------------------------------
+
 
 def _normalize_dsn(db_url: str) -> str:
     """asyncpg 가 이해하는 DSN 형태로 변환한다.
@@ -207,6 +269,7 @@ async def _close_pool() -> None:
 # ---------------------------------------------------------------------------
 # 지역별 최신 계층 신호 조회
 # ---------------------------------------------------------------------------
+
 
 async def _fetch_latest_signals(
     pool: asyncpg.Pool,
@@ -272,6 +335,7 @@ async def _fetch_latest_signals(
 # 단일 지역 점수 계산
 # ---------------------------------------------------------------------------
 
+
 async def compute_risk_scores_for_region(
     region: str,
     target_date: date,
@@ -293,7 +357,9 @@ async def compute_risk_scores_for_region(
         target_date.year,
         target_date.month,
         target_date.day,
-        23, 59, 59,
+        23,
+        59,
+        59,
         tzinfo=timezone.utc,
     )
     signals = await _fetch_latest_signals(pool, region, as_of=as_of)
@@ -313,7 +379,7 @@ async def compute_risk_scores_for_region(
     safe_l3 = l3 if l3 is not None else 0.0
 
     composite = round(w1 * safe_l1 + w2 * safe_l2 + w3 * safe_l3, 4)
-    alert_level = determine_alert_level(composite, l1, l2, l3)
+    alert_level = determine_alert_level(composite, l1, l2, l3, region=region)
 
     score_time = datetime(
         target_date.year,
@@ -336,6 +402,7 @@ async def compute_risk_scores_for_region(
 # ---------------------------------------------------------------------------
 # risk_scores upsert
 # ---------------------------------------------------------------------------
+
 
 async def _upsert_risk_score(pool: asyncpg.Pool, row: RiskScoreRow) -> bool:
     """risk_scores 에 upsert 한다 (동일 region + time 중복 방지).
@@ -398,6 +465,7 @@ async def _upsert_risk_score(pool: asyncpg.Pool, row: RiskScoreRow) -> bool:
 # 전체 지역 일괄 실행
 # ---------------------------------------------------------------------------
 
+
 async def run_weekly_scoring() -> int:
     """모든 지역의 최신 신호로 composite_score 를 계산하고 risk_scores 에 적재한다.
 
@@ -410,10 +478,7 @@ async def run_weekly_scoring() -> int:
 
     # 현재 DB 에 존재하는 모든 region 탐색
     regions: list[str] = [
-        row["region"]
-        for row in await pool.fetch(
-            "SELECT DISTINCT region FROM layer_signals ORDER BY region"
-        )
+        row["region"] for row in await pool.fetch("SELECT DISTINCT region FROM layer_signals ORDER BY region")
     ]
 
     if not regions:
@@ -443,6 +508,7 @@ async def run_weekly_scoring() -> int:
 # 과거 시점 시뮬레이션 백필
 # ---------------------------------------------------------------------------
 
+
 async def backfill_risk_scores(
     start_date: date,
     end_date: date,
@@ -463,10 +529,7 @@ async def backfill_risk_scores(
     """
     pool = await _get_pool()
     regions: list[str] = [
-        row["region"]
-        for row in await pool.fetch(
-            "SELECT DISTINCT region FROM layer_signals ORDER BY region"
-        )
+        row["region"] for row in await pool.fetch("SELECT DISTINCT region FROM layer_signals ORDER BY region")
     ]
     if not regions:
         logger.warning("layer_signals 가 비어있어 백필 불가")
@@ -499,6 +562,7 @@ async def backfill_risk_scores(
 # 직접 실행 엔트리포인트
 # ---------------------------------------------------------------------------
 
+
 async def _main() -> None:
     """python -m pipeline.scorer [--backfill START END] 실행 시 호출된다."""
     import argparse
@@ -514,8 +578,7 @@ async def _main() -> None:
         metavar=("START", "END"),
         help="과거 시점 시뮬레이션 백필 (YYYY-MM-DD YYYY-MM-DD)",
     )
-    parser.add_argument("--step-days", type=int, default=7,
-                        help="백필 시점 간 간격 (기본 7일)")
+    parser.add_argument("--step-days", type=int, default=7, help="백필 시점 간 간격 (기본 7일)")
     args = parser.parse_args()
 
     try:

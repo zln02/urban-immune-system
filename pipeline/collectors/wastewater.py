@@ -11,6 +11,7 @@
 Carry-forward (fallback) 로직:
   - 수집/파싱 실패 시 최근 N주의 이전 데이터를 재사용하여 NaN 전파 방지
 """
+
 from __future__ import annotations
 
 import asyncio

@@ -3,6 +3,7 @@
 사용법:
     python tests/load/analyze_results.py [--csv tests/load/results_stats.csv]
 """
+
 from __future__ import annotations
 
 import argparse
@@ -22,19 +23,21 @@ def parse_stats(csv_path: pathlib.Path) -> list[dict]:
             name = row.get("Name", "")
             if name in ("Aggregated", ""):
                 continue
-            rows.append({
-                "endpoint": name,
-                "method": row.get("Type", "GET"),
-                "request_count": int(row.get("Request Count", 0) or 0),
-                "failure_count": int(row.get("Failure Count", 0) or 0),
-                "p50_ms": float(row.get("50%", 0) or 0),
-                "p95_ms": float(row.get("95%", 0) or 0),
-                "p99_ms": float(row.get("99%", 0) or 0),
-                "avg_ms": float(row.get("Average (ms)", 0) or 0),
-                "min_ms": float(row.get("Min (ms)", 0) or 0),
-                "max_ms": float(row.get("Max (ms)", 0) or 0),
-                "rps": float(row.get("Requests/s", 0) or 0),
-            })
+            rows.append(
+                {
+                    "endpoint": name,
+                    "method": row.get("Type", "GET"),
+                    "request_count": int(row.get("Request Count", 0) or 0),
+                    "failure_count": int(row.get("Failure Count", 0) or 0),
+                    "p50_ms": float(row.get("50%", 0) or 0),
+                    "p95_ms": float(row.get("95%", 0) or 0),
+                    "p99_ms": float(row.get("99%", 0) or 0),
+                    "avg_ms": float(row.get("Average (ms)", 0) or 0),
+                    "min_ms": float(row.get("Min (ms)", 0) or 0),
+                    "max_ms": float(row.get("Max (ms)", 0) or 0),
+                    "rps": float(row.get("Requests/s", 0) or 0),
+                }
+            )
     return rows
 
 
@@ -47,10 +50,7 @@ def compute_verdict(rows: list[dict], p95_target_ms: float = 500.0) -> dict:
     total_rps = 0.0
 
     for r in rows:
-        fail_rate = (
-            round(r["failure_count"] / r["request_count"] * 100, 2)
-            if r["request_count"] > 0 else 0.0
-        )
+        fail_rate = round(r["failure_count"] / r["request_count"] * 100, 2) if r["request_count"] > 0 else 0.0
         pass_p95 = r["p95_ms"] < p95_target_ms
         if not pass_p95:
             all_pass = False
@@ -59,9 +59,7 @@ def compute_verdict(rows: list[dict], p95_target_ms: float = 500.0) -> dict:
         total_rps += r["rps"]
         results.append({**r, "failure_rate_pct": fail_rate, "p95_pass": pass_p95})
 
-    overall_fail_rate = (
-        round(total_failures / total_requests * 100, 2) if total_requests > 0 else 0.0
-    )
+    overall_fail_rate = round(total_failures / total_requests * 100, 2) if total_requests > 0 else 0.0
     return {
         "generated_at": datetime.now().isoformat(),
         "p95_target_ms": p95_target_ms,
@@ -81,6 +79,7 @@ def save_chart(verdict: dict, output_path: pathlib.Path) -> None:
     """엔드포인트별 p50/p95/p99 bar chart 저장 (matplotlib)."""
     try:
         import matplotlib
+
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
         import numpy as np
@@ -99,10 +98,9 @@ def save_chart(verdict: dict, output_path: pathlib.Path) -> None:
 
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.bar(x - width, p50_vals, width, label="p50", color="#3b82f6", alpha=0.85)
-    ax.bar(x,         p95_vals, width, label="p95", color="#f59e0b", alpha=0.85)
+    ax.bar(x, p95_vals, width, label="p95", color="#f59e0b", alpha=0.85)
     ax.bar(x + width, p99_vals, width, label="p99", color="#ef4444", alpha=0.85)
-    ax.axhline(y=target, color="red", linestyle="--", linewidth=1.5,
-               label=f"p95 목표 {target}ms (조달청 기준)")
+    ax.axhline(y=target, color="red", linestyle="--", linewidth=1.5, label=f"p95 목표 {target}ms (조달청 기준)")
 
     ax.set_xticks(x)
     ax.set_xticklabels(endpoints, rotation=15, ha="right", fontsize=9)
@@ -158,7 +156,8 @@ def main(argv: list[str] | None = None) -> int:
     json_path = pathlib.Path(args.output_json)
     json_path.parent.mkdir(parents=True, exist_ok=True)
     json_path.write_text(
-        json.dumps(verdict, ensure_ascii=False, indent=2), encoding="utf-8",
+        json.dumps(verdict, ensure_ascii=False, indent=2),
+        encoding="utf-8",
     )
     print(f"\nJSON 결과 저장: {json_path}")
 
@@ -174,10 +173,7 @@ def main(argv: list[str] | None = None) -> int:
         )
     s = verdict["summary"]
     print("=" * 60)
-    print(
-        f"종합  요청={s['total_requests']}  실패율={s['overall_failure_rate_pct']:.1f}%  "
-        f"총RPS={s['total_rps']:.1f}"
-    )
+    print(f"종합  요청={s['total_requests']}  실패율={s['overall_failure_rate_pct']:.1f}%  총RPS={s['total_rps']:.1f}")
     print(f"종합 판정: {s['overall_verdict']}")
 
     # 차트 저장

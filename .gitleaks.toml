@@ -1,0 +1,23 @@
+# UIS gitleaks 설정 — base config 확장 + 프로젝트 특수 false positive 제외
+# 검증 일자: 2026-06-01
+
+[extend]
+# 기본 gitleaks rules 그대로 사용
+useDefault = true
+
+[allowlist]
+description = "UIS 프로젝트 false positive (placeholder, baseline 파일)"
+
+paths = [
+    # detect-secrets baseline 파일 — SHA1 해시만 저장 (실 시크릿 아님)
+    '''\.secrets\.baseline''',
+]
+
+regexes = [
+    # `.env.example` 형식의 값 없는 환경변수 (문서·CLAUDE.md·security.md 다수)
+    # 예: `NAVER_CLIENT_SECRET=`, `OPENAI_API_KEY=`, `DB_PASSWORD=`
+    # 값(= 뒤) 이 비어있거나 placeholder("changeme", "your-key" 등)면 무시
+    '''(?i)(NAVER_CLIENT_SECRET|OPENAI_API_KEY|ANTHROPIC_API_KEY|DB_PASSWORD|KMA_API_KEY|MAPBOX_TOKEN)=\s*(#.*)?$''',
+    # nginx Basic Auth 검증 예시의 admin:PW placeholder
+    '''-u\s+admin:PW''',
+]

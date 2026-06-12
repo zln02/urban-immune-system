@@ -17,6 +17,7 @@ CLI 예시:
   python -m pipeline.collectors.kowas_loader --reparse-existing
   python -m pipeline.collectors.kowas_loader --weeks 52   # 최근 52주차만 적재
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -95,7 +96,11 @@ async def insert_readings(readings: list[WeeklyReading], report_date: datetime) 
             inserted += 1
         except Exception as exc:
             logger.error(
-                "INSERT 실패 %s/%s/w%d: %s", r.region, r.pathogen, r.week, exc,
+                "INSERT 실패 %s/%s/w%d: %s",
+                r.region,
+                r.pathogen,
+                r.week,
+                exc,
             )
     return inserted
 
@@ -118,7 +123,9 @@ async def load_pdf(
         )
 
     report_dt = datetime.combine(
-        iso_week_end_date(year, week), datetime.min.time(), tzinfo=timezone.utc,
+        iso_week_end_date(year, week),
+        datetime.min.time(),
+        tzinfo=timezone.utc,
     )
     inserted = await insert_readings(readings, report_dt)
     logger.info("PDF %s → 추출 %d건 / 적재 %d건", pdf_path.name, len(readings), inserted)
@@ -149,7 +156,6 @@ async def run(
         try:
             if skip_db:
                 # 파싱만 (캐시 JSON 갱신용)
-                from pipeline.collectors.kowas_parser import parse_report
                 readings = parse_report(pdf, year, week)
                 JSON_CACHE_DIR.mkdir(parents=True, exist_ok=True)
                 (JSON_CACHE_DIR / f"kowas_{year}_w{week:02d}.json").write_text(
@@ -169,9 +175,7 @@ async def run(
             async with make_session() as session:
                 for region in SIDO_ORDER:
                     try:
-                        fallback_row = await _apply_wastewater_fallback(
-                            session, region, week_iso, lookback_weeks=4
-                        )
+                        fallback_row = await _apply_wastewater_fallback(session, region, week_iso, lookback_weeks=4)
                         if fallback_row:
                             # Fallback row를 직접 DB에 INSERT
                             # (asyncpg로 직접 INSERT, 7개 컬럼만 사용 — meta 컬럼은 프로덕션 DB에 없음)
@@ -229,9 +233,11 @@ if __name__ == "__main__":
     p.add_argument("--no-db", action="store_true", help="파싱 + JSON만, DB 적재 스킵")
     args = p.parse_args()
 
-    asyncio.run(run(
-        weeks_limit=args.weeks,
-        download_first=args.download,
-        download_limit=args.download_limit,
-        skip_db=args.no_db,
-    ))
+    asyncio.run(
+        run(
+            weeks_limit=args.weeks,
+            download_first=args.download,
+            download_limit=args.download_limit,
+            skip_db=args.no_db,
+        )
+    )

@@ -22,10 +22,10 @@ import sys
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 import matplotlib.font_manager as fm
+import matplotlib.pyplot as plt
 import numpy as np
 
 # ─────────────────────── 한글 폰트 ──────────────────────────────────────────
@@ -43,8 +43,8 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from analysis.backtest_2025_flu import run_backtest  # noqa: E402
 from pipeline.scorer import (  # noqa: E402
-    _CROSS_VALIDATION_MIN_LAYERS,
     _CROSS_VALIDATION_LAYER_THRESHOLD,
+    _CROSS_VALIDATION_MIN_LAYERS,
     _RED_THRESHOLD,
 )
 
@@ -623,7 +623,7 @@ async def _main() -> None:
     print(f"  OK 지역 ≥ 4개:         {'✓ PASS' if v['ok_regions_gte_4'] else '✗ FAIL'}")
     print(f"  전체 Pass:              {'✓ ALL PASS' if v['all_pass'] else '✗ SOME FAIL'}")
     print()
-    print(f"  산출 파일:")
+    print("  산출 파일:")
     print(f"    {json_path}")
     print(f"    {timeline_png}")
     print(f"    {metrics_png}")

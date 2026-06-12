@@ -4,10 +4,12 @@
 backend/app/config.py · pipeline/scorer.py · ml/checkpoints/autoencoder/meta.json
 (동적 수치) 합성으로 구성된다. 가중치·임계값을 코드에서 바꾸면 챗봇 답변도 자동 갱신.
 """
+
 from __future__ import annotations
 
 import json
 import logging
+import re
 from collections.abc import AsyncIterator
 from pathlib import Path
 
@@ -56,9 +58,7 @@ def _live_spec() -> dict:
             _RED_THRESHOLD,
         )
     except ImportError:
-        logger.warning(
-            "pipeline.scorer import 실패 — PYTHONPATH 미설정 가능성. fallback 상수 사용"
-        )
+        logger.warning("pipeline.scorer import 실패 — PYTHONPATH 미설정 가능성. fallback 상수 사용")
         # CLAUDE.md 의 단일 출처 규칙 위반 우려 있으나, 챗봇 가용성 보호가 우선.
         # pipeline.scorer 가 임포트되면 이 분기는 절대 실행되지 않음.
         _CROSS_VALIDATION_LAYER_THRESHOLD = 30.0
@@ -94,8 +94,6 @@ def _render_knowledge(template: str, spec: dict) -> str:
     - {w1}, {autoencoder_threshold:.4f} 같은 알려진 key는 spec 값으로 치환
     - {...}, {{...}}, {7,14,21} 같은 사양 외 brace는 원문 그대로 유지
     """
-    import re
-
     pattern = re.compile(r"\{([a-zA-Z_][a-zA-Z0-9_]*)(?::([^}]+))?\}")
 
     def replace(match: re.Match) -> str:
@@ -155,7 +153,7 @@ async def _stream_chat(req: ChatRequest) -> AsyncIterator[str]:
     """Claude Haiku로 SSE 스트리밍 생성."""
     # history 검증: role은 user/assistant만 허용, content 300자 제한
     safe_history: list[dict] = []
-    for item in (req.history or []):
+    for item in req.history or []:
         if not isinstance(item, dict):
             continue
         role = item.get("role", "")

@@ -10,6 +10,7 @@
   --users 50 --spawn-rate 2 --run-time 6m
   (실행 예시 → tests/load/README.md 참조)
 """
+
 from __future__ import annotations
 
 from locust import HttpUser, between, task

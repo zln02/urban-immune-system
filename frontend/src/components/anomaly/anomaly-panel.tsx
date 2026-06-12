@@ -347,8 +347,8 @@ export function AnomalyPanel({ lang }: AnomalyPanelProps) {
           {lang === "ko" ? "작동 원리" : "How it works"}
         </div>
         {lang === "ko"
-          ? "Autoencoder가 52주 정상 시즌 데이터로 3계층 신호 패턴을 학습합니다. 입력 신호를 압축 후 복원할 때 발생하는 재구성 오차(Reconstruction Error)가 임계값(95th percentile)을 초과하면 이상으로 판정합니다. 인플루엔자, COVID-19 등 특정 질병명을 모르더라도 \"비정상 패턴\"을 탐지할 수 있습니다."
-          : "An Autoencoder learns normal 3-layer signal patterns from 52 weeks of baseline data. When reconstruction error from compressing and restoring input exceeds the 95th-percentile threshold, an anomaly is flagged — even without knowing the specific pathogen."}
+          ? "Autoencoder가 52주 정상 시즌 데이터로 3계층 신호 패턴을 학습합니다. 입력 신호를 압축 후 복원할 때 발생하는 재구성 오차(Reconstruction Error)가 임계값(99th percentile)을 초과하면 이상으로 판정합니다. 인플루엔자, COVID-19 등 특정 질병명을 모르더라도 \"비정상 패턴\"을 탐지할 수 있습니다."
+          : "An Autoencoder learns normal 3-layer signal patterns from 52 weeks of baseline data. When reconstruction error from compressing and restoring input exceeds the 99th-percentile threshold, an anomaly is flagged — even without knowing the specific pathogen."}
       </div>
     </div>
   );

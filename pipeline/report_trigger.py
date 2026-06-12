@@ -4,6 +4,7 @@
     python -m pipeline.report_trigger --region 서울특별시
     python -m pipeline.report_trigger --all
 """
+
 from __future__ import annotations
 
 import argparse
@@ -55,6 +56,7 @@ def _fetch_rag_context(region: str, alert_level: str) -> list[dict]:
         logger.exception("RAG 검색 실패, 가이드라인 없이 진행")
         return []
 
+
 _SYSTEM_PROMPT = """당신은 공중보건 전문가입니다.
 3-Layer 감염병 조기경보 시스템(약국 OTC + 하수 바이오마커 + 검색어 트렌드)의
 분석 결과를 바탕으로 KDCA 주간 감염병 보고서 표준 포맷에 맞는 경보 리포트를 작성합니다.
@@ -84,10 +86,23 @@ ACTION_GUIDE: dict[str, str] = {
 
 # 전국 17개 시·도
 ALL_REGIONS = [
-    "서울특별시", "부산광역시", "대구광역시", "인천광역시",
-    "광주광역시", "대전광역시", "울산광역시", "세종특별자치시",
-    "경기도", "강원특별자치도", "충청북도", "충청남도",
-    "전라북도", "전라남도", "경상북도", "경상남도", "제주특별자치도",
+    "서울특별시",
+    "부산광역시",
+    "대구광역시",
+    "인천광역시",
+    "광주광역시",
+    "대전광역시",
+    "울산광역시",
+    "세종특별자치시",
+    "경기도",
+    "강원특별자치도",
+    "충청북도",
+    "충청남도",
+    "전라북도",
+    "전라남도",
+    "경상북도",
+    "경상남도",
+    "제주특별자치도",
 ]
 
 
@@ -215,7 +230,14 @@ async def _call_claude_haiku(prompt: str) -> str:
         system=_SYSTEM_PROMPT,
         messages=[{"role": "user", "content": prompt}],
     )
-    return resp.content[0].text if resp.content else ""
+    # content[0] may be TextBlock, ThinkingBlock, ToolUseBlock — only TextBlock has .text.
+    # Scan for the first text block so extended-thinking responses don't AttributeError.
+    if not resp.content:
+        return ""
+    for block in resp.content:
+        if getattr(block, "type", None) == "text":
+            return getattr(block, "text", "") or ""
+    return ""
 
 
 async def _fetch_latest_risk_score(region: str, session: AsyncSession) -> dict[str, Any] | None:
@@ -288,15 +310,9 @@ async def _insert_alert_report(
             "model_used": _HAIKU_MODEL,
             "triggered_by": triggered_by,
             "trigger_source": trigger_source,
-            "feature_values": (
-                json.dumps(feature_values, ensure_ascii=False) if feature_values is not None else None
-            ),
-            "rag_sources": (
-                json.dumps(rag_sources, ensure_ascii=False) if rag_sources is not None else None
-            ),
-            "model_metadata": (
-                json.dumps(model_metadata, ensure_ascii=False) if model_metadata is not None else None
-            ),
+            "feature_values": (json.dumps(feature_values, ensure_ascii=False) if feature_values is not None else None),
+            "rag_sources": (json.dumps(rag_sources, ensure_ascii=False) if rag_sources is not None else None),
+            "model_metadata": (json.dumps(model_metadata, ensure_ascii=False) if model_metadata is not None else None),
         },
     )
     await session.commit()
@@ -457,11 +473,12 @@ def _cli() -> None:
     args = parser.parse_args()
 
     import sys
+
     trigger_source = " ".join(sys.argv[1:])  # CLI 호출 인수 감사 기록
 
     if args.all:
         count = asyncio.run(run_nightly_reports(triggered_by="manual_cli", trigger_source=trigger_source))
-        print(f"[완료] 총 {count}건 생성")
+        logger.info("[완료] 총 %d건 생성", count)
     else:
         result = asyncio.run(
             generate_latest_alert_report(
@@ -471,11 +488,11 @@ def _cli() -> None:
             )
         )
         if result is None:
-            print(f"[스킵] {args.region}: risk_scores 없음 또는 GREEN 경보")
+            logger.info("[스킵] %s: risk_scores 없음 또는 GREEN 경보", args.region)
         else:
-            print(f"[완료] id={result['id']}, level={result['alert_level']}")
-            print(f"[triggered_by] {result['triggered_by']}")
-            print(f"[summary 앞 300자]\n{result['summary'][:300]}")
+            logger.info("[완료] id=%d, level=%s", result["id"], result["alert_level"])
+            logger.info("[triggered_by] %s", result["triggered_by"])
+            logger.info("[summary 앞 300자]\n%s", result["summary"][:300])
 
 
 if __name__ == "__main__":

@@ -8,6 +8,7 @@
 3. source 분기: backfill 'naver_shopping' + collector 'naver_shopping_insight' 가 한 region 에
    섞여 정규화 스케일 차이로 등락 왜곡 (2026-04-13 vs 04-24 vs 04-27)
 """
+
 from __future__ import annotations
 
 from datetime import date, timedelta
@@ -29,8 +30,7 @@ class TestBackfillZeroCollapse:
             (date(2026, 4, 27) - timedelta(weeks=56 - i), float(v))
             for i, v in enumerate(
                 # 인플루엔자 시즌 패턴: 점진 상승 → 피크(100) → 하강 → 비수기(<5)
-                [50] * 5 + [80, 95, 100, 90, 70, 50, 30, 20, 15, 10, 8, 6, 5, 4, 3, 2, 1.5, 1.2, 1.0]
-                + [0.98] * 32
+                [50] * 5 + [80, 95, 100, 90, 70, 50, 30, 20, 15, 10, 8, 6, 5, 4, 3, 2, 1.5, 1.2, 1.0] + [0.98] * 32
             )
         ]
         assert series[-1][1] == 0.98
@@ -56,8 +56,7 @@ class TestBackfillZeroCollapse:
         # 마지막 주 raw=0.98 → value=0.98 (이전 버그: value=0.0)
         last = captured[-1]
         assert last["value"] == pytest.approx(0.98, abs=1e-6), (
-            f"zero-collapse 재발: raw=0.98 인데 value={last['value']}. "
-            f"backfill_layer 가 raw 그대로 사용해야 함."
+            f"zero-collapse 재발: raw=0.98 인데 value={last['value']}. backfill_layer 가 raw 그대로 사용해야 함."
         )
         assert last["raw_value"] == pytest.approx(0.98, abs=1e-6)
 
@@ -79,7 +78,9 @@ class TestBackfillZeroCollapse:
 
         series = [(date(2026, 4, 13), 150.0), (date(2026, 4, 20), 50.0)]
         await naver_backfill.backfill_layer(
-            layer="otc", series=series, source="naver_shopping_insight",
+            layer="otc",
+            series=series,
+            source="naver_shopping_insight",
             regions=["서울특별시"],
         )
         assert captured[0]["value"] == 100.0
@@ -126,8 +127,7 @@ class TestOtcRegionBroadcast:
 
         # 17개 시·도 모두 적재됐는지
         assert len(captured_regions) == 17, (
-            f"region broadcast 누락: {len(captured_regions)}/17. "
-            f"otc_collector.SIDO_ALL 로 fan-out 해야 함."
+            f"region broadcast 누락: {len(captured_regions)}/17. otc_collector.SIDO_ALL 로 fan-out 해야 함."
         )
         assert set(captured_regions) == set(otc_collector.SIDO_ALL)
 
@@ -153,11 +153,17 @@ class TestSourceUnification:
         text = src.read_text(encoding="utf-8")
         # OTC backfill_layer 호출에 'naver_shopping' (legacy) 가 단독으로 들어가면 안 됨
         # 'naver_shopping_insight' 통일 정책
-        otc_block = text.split('layers in ("both", "otc")')[1].split("return counts")[0]
-        assert '"naver_shopping_insight"' in otc_block, (
-            "OTC backfill source 가 'naver_shopping_insight' 로 통일돼야 함 "
+        # 2026-06-01 다질병 도입 후 source 라벨이 변수(otc_source) 로 분기:
+        #   influenza  → 'naver_shopping_insight'  (호환성 유지, otc_collector 와 통일)
+        #   covid/노로 → 'naver_shopping_insight_{pathogen}' (멱등 DELETE 분리)
+        # 변수 정의 코드와 do_otc 블록 내부 사용 둘 다 'naver_shopping_insight' 리터럴 검증.
+        assert (
+            '"naver_shopping_insight" if pathogen == "influenza"' in text
+        ), (
+            "OTC backfill source 가 influenza 일 때 'naver_shopping_insight' 로 통일돼야 함 "
             "(otc_collector 와 같은 라벨, 두 source 섞임 방지)"
         )
-        assert '"naver_shopping",' not in otc_block.replace('"naver_shopping_insight"', ""), (
+        # legacy 라벨 회귀 방지
+        assert '"naver_shopping",' not in text, (
             "legacy 'naver_shopping' source 로 backfill 하면 안 됨 — 정규화 스케일 분기 사고 재발"
         )

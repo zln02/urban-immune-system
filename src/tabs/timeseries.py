@@ -1,8 +1,10 @@
 """시계열 탭."""
+
 from __future__ import annotations
 
 import logging
 
+import pandas as pd
 import streamlit as st
 
 from src.api_client import get_latest_signals
@@ -15,11 +17,9 @@ logger = logging.getLogger(__name__)
 def render_timeseries_tab(show_train: bool) -> None:
     st.markdown("#### 3-Layer 시계열 트렌드 vs 확진자 수")
 
-    # Try API data first
     api_data = get_latest_signals()
     if api_data and api_data.get("count", 0) > 0:
         st.success(f"실데이터 연결됨 — {api_data['count']}건 조회")
-        import pandas as pd
         df = pd.DataFrame(api_data["data"])
         if not df.empty and "time" in df.columns:
             df["time"] = pd.to_datetime(df["time"])
@@ -33,7 +33,6 @@ def render_timeseries_tab(show_train: bool) -> None:
                     st.line_chart(layer_df.set_index("time")["value"], color=color)
                     st.caption(f"{label} (최근 {len(layer_df)}건)")
     else:
-        # Simulation fallback
         render_image_card("slide6_timeseries.png", "📁 `assets/slide6_timeseries.png` 파일을 넣어주세요")
         st.info("API 미연결 — 시뮬레이션 데이터 표시 중")
 
