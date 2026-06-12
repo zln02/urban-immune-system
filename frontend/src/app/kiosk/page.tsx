@@ -88,7 +88,7 @@ function LayerGraphCard({ title, source, dbDate, values, latest, change, color, 
             {title}
             {caveat && <span style={{ fontSize: 9, padding: "1px 5px", borderRadius: 4, background: "rgba(148,163,184,0.15)", color: "#94a3b8", fontWeight: 600 }}>전국</span>}
           </div>
-          <div style={{ fontSize: 10.5, opacity: 0.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{source}</div>
+          <div style={{ fontSize: 12, opacity: 0.6, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{source}</div>
         </div>
         <div style={{ textAlign: "right" }}>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 19, fontWeight: 800, color, lineHeight: 1 }}>{latest.toFixed(0)}</div>
@@ -96,7 +96,7 @@ function LayerGraphCard({ title, source, dbDate, values, latest, change, color, 
         </div>
       </div>
       <MiniAreaChart values={values} color={color} />
-      <div style={{ fontSize: 9.5, opacity: 0.45, fontFamily: "var(--font-mono)", marginTop: 4 }}>DB 최신 {dbDate}</div>
+      <div style={{ fontSize: 11, opacity: 0.55, fontFamily: "var(--font-mono)", marginTop: 4 }}>DB 최신 {dbDate}</div>
     </div>
   );
 }
@@ -195,7 +195,7 @@ function RegionDrilldown({ alert, onClose }: { alert: RegionAlert; onClose: () =
 }
 
 export default function KioskPage() {
-  const { data } = useRegionAlerts();
+  const { data, isLoading, isError } = useRegionAlerts();
   const alerts = data?.alerts ?? [];
   const [selectedCode, setSelectedCode] = useState<RegionCode | null>(null);
   const [clock, setClock] = useState("");
@@ -245,7 +245,7 @@ export default function KioskPage() {
           <h1 style={{ fontSize: 25, fontWeight: 800, margin: 0, letterSpacing: "-0.02em" }}>도시 면역 시스템</h1>
           <span style={{ fontSize: 13, opacity: 0.6, marginTop: 2 }}>전국 감염병 조기경보 · 3계층 비의료 신호 융합</span>
         </div>
-        <span className="live-badge"><span className="live-dot" /> LIVE</span>
+        <span className="live-badge" style={isError ? { color: "#f87171", borderColor: "rgba(248,113,113,0.35)", background: "rgba(248,113,113,0.08)" } : undefined}><span className="live-dot" style={isError ? { background: "#f87171" } : undefined} /> {isError ? "연결 실패" : isLoading ? "연결 중" : "LIVE"}</span>
         <span style={{ marginLeft: "auto", textAlign: "right", fontFamily: "var(--font-mono)" }}>
           <span style={{ display: "block", fontSize: 22, fontWeight: 700, letterSpacing: "0.02em" }}>{clock}</span>
           <span style={{ display: "block", fontSize: 12, opacity: 0.55 }}>데이터 {latest?.slice(0, 10) ?? "—"} · 60초 자동 갱신</span>
@@ -282,11 +282,16 @@ export default function KioskPage() {
               </div>
               <div style={{ flex: 1, overflowY: "auto" }}>
                 <SectionTitle accent="#38bdf8">위험도 순위 (17개 시·도)</SectionTitle>
+                {sorted.length === 0 && (
+                  <div style={{ padding: 24, textAlign: "center", opacity: 0.7, fontSize: 14 }}>
+                    {isError ? "⚠ 데이터 연결 실패 — 백엔드 점검 필요" : "데이터 로딩 중…"}
+                  </div>
+                )}
                 {sorted.map((a, i) => {
                   const tok = TOKENS[LEVEL_TO_RISK[a.alert_level]];
                   const pct = Math.max(4, Math.round((a.composite / maxComposite) * 100));
                   return (
-                    <button key={a.region} className="rank-row" onClick={() => setSelectedCode(regionCodeFromName(a.region))}>
+                    <button key={a.region} className="rank-row" onClick={() => { const code = regionCodeFromName(a.region); if (code) setSelectedCode(code); }}>
                       <span className="rank-fill" style={{ width: `${pct}%`, background: `var(--risk-${tok})` }} />
                       <span style={{ position: "relative", width: 22, fontFamily: "var(--font-mono)", fontSize: 12, opacity: 0.5 }}>{i + 1}</span>
                       <span style={{ position: "relative", width: 11, height: 11, borderRadius: "50%", background: `var(--risk-${tok})`, flexShrink: 0 }} />
@@ -311,7 +316,7 @@ export default function KioskPage() {
         .map-panel { display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(ellipse at center, #0b1426 0%, #070d1c 100%); border: 1px solid #16243f; border-radius: 20px; padding: 18px; box-shadow: inset 0 0 60px rgba(0,0,0,0.4); }
         .legend { display: flex; gap: 18px; margin-top: 16px; font-size: 13px; }
         .legend-chip { display: flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; background: rgba(148,163,184,0.07); border: 1px solid #1a2740; }
-        .side-panel { background: linear-gradient(160deg, #0c1628, #080f1e); border: 1px solid #16243f; border-radius: 20px; padding: 22px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.4); }
+        .side-panel { background: linear-gradient(160deg, #0c1628, #080f1e); border: 1px solid #16243f; border-radius: 20px; padding: 22px; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.4); }
         .kpi-card { background: linear-gradient(160deg, #101d33, #0a1322); border: 1px solid #1a2740; border-top: 3px solid; border-radius: 14px; padding: 18px 16px; text-align: center; transition: transform .15s ease, box-shadow .15s ease; }
         .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
         .rank-row { position: relative; display: flex; align-items: center; gap: 11px; width: 100%; background: transparent; border: none; border-bottom: 1px solid #14223c; padding: 11px 6px; cursor: pointer; color: #e2e8f0; text-align: left; overflow: hidden; transition: background .15s ease; }

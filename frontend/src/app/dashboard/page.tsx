@@ -907,7 +907,7 @@ export default function DashboardPage() {
                       marginTop: 4,
                     }}
                   >
-                    <span>{lang === "en" ? "Cases" : "건수"}</span>
+                    <span>{lang === "en" ? "Risk score" : "위험점수"}</span>
                     <span className="t-num-sm">{selectedInfo.cases}</span>
                   </div>
                   <div
@@ -920,9 +920,9 @@ export default function DashboardPage() {
                     <span>Δ 7d</span>
                     <span
                       className="t-num-sm"
-                      style={{ color: "var(--risk-warning)" }}
+                      style={{ color: selectedInfo.change >= 0 ? "var(--risk-warning)" : "var(--risk-safe)" }}
                     >
-                      +{selectedInfo.change}%
+                      {selectedInfo.change >= 0 ? "+" : ""}{selectedInfo.change}%
                     </span>
                   </div>
                 </div>
@@ -1143,20 +1143,6 @@ const iconBtnDark: CSSProperties = {
   display: "grid",
   placeItems: "center",
   position: "relative",
-};
-
-const btnGhost: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: 6,
-  padding: "7px 12px",
-  fontSize: 12,
-  fontWeight: 500,
-  background: "transparent",
-  color: "var(--text)",
-  border: "1px solid var(--border-strong)",
-  cursor: "pointer",
-  fontFamily: "inherit",
 };
 
 const btnPrimary: CSSProperties = {
