@@ -105,7 +105,7 @@ graph LR
 | **LLM / RAG** | Claude Haiku · RAG (Qdrant) · multilingual MiniLM 임베딩 |
 | **Data** | TimescaleDB (PG 16) · 하이퍼테이블 weekly partition |
 | **Infra** | Docker Compose · Kubernetes (GKE) · GitHub Actions · pre-commit |
-| **Quality** | pytest (105 ✅) · ruff · mypy --strict · detect-private-key |
+| **Quality** | pytest (598 ✅ · 4 skip) · ruff · mypy --strict · detect-private-key |
 
 ## 🚀 Quick Start
 
@@ -149,7 +149,7 @@ cd frontend && npm install && npm run dev
 ### 검증
 
 ```bash
-pytest                                      # 105 tests
+pytest                                      # 598 passed · 4 skipped
 ruff check src/ backend/ pipeline/ ml/ tests/
 mypy src/ backend/
 python -m tests.benchmark_xgboost           # 캡스톤 목표값 PASS/FAIL
@@ -166,7 +166,7 @@ urban-immune-system/
 ├── ml/               XGBoost · TFT · Autoencoder · RAG (Qdrant)
 ├── analysis/         공모전·재검증 백테스트 스크립트 + outputs/
 ├── infra/            K8s 매니페스트 · TimescaleDB init.sql
-├── tests/            105 pytest (Mock LLM · monkeypatch env)
+├── tests/            598 pytest (Mock LLM · monkeypatch env)
 └── docs/             architecture · data-sources · business/
 ```
 
@@ -191,7 +191,7 @@ urban-immune-system/
 
 - **표본 한계**: 시즌 단위 분석 — Granger 검정 통계적 유의성 제한적, 다음 시즌 데이터 누적 필수
 - **라벨 정직성 (V11.5)**: 인플루엔자 F1=0.907 은 OTC z-score 기반 self-target proxy 라벨. KDCA 4급 ILI ground truth 대비 Cohen κ=0.058, agreement 29.5% (n=61) — `analysis/outputs/label_validation_influenza.json`. 라벨 교체 재학습은 Phase 3 #63 진행 중.
-- **다질병 신호 편차**: 인플루엔자 F1=0.907, COVID F1=0.68, 노로 F1=0.70 — 질병별 OTC·검색 신호 강도 차이를 정직하게 노출 (캡스톤 평가 4번째 항목 ✅).
+- **다질병 신호 편차**: 인플루엔자 F1=0.907, COVID F1=0.667, 노로 F1=0.756 — 질병별 OTC·검색 신호 강도 차이를 정직하게 노출 (캡스톤 평가 4번째 항목 ✅).
 - **L2 약함**: 하수 신호 Granger p=0.267로 단독 유의성 부족 → 가중치 0.30으로 축소 검토 중
 - **TFT 위치**: 주모델은 XGBoost(walk-forward CV), TFT는 attention 기반 해석성 보조 (D-4 재학습 완료, prod 전환은 데이터 누적 후)
 - **L2 자동화**: KOWAS PDF 자동 다운로더 구현됐으나 일부 주차 carry-forward 적용 (`backtest_17regions.json` 참조)

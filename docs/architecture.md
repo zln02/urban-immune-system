@@ -44,8 +44,8 @@ pipeline/collectors/   docker-compose:           ml/                 frontend/
 | 모델 | 학습일 | 위치 | 상태 |
 |---|---|---|---|
 | XGBoost — 인플루엔자 (앙상블 주모델) | 2026-06-03 | `ml/checkpoints/xgb_best.joblib` | ✅ F1=0.907 / Recall=0.882 / Precision=0.940 / FAR=0.250 (gate ON) / Lead 6.76주 / MCC=0.610 / AUPRC=0.973 (17지역 walk-forward, gap 4주 5-fold, self-target proxy, `analysis/outputs/backtest_17regions.json`) |
-| XGBoost — COVID-19 (다질병 ✅) | 2026-06-03 | `analysis/outputs/backtest_xgboost_covid_17regions.json` | ✅ F1=0.68 (pathogen selector 활성화, PR #71/#72) |
-| XGBoost — 노로 (다질병 ✅) | 2026-06-03 | `analysis/outputs/backtest_xgboost_norovirus_17regions.json` | ✅ F1=0.70 (transition 타깃 우위 입증, PR #73) |
+| XGBoost — COVID-19 (다질병 ✅) | 2026-06-03 | `analysis/outputs/backtest_xgboost_covid_17regions.json` | ✅ F1=0.667 (pool level, PR #71/#72) |
+| XGBoost — 노로 (다질병 ✅) | 2026-06-03 | `analysis/outputs/backtest_xgboost_norovirus_17regions.json` | ✅ F1=0.756 (pool level) · transition 0.396 (trivial 대비 우위, PR #73) |
 | TFT-real (Lightning) | 2026-06-01 | `ml/checkpoints/tft_real/tft_best.ckpt` | ⚠️ epoch5 best val_loss=5.48, 26주 한계로 발산 — PoC 위치, +12주 누적 후 prod |
 | TFT-synth (Lightning) | 2026-04-26 | `ml/checkpoints/tft_synth/tft_best-v2.ckpt` | ✅ val_loss=1.88, attention top3 (검색·하수·OTC) 검증용 |
 | Autoencoder | 2026-04-29 | `ml/checkpoints/autoencoder/model.pt` | ✅ 99p threshold 적용 후 17지역 inference 1/17 정상화 (`ff17dfa`) |
@@ -69,6 +69,7 @@ RED    : composite ≥ 75
 
 - `frontend/src/app/dashboard/page.tsx` — 17개 시도 지도 + KPI + Granger/CCF + SSE 경보 + Claude Haiku RAG 리포트 + 4쪽 PDF 다운로드
 - `frontend/src/components/map/korea-map-naver.tsx` — `NEXT_PUBLIC_NAVER_MAPS_KEY_ID` 존재 시 네이버 지도, 없으면 기존 `KoreaMap` SVG fallback
+- `frontend/src/app/kiosk/page.tsx` — **키오스크 모드** (무인증 공용 디스플레이, 8090/kiosk): 전국 17시도 위험도 지도 + 지역 클릭 드릴다운(위험도 계산·3계층 수집 그래프·신호 추이·AI 리포트)
 - `src/app.py` (Streamlit) — Phase 1 fallback, 데모 백업용
 
 ## 인프라 / 배포
@@ -92,7 +93,7 @@ RED    : composite ≥ 75
 - **지역 분리**: L1·L3 는 네이버 API 제약으로 **전국 단일값 → 17지역 broadcast** (`pipeline/collectors/otc_collector.py` 의 zero-collapse 핫픽스 `07c9c5a` 이후). HIRA OpenAPI 교체로 Phase 3 에서 지역 분리.
 - **L2 자동화 + carry-forward**: KOWAS PDF httpx 자동 다운로더 + APScheduler 주간 잡 + cron fallback 작동 중 (매주 화 09:30). 그러나 운영 DB audit (`analysis/outputs/kowas_carry_forward_audit.json`, 2026-06-08) 결과 17지역 40주 KOWAS L2 데이터의 **60.7% 가 같은 value 연속** — KOWAS 게시 지연 / PDF 픽셀 분석 일관성 / scheduler silent miss 분리 불가. Phase 3: `layer_signals.meta` JSONB 컬럼 추가 + fallback 마커 운영 적용.
 - **TFT-real**: 26주 데이터로 발산 → 12주 추가 누적 후 재학습.
-- **다질병 신호 편차**: COVID F1=0.68 / 노로 F1=0.70 — 인플루엔자 대비 OTC·검색 신호 약함 (질병별 행동 패턴 차이).
+- **다질병 신호 편차**: COVID F1=0.667 / 노로 F1=0.756 — 인플루엔자 대비 OTC·검색 신호 약함 (질병별 행동 패턴 차이).
 
 ## Phase 로드맵 (2026-06-08 기준)
 
