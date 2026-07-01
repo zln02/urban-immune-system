@@ -32,7 +32,7 @@ NAV_H = {"X-Naver-Client-Id": CID, "X-Naver-Client-Secret": CSEC, "Content-Type"
 def fetch_who() -> pd.DataFrame:
     """WHO FluNet 한국 양성률 — 외부 독립 임상 truth."""
     base = "https://xmart-api-public.who.int/FLUMART/VIW_FNT"
-    with httpx.Client(timeout=120, verify=False, follow_redirects=True) as c:
+    with httpx.Client(timeout=120, follow_redirects=True) as c:
         r = c.get(base, params={
             "$filter": "COUNTRY_CODE eq 'KOR' and ISO_YEAR ge 2016",
             "$select": "ISO_WEEKSTARTDATE,SPEC_PROCESSED_NB,INF_ALL",
