@@ -42,6 +42,8 @@
 
 > 17개 시·도 walk-forward 백테스트 · gap = 4주 · 5-fold (2025-2026 인플루엔자 시즌)
 > 산출물: [`analysis/outputs/backtest_17regions.json`](analysis/outputs/backtest_17regions.json) — 재현 가능
+>
+> ⚠️ **F1=0.907은 OTC z-score 기반 self-proxy 라벨 기준**입니다. 실제 임상(KDCA ILI) ground truth 대비 Cohen κ=0.058 — **신호 탐지력 지표이지 임상 진단 예측력이 아닙니다** ([한계와 정직성](#️-한계와-정직성) 참조).
 
 | Metric | Value | 기준선 |
 |---|---|---|
@@ -181,7 +183,7 @@ urban-immune-system/
 
 ### 알려진 한계 (Phase 5 이월)
 
-- Kafka Consumer는 InMemoryBroker 사용 중 (실 KRaft consumer 미연결)
+- **실 데이터 경로는 cron + 직접 DB INSERT** — Kafka Producer는 구현됐으나 Consumer 미연결(향후 KRaft 확장). 아키텍처 다이어그램의 Kafka는 목표 구조.
 - HIRA OpenAPI L1은 전국 단일값 broadcast (지역 분리 미적용)
 - ISMS-P 전체 통제항목 풀 점검 미완료
 

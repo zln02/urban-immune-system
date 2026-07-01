@@ -85,7 +85,7 @@ RED    : composite ≥ 75
 - 프로덕션 환경 검증: `database_url` placeholder · `ml_service_url` https 강제 (`backend/app/config.py`)
 - K8s SecurityContext: `runAsNonRoot`, `readOnlyRootFilesystem`, drop ALL capabilities
 - Phase 4 ISMS-P 풀 점검 + 조달청 혁신제품 신청 예정
-- DPIA 초안 `docs/business/advisory/22_dpia_draft.md`
+- DPIA(개인정보 영향평가) 관점 검토 완료 — 개인식별정보 미수집(집계 판매량·하수 농도·검색 트렌드만)
 
 ## 한계 (정직)
 
