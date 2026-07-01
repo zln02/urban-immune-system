@@ -51,7 +51,7 @@ def render_sidebar() -> tuple[str, str, int, bool]:
             """,
             unsafe_allow_html=True,
         )
-        st.caption("© 2026 Urban Immune System · LG전자 DX School 13회차")
+        st.caption("© 2026 Urban Immune System · 한국능률협회 AI 아이디어 공모전 대상")
 
         st.markdown(
             """

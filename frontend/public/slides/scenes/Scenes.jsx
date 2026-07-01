@@ -768,7 +768,7 @@ function S10() {
   return (
     <>
       <Chrome index={10} label="10 · DEMO" />
-      <Line x={120} y={140} style={TYPE.eyebrow}>데모 · 김나영</Line>
+      <Line x={120} y={140} style={TYPE.eyebrow}>데모 · 정욱현</Line>
       <Line x={120} y={200} delay={0.1} style={TYPE.title} width={1700}>Next.js 대시보드.</Line>
 
       {/* 좌측 — 진짜 대시보드 모형 (1020×580) */}
@@ -1285,7 +1285,7 @@ function S11() {
             <div>
               <Line x={0} y={0} delay={0.9} style={{ position: 'static', ...TYPE.mega, fontSize: 150, color: ACCENT }}>6.76</Line>
               <div style={{ fontSize: 22, color: WHITE, fontWeight: 600, letterSpacing: '-0.01em', marginTop: 4 }}>주 선행 평균</div>
-              <div style={{ ...TYPE.small, fontSize: 16, color: WHITE_70, marginTop: 4 }}>임상 확진 피크보다 6.76주 전 YELLOW</div>
+              <div style={{ ...TYPE.small, fontSize: 16, color: WHITE_70, marginTop: 4 }}>self-proxy 라벨 기준 · 실검증 선행은 L1 OTC ~2주</div>
             </div>
             <LeadDistribution delay={1.1} />
           </div>
@@ -1510,12 +1510,12 @@ function PathogenCard({ name, f1, subtitle, detail, delay, accent }) {
   );
 }
 
-// ----- S11B 다질병 비교 — 캡스톤 평가 4번째 항목 ✅ -----
+// ----- S11B 다질병 비교 — 공모전 심사 '확장성' 항목 ✅ -----
 function S11B() {
   return (
     <>
       <Chrome index="11B" label="11B · MULTI-PATHOGEN" />
-      <Line x={120} y={140} style={TYPE.eyebrow}>다질병 확장 · 캡스톤 평가 4번째 항목 ✅</Line>
+      <Line x={120} y={140} style={TYPE.eyebrow}>다질병 확장 · 공모전 심사 '확장성' 항목 ✅</Line>
       <Line x={120} y={200} delay={0.1} style={TYPE.title}>한 시스템, 세 질병 검증.</Line>
 
       <Plate x={120} y={340} width={1680} height={600} delay={0.5}>
@@ -1561,8 +1561,8 @@ function S12() {
     {
       pos: 'br',
       title: '★ Urban Immune System',
-      tag: '한국 · 캡스톤 · 2026',
-      bullets: ['3-Layer 정량 신호 (OTC·하수·검색)', '6.76주 선행 · 게이트 B 교차검증', '한국 first-mover · KIPRIS 미확인'],
+      tag: '한국 · 공모전 대상 · 2026',
+      bullets: ['3-Layer 정량 신호 (OTC·하수·검색)', 'L1 OTC ~2주 선행(검증) · 게이트 B 교차검증', '한국 first-mover · KIPRIS 미확인'],
       tone: 'hero',
     },
   ];
@@ -1667,7 +1667,7 @@ function S13() {
   return (
     <>
       <Chrome index={13} label="13 · LEGAL" />
-      <Line x={120} y={140} style={TYPE.eyebrow}>법·규제 · 박정빈</Line>
+      <Line x={120} y={140} style={TYPE.eyebrow}>법·규제 · 박진영</Line>
       <Line x={120} y={200} delay={0.1} style={TYPE.title}>정부 납품 통과 조건.</Line>
 
       <LegalCard x={120}  y={400} delay={0.5} title="ISMS-P 인증"      sub="정보보호 관리체계"   pct={25}   color={WHITE} />
@@ -2044,11 +2044,9 @@ function TargetCard({ metric, target, baseline, hero, delay }) {
 // ----- S16 Team & Q&A -----
 function S16() {
   const team = [
-    ['박진영', 'PM · AI'],
-    ['이경준', '백엔드 · DB'],
-    ['이우형', '데이터 엔지니어'],
-    ['김나영', '프런트엔드'],
-    ['박정빈', 'DevOps · QA · 법'],
+    ['박진영', 'PM · ML · DevOps'],
+    ['윤재영', '데이터 엔지니어 · 백엔드'],
+    ['정욱현', '프런트엔드 · UX'],
   ];
   const risks = ['네이버 API 정책 변경 (전국 단일값)', '하수 데이터 품질 · 지역 편차', 'HIRA L1 지역분리 · KOWAS 자동화 (Phase 3)'];
   return (

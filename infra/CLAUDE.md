@@ -1,7 +1,7 @@
-# infra/ — 박정빈 (DevOps / QA)
+# infra/ — 박진영 (DevOps / QA)
 
 ## 담당자
-박정빈 (DevOps / QA) · 박진영 PL 권한으로 직접 수정 가능
+박진영 (PM/ML Lead · DevOps / QA 겸임)
 
 ## 책임 범위
 - `docker-compose.yml` (Kafka KRaft + TimescaleDB + Qdrant + kafka-ui)
@@ -12,7 +12,7 @@
 - `tests/` 전반 (단위 113 + 통합 19)
 
 ## 운영 환경
-- **GCP e2-standard-2 단일 노드** — `${UIS_HOST}` (현재 static IP `uis-capstone-ip` 예약 완료)
+- **GCP e2-standard-2 단일 노드** — `${UIS_HOST}` (현재 static IP `uis-prod-ip` 예약 완료)
 - 발표 후 release 시 재예약 필요 — 발표 도중 IP 변동 위험 제거됨
 - 타임존 KST (Asia/Seoul, UTC+9)
 - OS: Debian 12 / Ubuntu 22.04
@@ -41,7 +41,7 @@
 
 ## 배포 흐름
 ```
-develop (PR merge) ─→ main (PR merge, 박정빈 또는 박진영 승인)
+develop (PR merge) ─→ main (PR merge, 박진영 승인)
                           ↓
                     GitHub Actions
                           ↓

@@ -20,7 +20,7 @@
 
 > 인플루엔자 메트릭은 V11 시점에 frozen. V12 는 라벨 신뢰도 검증 + 다질병 확장으로 정직성 보강.
 
-### 다질병 확장 (캡스톤 평가 4번째 항목 ✅)
+### 다질병 확장 (공모전 심사 '확장성' 항목 ✅)
 
 | Pathogen | F1 | Source |
 |----------|----|----|
@@ -101,6 +101,12 @@ V11.5 의 라벨 갭에 대한 본 작업. `analysis/backtest_xgboost_multipath.
 - L1/L3 신선도: T-2 lag (Naver API 공개 정책)
 - L2 신선도: T-7~14 lag (KOWAS 주간 PDF, 발행 주기 반영 #67/#68)
 - 실시간 데모 시 lag 안내 필요
+
+### V12.1 — 외부 감사 (2026-06-30): 선행성·Lead time 프레이밍 교정
+
+- **"6.76주 선행"은 self-proxy 라벨 기준이며 실데이터로 검증된 선행이 아니다.** `analysis/clinical_validation_real.py`(실데이터 CCF+Granger) 결과: **L1 약국 OTC ~2주 단방향 선행만 통계 검증**. L2 하수·L3 검색은 임상과 **동시~소폭·양방향(역인과 포함)** → 단독 '선행' 주장 불가. 발표/문서에서 "6.76주 선행"은 "self-proxy 기준·미입증"으로 표기하고, 검증된 선행은 "L1 OTC ~2주"로 병기한다.
+- **신규 모듈 `ml/forecast/`(CDC ILINet 실임상)**: 누수 없는 walk-forward로 회귀 예측 skill **persistence 대비 +24%(2주)** 가 진짜 근거. 조기경보 F1=0.911은 랜덤 baseline(0.433) 대비라 과제 난이도가 낮고 persistence 분류기 대비는 미측정 → 헤드라인으로 쓰지 않는다. (`docs/REAL_CLINICAL_FORECAST.md`)
+- **TRL**: 자체평가 TRL 7 → 외부 감사 기준 **TRL 4**(엔지니어링 6~7 / 과학 3~4). 한국 KDCA 실라벨 검증 전까지 유지.
 
 ## Canonical Source
 

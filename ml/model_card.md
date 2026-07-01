@@ -21,8 +21,8 @@
 | **RAG (Claude Haiku)** | 경보 리포트 생성 | Qdrant `epidemiology_docs` 20건 | WHO·ECDC·KCDC 가이드 | top_k=5 |
 
 ### 1.2 개발 정보
-- **개발자**: 박진영(PM/ML), 이경준(Backend), 이우형(Data), 김나영(Frontend), 박정빈(DevOps/QA)
-- **소속**: Urban Immune System 캡스톤 팀 (학부, 5명)
+- **개발자**: 박진영(PM/ML), 윤재영(Data Eng/Backend), 정욱현(Frontend)
+- **소속**: Urban Immune System — 제1회 데이터로 미래를 그리는 AI 아이디어 공모전 대상 수상팀 (한국능률협회, 3명)
 - **공개일**: 2026-05-07 (중간발표 시점, v0.2)
 - **모델 버전**: 0.2.0 (`backend/app/main.py` `version="0.2.0"`)
 - **라이선스**: MIT (소스코드). 단 학습 데이터·임베딩 자료는 별도 라이선스 (§7 참조)
@@ -213,7 +213,7 @@ python -m ml.anomaly.train_synth
 | 버전 | 일자 | 주요 변경 |
 |---|---|---|
 | 0.1 (alpha) | 2026-04-15 | Streamlit MVP + 합성 데이터 |
-| 0.2.0 (캡스톤 중간) | 2026-05-07 | 17지역 실데이터 + 게이트 B + RAG + ISMS-P 미들웨어 + Granger 검정 |
+| 0.2.0 (중간 점검) | 2026-05-07 | 17지역 실데이터 + 게이트 B + RAG + ISMS-P 미들웨어 + Granger 검정 |
 | 0.3 (예정) | 2026-06 | 최종 발표 + 1개 추가 질병 시연 + ISMS-P self-assessment |
 | 1.0 (예정) | 2026-Q4 | KDCA·서울시 PoC 완료 + 조달청 혁신제품 신청 |
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import { I } from "@/components/ui/icons";
 import { Panel } from "@/components/ui/panel";
 import { RiskPill } from "@/components/ui/risk-pill";
@@ -55,13 +55,14 @@ function buildDistrictsFromAlerts(alerts: RegionAlert[]): Record<RegionCode, Dis
 }
 
 type DashTab = "surveillance" | "anomaly";
+type ReportStatus = "idle" | "loading" | "success" | "error";
 
 /**
  * Urban Immune System — Conservative Dashboard Home
  *
  * Claude Design handoff (2026-04-22, k6f2hag...) Conservative 변형.
  * 전국 17개 시도 · 전라 권역 L4 경보 시나리오.
- * 캡스톤 중간발표 Golden Path: Alert Banner → AI Report → PDF.
+ * 중간 점검 발표 Golden Path: Alert Banner → AI Report → PDF.
  *
  * Layout:
  *   ┌─────────── top bar (navy) ───────────┐
@@ -77,6 +78,7 @@ export default function DashboardPage() {
   const [selected, setSelected] = useState<RegionCode>("JB");
   const [activeTab, setActiveTab] = useState<DashTab>("surveillance");
   const [pathogen, setPathogen] = useState<Pathogen>("influenza");
+  const [reportStatus, setReportStatus] = useState<ReportStatus>("idle");
   // 신호 시계열 차트 기간 — null = 전체 데이터 범위
   const [trendDays, setTrendDays] = useState<number | null>(60);
 
@@ -111,6 +113,7 @@ export default function DashboardPage() {
   };
 
   const selectedInfo = districts[selected];
+  const selectedRiskMeta = RISK_META[selectedInfo.risk];
 
   // ── Naver 실데이터 (L1 OTC / L3 검색어) ──────────────────────────
   const otcQuery = useOtcTrend(12);
@@ -169,6 +172,53 @@ export default function DashboardPage() {
   const tftMape1w = tftProdEval?.by_horizon?.horizon_1week?.mape_percent;
   const tftRmse1w = tftProdEval?.by_horizon?.horizon_1week?.rmse;
   const tftN = tftProdEval?.by_horizon?.horizon_1week?.n;
+  const dataIssueCount = [
+    regionAlertsQuery.error,
+    otcQuery.error,
+    searchQuery.error,
+    sewageQuery.error,
+    leadTimeQuery.error,
+    backtestQuery.error,
+    tftRegressionQuery.error,
+  ].filter(Boolean).length;
+  const isRefreshing =
+    regionAlertsQuery.isFetching ||
+    otcQuery.isFetching ||
+    searchQuery.isFetching ||
+    sewageQuery.isFetching ||
+    leadTimeQuery.isFetching ||
+    backtestQuery.isFetching ||
+    tftRegressionQuery.isFetching;
+
+  const refreshDashboardData = async () => {
+    await Promise.allSettled([
+      regionAlertsQuery.refetch(),
+      otcQuery.refetch(),
+      searchQuery.refetch(),
+      sewageQuery.refetch(),
+      leadTimeQuery.refetch(),
+      backtestQuery.refetch(),
+      tftRegressionQuery.refetch(),
+    ]);
+  };
+
+  const downloadRegionReport = async () => {
+    setReportStatus("loading");
+    const url = `/api/v1/alerts/report-pdf?region=${encodeURIComponent(regionName(selected, "ko"))}`;
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) {
+      setReportStatus("error");
+      return;
+    }
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    const obj = URL.createObjectURL(blob);
+    a.href = obj;
+    a.download = `UIS_alert_${regionName(selected, "ko")}_${new Date().toISOString().slice(0, 10)}.pdf`;
+    a.click();
+    URL.revokeObjectURL(obj);
+    setReportStatus("success");
+  };
 
   return (
     <div
@@ -629,32 +679,54 @@ export default function DashboardPage() {
                 KST · Δ 7d vs baseline
               </div>
             </div>
-            <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
               <button
                 type="button"
-                onClick={async () => {
-                  const url = `/api/v1/alerts/report-pdf?region=${encodeURIComponent(regionName(selected, "ko"))}`;
-                  const res = await fetch(url, { cache: "no-store" });
-                  if (!res.ok) {
-                    alert(lang === "ko" ? "PDF 생성 실패" : "PDF failed");
-                    return;
-                  }
-                  const blob = await res.blob();
-                  const a = document.createElement("a");
-                  const obj = URL.createObjectURL(blob);
-                  a.href = obj;
-                  a.download = `UIS_alert_${regionName(selected, "ko")}_${new Date().toISOString().slice(0,10)}.pdf`;
-                  a.click();
-                  URL.revokeObjectURL(obj);
+                onClick={refreshDashboardData}
+                disabled={isRefreshing}
+                title={lang === "en" ? "Refresh all dashboard data" : "대시보드 데이터 새로고침"}
+                style={{
+                  ...btnSecondary,
+                  opacity: isRefreshing ? 0.65 : 1,
+                  cursor: isRefreshing ? "wait" : "pointer",
                 }}
-                title={lang === "en" ? "Download PDF report" : "PDF 리포트 다운로드"}
-                style={btnPrimary}
               >
-                <I.Print size={14} /> {lang === "en" ? "Download PDF" : "PDF 리포트"}
+                <I.RefreshCw size={14} /> {isRefreshing ? (lang === "en" ? "Refreshing" : "새로고침 중") : (lang === "en" ? "Refresh" : "새로고침")}
+              </button>
+              <button
+                type="button"
+                onClick={downloadRegionReport}
+                disabled={reportStatus === "loading"}
+                title={lang === "en" ? "Download PDF report" : "PDF 리포트 다운로드"}
+                style={{
+                  ...btnPrimary,
+                  opacity: reportStatus === "loading" ? 0.7 : 1,
+                  cursor: reportStatus === "loading" ? "wait" : "pointer",
+                }}
+              >
+                <I.Print size={14} /> {reportStatus === "loading" ? (lang === "en" ? "Preparing PDF" : "PDF 준비 중") : (lang === "en" ? "Download PDF" : "PDF 리포트")}
               </button>
             </div>
           </div>
         </div>
+
+        <CxActionPanel
+          lang={lang}
+          selectedRegion={regionName(selected, lang)}
+          selectedRisk={`L${selectedInfo.risk} · ${selectedRiskMeta.label[lang]}`}
+          pathogenLabel={
+            pathogen === "influenza"
+              ? (lang === "en" ? "Influenza" : "인플루엔자")
+              : pathogen === "covid"
+                ? "COVID-19"
+                : (lang === "en" ? "Norovirus" : "노로바이러스")
+          }
+          reportStatus={reportStatus}
+          dataIssueCount={dataIssueCount}
+          isRefreshing={isRefreshing}
+          onRefresh={refreshDashboardData}
+          onDownload={downloadRegionReport}
+        />
 
         {/* 운영 알림 (수집기 freshness) — fail/warn 시에만 표시 */}
         <SystemHealthBanner lang={lang} />
@@ -1112,6 +1184,172 @@ export default function DashboardPage() {
   );
 }
 
+
+function CxActionPanel({
+  lang,
+  selectedRegion,
+  selectedRisk,
+  pathogenLabel,
+  reportStatus,
+  dataIssueCount,
+  isRefreshing,
+  onRefresh,
+  onDownload,
+}: {
+  lang: Lang;
+  selectedRegion: string;
+  selectedRisk: string;
+  pathogenLabel: string;
+  reportStatus: ReportStatus;
+  dataIssueCount: number;
+  isRefreshing: boolean;
+  onRefresh: () => void;
+  onDownload: () => void;
+}) {
+  const hasIssue = dataIssueCount > 0;
+  const reportCopy: Record<ReportStatus, { tone: "muted" | "safe" | "warn"; text: string }> = {
+    idle: {
+      tone: "muted",
+      text: lang === "en" ? "Choose a region, review signals, then export the brief." : "권역을 선택하고 신호를 확인한 뒤 브리핑을 내려받으세요.",
+    },
+    loading: {
+      tone: "warn",
+      text: lang === "en" ? "Preparing the regional PDF brief." : "선택 권역의 PDF 브리핑을 준비하고 있습니다.",
+    },
+    success: {
+      tone: "safe",
+      text: lang === "en" ? "PDF brief downloaded. Continue with the alert table or AI report." : "PDF 브리핑을 내려받았습니다. 경보 표나 AI 리포트로 이어서 확인하세요.",
+    },
+    error: {
+      tone: "warn",
+      text: lang === "en" ? "PDF generation failed. Refresh data and try again." : "PDF 생성에 실패했습니다. 데이터를 새로고침한 뒤 다시 시도하세요.",
+    },
+  };
+
+  const steps = [
+    {
+      label: lang === "en" ? "1. Set context" : "1. 조건 선택",
+      value: `${selectedRegion} · ${pathogenLabel}`,
+      state: "done" as const,
+    },
+    {
+      label: lang === "en" ? "2. Review risk" : "2. 위험 확인",
+      value: selectedRisk,
+      state: hasIssue ? ("warn" as const) : ("done" as const),
+    },
+    {
+      label: lang === "en" ? "3. Take action" : "3. 조치 실행",
+      value: reportStatus === "success" ? (lang === "en" ? "Brief ready" : "브리핑 완료") : (lang === "en" ? "Export brief" : "브리핑 내보내기"),
+      state: reportStatus === "success" ? ("done" as const) : reportStatus === "error" ? ("warn" as const) : ("active" as const),
+    },
+  ];
+
+  return (
+    <section
+      aria-label={lang === "en" ? "Guided dashboard workflow" : "대시보드 안내 흐름"}
+      style={{
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+        gap: 16,
+        alignItems: "stretch",
+        padding: 16,
+      }}
+    >
+      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 6 }}>
+        <div className="t-label-01" style={{ color: "var(--text-tertiary)" }}>
+          {lang === "en" ? "Recommended next step" : "추천 다음 행동"}
+        </div>
+        <div style={{ fontSize: 17, fontWeight: 700, color: "var(--text)", lineHeight: 1.35 }}>
+          {lang === "en" ? `Review ${selectedRegion} and export the response brief` : `${selectedRegion} 위험도를 확인하고 대응 브리핑을 생성하세요`}
+        </div>
+        <div style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.55 }}>
+          {lang === "en"
+            ? "This keeps the main task visible: select context, verify signals, and hand off a clear report."
+            : "조건 선택, 신호 확인, 보고서 전달까지 한 흐름으로 완료할 수 있게 구성했습니다."}
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 8 }}>
+        {steps.map((step) => (
+          <div
+            key={step.label}
+            style={{
+              border: `1px solid ${step.state === "active" ? "var(--primary-70)" : step.state === "warn" ? "var(--risk-warning)" : "var(--border)"}`,
+              background: step.state === "active" ? "rgba(30, 58, 138, 0.06)" : step.state === "warn" ? "rgba(234, 159, 0, 0.08)" : "var(--bg-sub)",
+              padding: "10px 12px",
+              minHeight: 78,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)" }}>{step.label}</span>
+              <span
+                aria-hidden
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: "50%",
+                  background: step.state === "warn" ? "var(--risk-warning)" : step.state === "active" ? "var(--primary-70)" : "var(--risk-safe)",
+                }}
+              />
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", lineHeight: 1.35 }}>{step.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: 8, minWidth: 190 }}>
+        <button
+          type="button"
+          onClick={onDownload}
+          disabled={reportStatus === "loading"}
+          style={{
+            ...btnPrimary,
+            justifyContent: "center",
+            width: "100%",
+            minHeight: 36,
+            opacity: reportStatus === "loading" ? 0.7 : 1,
+          }}
+        >
+          <I.Print size={14} /> {reportStatus === "loading" ? (lang === "en" ? "Preparing" : "준비 중") : (lang === "en" ? "Export brief" : "브리핑 생성")}
+        </button>
+        <button
+          type="button"
+          onClick={onRefresh}
+          disabled={isRefreshing}
+          style={{
+            ...btnSecondary,
+            justifyContent: "center",
+            width: "100%",
+            minHeight: 34,
+            opacity: isRefreshing ? 0.65 : 1,
+          }}
+        >
+          <I.RefreshCw size={14} /> {isRefreshing ? (lang === "en" ? "Refreshing" : "새로고침 중") : (lang === "en" ? "Refresh data" : "데이터 새로고침")}
+        </button>
+        <StatusText tone={hasIssue ? "warn" : reportCopy[reportStatus].tone}>
+          {hasIssue
+            ? (lang === "en" ? `${dataIssueCount} data source needs attention. Mock fallback remains visible.` : `${dataIssueCount}개 데이터 소스 확인이 필요합니다. 대체 데이터로 화면은 계속 볼 수 있습니다.`)
+            : reportCopy[reportStatus].text}
+        </StatusText>
+      </div>
+    </section>
+  );
+}
+
+function StatusText({ tone, children }: { tone: "muted" | "safe" | "warn"; children: ReactNode }) {
+  const color = tone === "safe" ? "var(--risk-safe)" : tone === "warn" ? "var(--risk-warning)" : "var(--text-tertiary)";
+  return (
+    <div role="status" aria-live="polite" style={{ fontSize: 11, color, lineHeight: 1.45, textAlign: "center" }}>
+      {children}
+    </div>
+  );
+}
+
 /* ── 공통 style tokens (페이지 전용) ─────────────────────── */
 
 const sidebarLabel: CSSProperties = {
@@ -1159,6 +1397,20 @@ const btnPrimary: CSSProperties = {
   fontFamily: "inherit",
 };
 
+const btnSecondary: CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  padding: "7px 12px",
+  fontSize: 12,
+  fontWeight: 500,
+  background: "var(--surface)",
+  color: "var(--primary-70)",
+  border: "1px solid var(--border-strong)",
+  cursor: "pointer",
+  fontFamily: "inherit",
+};
+
 function tabBtn(active: boolean): CSSProperties {
   return {
     padding: "4px 10px",
@@ -1177,7 +1429,7 @@ function FieldRow({
   children,
 }: {
   label: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>

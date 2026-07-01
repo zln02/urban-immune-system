@@ -121,10 +121,10 @@ L2 데이터 밀도 체크
 
 | 파일 | 변경 내용 | 담당 |
 |------|----------|------|
-| `backend/app/config.py` | `REGIONAL_GATE_CONFIG` dict 추가, 지역 티어 매핑 | 이경준 (Backend) |
+| `backend/app/config.py` | `REGIONAL_GATE_CONFIG` dict 추가, 지역 티어 매핑 | 윤재영 (Backend) |
 | `ml/anomaly/scorer.py` | `get_layer_weights(region)` 함수 추가, 약한 지역 w2 오버라이드 | 박진영 (ML) |
 | `analysis/scripts/backtest_regional.py` | 신규 임계값으로 재백테스트 스크립트 | 박진영 (ML) |
-| `tests/test_gate_b_regional.py` | 지역별 임계값 분기 단위 테스트 | 박정빈 (QA) |
+| `tests/test_gate_b_regional.py` | 지역별 임계값 분기 단위 테스트 | 박진영 (QA) |
 
 ---
 

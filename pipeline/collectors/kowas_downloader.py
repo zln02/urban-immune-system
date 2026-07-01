@@ -31,7 +31,7 @@ DOWNLOAD_URL = f"{KDCA_BASE}/pot/component/file/ND_fileDownload.do"
 BBS_SN = "1010"
 CLSF_NO = "4"
 
-USER_AGENT = "Mozilla/5.0 (compatible; UIS-KOWAS-Crawler/1.0; capstone-research)"
+USER_AGENT = "Mozilla/5.0 (compatible; UIS-KOWAS-Crawler/1.0; uis-research)"
 
 DEFAULT_OUTPUT_DIR = Path(__file__).parent.parent / "data" / "kowas"
 

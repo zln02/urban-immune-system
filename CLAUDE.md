@@ -1,22 +1,22 @@
 # urban-immune-system — 팀 프로젝트
 
+> 🏆 **제1회 데이터로 미래를 그리는 AI 아이디어 공모전 — 대상 🏆** (한국능률협회 주최, 2026.03) 수상작.
+
 AI 기반 감염병 조기경보 시스템 (B2G 납품 목표). 3계층 비의료 신호(약국 OTC·하수도 바이오마커·검색 트렌드) 교차검증으로 임상 확진 1–3주 선행 탐지.
 
 > **중간발표: 2026-05-07** ✅ 완료 · **최종발표: 2026-06-17** (6/초 → 6/17 연기, **D-9 / 6/8 기준**) · PPT 6/15 freeze · 현 baseline **F1=0.907 / Recall=0.882 (gate ON) / Recall_no_gate=0.904 / Precision=0.940 / FAR=0.250 (gate ON, 게이트 OFF=0.602, 게이트 효과 −58.5%) / Lead 6.76주 / MCC=0.610 / Balanced Acc=0.816 / AUPRC=0.973** (17지역 walk-forward 실측 — self-target proxy 라벨, `analysis/outputs/backtest_17regions.json`).
 >
 > ⚠️ **V11.5 라벨 정직성**: 위 메트릭은 OTC z-score 기반 self-proxy 라벨 — KDCA 4급 ILI ground truth(`analysis/outputs/label_validation_influenza.json`) 대비 Cohen κ=0.058, agreement 29.5% (n=61). 라벨 교체 재학습은 Phase 3 #63 진행 중.
 >
-> 📈 **다질병 확장**: 인플루엔자 F1=0.907 · COVID F1=0.667 · 노로 F1=0.756 (질병별 신호 강도 차이 그대로 — 캡스톤 평가 4번째 항목 ✅).
+> 📈 **다질병 확장**: 인플루엔자 F1=0.907 · COVID F1=0.667 · 노로 F1=0.756 (질병별 신호 강도 차이 그대로 — 공모전 심사 '확장성' 항목 ✅).
 
-## 팀 구성 & 역할
+## 팀 구성 & 역할 (공모전 대상 수상팀 3인)
 
 | 이름 | 역할 | 담당 모듈 |
 |------|------|----------|
-| 박진영 (PM·PL) | PM / ML Lead — 전체 아키텍처·총괄 | `ml/`, `docs/`, `docs/business/` (전 모듈 풀 권한) |
-| 이경준 | Backend (FastAPI·DB·라우터 17개) | `backend/` |
-| 이우형 | Data Engineer (수집·스케줄러·KOWAS) | `pipeline/` |
-| 김나영 | Frontend (Next.js Phase2·Streamlit Phase1) | `frontend/`, `src/` |
-| 박정빈 | DevOps / QA (CI·k8s·systemd·테스트) | `infra/`, `.github/`, `tests/` |
+| 박진영 (PM·PL) | PM / ML Lead — 전체 아키텍처·총괄·DevOps/QA | `ml/`, `infra/`, `.github/`, `tests/`, `docs/`, `docs/business/` (전 모듈 풀 권한) |
+| 윤재영 | Data Engineer / Backend (수집·스케줄러·KOWAS·FastAPI·DB·라우터) | `pipeline/`, `backend/` |
+| 정욱현 | Frontend (Next.js Phase2·Streamlit Phase1·UX·발표) | `frontend/`, `src/` |
 
 > 박진영은 PL 권한으로 모든 모듈 사전 합의 없이 수정·푸시·머지 가능 (글로벌 CLAUDE.md `team_pl_authority.md` 참조). 단 **main 직푸시 금지** 절대 규칙은 그대로 유지.
 
@@ -545,7 +545,7 @@ prediction_lengths: [7, 14, 21]
 
 ---
 
-## 캡스톤 성공 기준 (회의자료 9.1 기준)
+## 공모전 심사 기준 대응 (회의자료 9.1 기준)
 
 > 심사 기준 — 4가지 모두 충족 목표
 
@@ -574,7 +574,7 @@ prediction_lengths: [7, 14, 21]
 
 역할별 권장 스킬 (Claude Code에서 `/스킬명`으로 실행):
 
-### D1 김나영 (Frontend 코딩)
+### 정욱현 (Frontend 코딩)
 
 | 스킬 | 사용 시점 |
 |------|----------|
@@ -583,7 +583,7 @@ prediction_lengths: [7, 14, 21]
 | `/audit` | API 연동 후 접근성·성능 체크 |
 | `/harden` | 에러 상태·오버플로우 처리 추가 |
 
-### D2 박정빈 (UX 디자인·발표)
+### 정욱현 (UX 디자인·발표)
 
 | 스킬 | 사용 시점 |
 |------|----------|
@@ -593,13 +593,13 @@ prediction_lengths: [7, 14, 21]
 | `/critique` | UX 리뷰·피드백 |
 | `/distill` | 복잡해진 UI 단순화 |
 
-### A 이우형 (Backend)
+### 윤재영 (Backend)
 
 | 스킬 | 사용 시점 |
 |------|----------|
 | `/harden` | FastAPI 에러 핸들링·엣지 케이스 |
 
-### B 이경준·박진영 (Pipeline)
+### 윤재영·박진영 (Pipeline)
 
 | 스킬 | 사용 시점 |
 |------|----------|

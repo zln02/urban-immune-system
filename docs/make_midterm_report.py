@@ -84,7 +84,7 @@ cover.columns[0].width = Cm(3.5)
 cover.columns[1].width = Cm(11.5)
 
 rows_data = [
-    ("교과목명", "캡스톤디자인"),
+    ("공 모 전", "제1회 데이터로 미래를 그리는 AI 아이디어 공모전 (한국능률협회 주최) — 대상 수상"),
     ("소  속", "동신대학교 컴퓨터공학과"),
     ("팀  명", "Urban Immune System"),
     ("과제명", "Urban Immune System — 비의료 다중 신호 교차검증 감염병 조기경보 AI"),
@@ -101,8 +101,8 @@ set_cell(cover.rows[5].cells[0], "구  분", bold=True, bg="BDD7EE", align=WD_AL
 set_cell(cover.rows[5].cells[1], "성명 (학번)", bold=True, bg="BDD7EE", align=WD_ALIGN_PARAGRAPH.CENTER)
 
 members = [
-    ("팀  장", "이경준"),
-    ("팀  원", "박진영 / 이우형 / 김나영 / 박정빈"),
+    ("팀  장", "박진영"),
+    ("팀  원", "윤재영 / 정욱현"),
 ]
 for i, (role, name) in enumerate(members):
     set_cell(cover.rows[6+i].cells[0], role, bold=True, bg="BDD7EE", align=WD_ALIGN_PARAGRAPH.CENTER)
@@ -195,22 +195,20 @@ for b in [
     "하수·약국·검색 등 기존에 활용되지 않던 비의료 공개 데이터를 공중보건에 재활용하는 신패러다임 제시",
     "오경보율 58.5% 감소로 불필요한 사회적 비용(격리·검사·경보 알림) 절감 기여",
     "인플루엔자 외 노로바이러스·RSV·COVID-19 등 다병원체 확장 가능한 플랫폼 구조로 범용성 확보",
-    "학부 캡스톤 수준의 공개 API 기반 구현으로 저비용 공공 감염병 감시 시스템 모델 제시 및 특허 출원 추진",
+    "공모전 대상 수상작(연구 프로토타입) 수준의 공개 API 기반 구현으로 저비용 공공 감염병 감시 시스템 모델 제시 및 특허 출원 추진",
 ]:
     add_bullet(doc, b, indent=1.0)
 
 add_p(doc, "바. 팀원의 구성 및 역할 분담", bold=True, size=12, space_before=6, space_after=4)
-team_t = doc.add_table(rows=6, cols=4)
+team_t = doc.add_table(rows=4, cols=4)
 team_t.style = "Table Grid"
 headers = ["NO", "학번", "성명", "담당역할 / 담당 업무"]
 for i, h in enumerate(headers):
     set_cell(team_t.rows[0].cells[i], h, bold=True, bg="BDD7EE", align=WD_ALIGN_PARAGRAPH.CENTER)
 team_data = [
-    ("1", "○○○○○○", "이경준", "팀장 / Backend (FastAPI·DB·라우터 17개), 전문가 자문 연락, 특허 출원"),
-    ("2", "○○○○○○", "박진영", "PM·ML Lead / 전체 아키텍처 총괄, XGBoost·TFT·Autoencoder, RAG, 문서"),
-    ("3", "○○○○○○", "이우형", "Data Engineer / L1·L2·L3 수집기, Kafka 파이프라인, KOWAS 크롤링"),
-    ("4", "○○○○○○", "김나영", "Frontend / Next.js 대시보드, Deck.gl 지도, SSE 경보 시각화"),
-    ("5", "○○○○○○", "박정빈", "DevOps·QA / CI·K8s·systemd, pytest 테스트 113+19건, 보안 점검"),
+    ("1", "○○○○○○", "박진영", "PM·ML Lead·DevOps·QA / 전체 아키텍처 총괄, XGBoost·TFT·Autoencoder, RAG, 문서, CI·K8s·systemd, pytest 테스트 113+19건, 보안 점검"),
+    ("2", "○○○○○○", "윤재영", "Data Engineer·Backend / FastAPI·DB·라우터 17개, L1·L2·L3 수집기, Kafka 파이프라인, KOWAS 크롤링, 전문가 자문 연락, 특허 출원"),
+    ("3", "○○○○○○", "정욱현", "Frontend / Next.js 대시보드, Deck.gl 지도, SSE 경보 시각화"),
 ]
 for i, (no, sid, name, role) in enumerate(team_data):
     row = team_t.rows[i+1]
@@ -356,7 +354,7 @@ for b in [
     "Phase 4: ISMS-P 풀 점검, 조달청 혁신제품 신청, KDCA·서울시·WHO 협력 파일럿 기관 확보",
     "외부 전문가 자문 30인 검증 완료 후 성능 지표 재보정 및 학술 논문 투고",
     "감염병 조기경보 시스템 방법론 특허 출원 (산학협력단 발명신고서 제출 완료)",
-    "1개 추가 병원체(노로바이러스 또는 RSV) 또는 추가 국가 확장 시연 (캡스톤 평가 4번째 항목)",
+    "1개 추가 병원체(노로바이러스 또는 RSV) 또는 추가 국가 확장 시연 (공모전 심사 4번째 항목)",
 ]:
     add_bullet(doc, b)
 

@@ -1,7 +1,7 @@
-# frontend/ — 김나영
+# frontend/ — 정욱현
 
 ## 담당자
-김나영 (Frontend) · 박진영 PL 권한으로 직접 수정 가능
+정욱현 (Frontend) · 박진영 PL 권한으로 직접 수정 가능
 
 ## 기술 스택 (실측 2026-05-02)
 - **Next.js 14.2.3** App Router (`src/app/`) — Phase 4 에서 15.2 마이그레이션 검토

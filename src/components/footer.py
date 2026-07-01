@@ -12,7 +12,7 @@ def render_footer() -> None:
         f"""
         <div class="gov-footer">
             <strong style="color:{NAVY};">Urban Immune System</strong> v3.0 — CDC-grade Surveillance Console<br>
-            제1회 2026 데이터로 미래를 그리는 AI 아이디어 공모전 · LG전자 DX School 13회차<br>
+            제1회 데이터로 미래를 그리는 AI 아이디어 공모전 — 대상 🏆 · 주최 한국능률협회<br>
             데이터: KDCA 감염병포털 · KOWAS 하수감시소식지 · 네이버 쇼핑인사이트/데이터랩<br>
             선행연구: Deng et al. (2026) Engineering — 2-Layer 하수+검색어 통합 조기경보
             <div class="team-watermark">
