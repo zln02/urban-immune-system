@@ -22,7 +22,7 @@ function S01() {
       <OrbitNode cx={960} cy={540} r={380} angle={30} color={ACCENT} delay={1.6} />
       <OrbitNode cx={960} cy={540} r={380} angle={150} color={ACCENT} delay={1.8} />
 
-      <Line x={120} y={180} delay={0.1} style={TYPE.eyebrow}>CAPSTONE · FINAL · 2026</Line>
+      <Line x={120} y={180} delay={0.1} style={TYPE.eyebrow}>공모전 대상 · 2026</Line>
       <Line x={120} y={720} delay={0.4} style={{ ...TYPE.titleXL, fontSize: 130 }}>URBAN IMMUNE</Line>
       <Line x={120} y={870} delay={0.6} style={{ ...TYPE.titleXL, fontSize: 130, color: ACCENT }}>SYSTEM</Line>
 

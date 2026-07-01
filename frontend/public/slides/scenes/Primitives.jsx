@@ -96,7 +96,7 @@ function Chrome({ index, total = 27, label }) {
       </Line>
       <Line x={60} y={1020} style={{ ...TYPE.label, color: WHITE_45 }}>{label}</Line>
       <Line x={1860} y={1020} style={{ ...TYPE.label, color: WHITE_45, textAlign: 'right' }} width={0}>
-        <div style={{ position:'absolute', right:0, top:0, whiteSpace:'nowrap' }}>CAPSTONE · 2026.05.07</div>
+        <div style={{ position:'absolute', right:0, top:0, whiteSpace:'nowrap' }}>공모전 대상 · 2026</div>
       </Line>
     </>
   );
