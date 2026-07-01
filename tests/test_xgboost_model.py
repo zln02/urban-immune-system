@@ -81,7 +81,7 @@ def test_predict_clips_output() -> None:
 
 
 def test_f1_score_meets_target() -> None:
-    """XGBoost F1 >= 0.70 캡스톤 목표 달성 확인."""
+    """XGBoost F1 >= 0.70 공모전 목표 달성 확인."""
     from ml.xgboost.model import evaluate, generate_synthetic_data, load_model, train
 
     df = generate_synthetic_data(n_weeks=104)

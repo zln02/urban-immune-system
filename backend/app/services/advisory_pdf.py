@@ -239,7 +239,7 @@ def _cover(s: dict, week_label: str, generated_at: str) -> list:
                 ("발행 / Issued", generated_at),
                 ("배포 등급 / Distribution", "Limited — KDCA · 협력 자문 패널"),
                 ("문서 분류 / Classification", "Surveillance Bulletin (non-medical-device)"),
-                ("판본 / Version", "v1.0 · 캡스톤 외부 자문용"),
+                ("판본 / Version", "v1.0 · 외부 자문용"),
             ],
             col_widths=(70 * mm, 100 * mm),
         ),
@@ -253,7 +253,7 @@ def _cover(s: dict, week_label: str, generated_at: str) -> list:
             s["small"],
         ),
         Spacer(1, 16 * mm),
-        Paragraph("작성: Urban Immune System 캡스톤 팀 (PM 박진영) · 발행처: 서울과학기술대학교", s["small"]),
+        Paragraph("작성: Urban Immune System 공모전 대상 수상팀 (PM 박진영) · 발행처: 동신대학교", s["small"]),
         PageBreak(),
     ]
     return story
@@ -580,7 +580,7 @@ def build_advisory_pdf(output_path: Path, week_label: str | None = None) -> Path
         topMargin=22 * mm,
         bottomMargin=18 * mm,
         title="UIS Surveillance Bulletin",
-        author="Urban Immune System Capstone Team",
+        author="Urban Immune System Award-Winning Team",
         subject=f"Weekly Surveillance Bulletin {week_label}",
     )
 

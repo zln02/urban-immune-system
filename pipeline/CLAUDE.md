@@ -1,17 +1,17 @@
-# pipeline/ — B 이경준·박진영 공용
+# pipeline/ — B 윤재영·박진영 공용
 
 ## 담당자
-- **역할 B — 이경준**: 수집기 구현, APScheduler 크론 등록
+- **역할 B — 윤재영**: 수집기 구현, APScheduler 크론 등록
 - **역할 B+C — 박진영**: Kafka Consumer 구현, TimescaleDB 적재
 
 ## 수집 스케줄
 
 | 수집기 | Kafka 토픽 | 주기 | 담당 |
 |-------|-----------|------|------|
-| `otc_collector.py` | `uis.layer1.otc` | 매주 월 09:00 | 이경준 |
-| `wastewater.py` | `uis.layer2.wastewater` | 매주 화 10:00 | 이경준 |
-| `search_collector.py` | `uis.layer3.search` | 매주 월 09:05 | 이경준 |
-| `weather_collector.py` | `uis.aux.weather` | 매시간 | 이경준 |
+| `otc_collector.py` | `uis.layer1.otc` | 매주 월 09:00 | 윤재영 |
+| `wastewater.py` | `uis.layer2.wastewater` | 매주 화 10:00 | 윤재영 |
+| `search_collector.py` | `uis.layer3.search` | 매주 월 09:05 | 윤재영 |
+| `weather_collector.py` | `uis.aux.weather` | 매시간 | 윤재영 |
 
 ## 발표 데모 단순화 옵션
 > Kafka Consumer + TimescaleDB full-pipeline이 발표 전까지 미완료될 경우:

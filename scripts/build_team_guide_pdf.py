@@ -136,7 +136,7 @@ def build(output_path: Path):
     story.append(Spacer(1, 8 * mm))
     story.append(Paragraph("작성일: 2026-05-10 (중간발표 D+3)", S["cover_meta"]))
     story.append(Paragraph("작성자: 박진영 (PM / ML Lead)", S["cover_meta"]))
-    story.append(Paragraph("수신: 이경준(Backend) · 김나영(Frontend) · 박정빈(DevOps/QA)", S["cover_meta"]))
+    story.append(Paragraph("수신: 윤재영(Data Engineer/Backend) · 정욱현(Frontend)", S["cover_meta"]))
     story.append(Spacer(1, 6 * mm))
 
     # 경고 박스
@@ -169,10 +169,10 @@ def build(output_path: Path):
     status_data = [
         ["모듈", "담당", "완성도", "핵심 미완 사항"],
         ["ML", "박진영", "75%", "TFT-real 데이터 누적 후 재학습"],
-        ["Backend", "이경준", "80%", "advisory_pdf·report_pdf 테스트 0%, ML fallback 없음"],
-        ["Pipeline", "이우형", "65%", "KOWAS Selenium 자동화, kafka 테스트 0%, scorer 31%"],
-        ["Frontend", "김나영", "85%", "slides-animated 삭제 미커밋, 단위 테스트 없음"],
-        ["Infra / QA", "박정빈", "70%", "커버리지 39%(목표 70%), systemd 미기동"],
+        ["Backend", "윤재영", "80%", "advisory_pdf·report_pdf 테스트 0%, ML fallback 없음"],
+        ["Pipeline", "윤재영", "65%", "KOWAS Selenium 자동화, kafka 테스트 0%, scorer 31%"],
+        ["Frontend", "정욱현", "85%", "slides-animated 삭제 미커밋, 단위 테스트 없음"],
+        ["Infra / QA", "박진영", "70%", "커버리지 39%(목표 70%), systemd 미기동"],
     ]
     status_table = Table(status_data, colWidths=[28 * mm, 22 * mm, 18 * mm, content_w - 68 * mm])
     status_table.setStyle(_table_style())
@@ -191,7 +191,7 @@ def build(output_path: Path):
     # 팀원별 과제
     for member, role, tasks_dev, tasks_patent, tasks_verify in [
         (
-            "이경준 (Backend)",
+            "윤재영 (Backend)",
             "Backend",
             [
                 "advisory_pdf.py 테스트 작성 (커버리지 0% → 50%+)",
@@ -204,7 +204,7 @@ def build(output_path: Path):
             ["Swagger/OpenAPI 스크린샷 → docs/business/advisory/ 추가", "p95 응답시간 측정 리포트 작성"],
         ),
         (
-            "김나영 (Frontend)",
+            "정욱현 (Frontend)",
             "Frontend",
             [
                 "frontend/public/slides-animated/ 13개 deleted 파일 커밋 (오늘)",
@@ -216,7 +216,7 @@ def build(output_path: Path):
             ["역학 전문가 데모용 5분 시연 스크립트 작성", "대시보드 화면 녹화 (경보 SSE 흐름 포함)"],
         ),
         (
-            "박정빈 (DevOps / QA)",
+            "박진영 (DevOps / QA)",
             "DevOps/QA",
             [
                 "kafka_producer.py 테스트 신규 작성 (현재 0%)",
@@ -284,7 +284,7 @@ def build(output_path: Path):
         ["공개 행위", "날짜", "특허 마감일"],
         ["한국능률협회 AI 공모전 수상", "2026-03 (정확한 날짜 확인 필요)", "2027-03 이전"],
         ["GitHub 저장소 공개 (PUBLIC인 경우)", "최초 커밋 날짜 확인 필요", "커밋일 + 12개월"],
-        ["캡스톤 중간발표", "2026-05-07", "2027-05-07"],
+        ["중간 점검 발표", "2026-05-07", "2027-05-07"],
     ]
     pt = Table(patent_timeline, colWidths=[55 * mm, 60 * mm, content_w - 115 * mm])
     pts = _table_style(C_ACCENT)
@@ -295,17 +295,17 @@ def build(output_path: Path):
     story.append(Spacer(1, 4 * mm))
 
     story.append(Paragraph("Step 1. 발명 공개 신고서 작성 — 이번 주 필수", S["h2"]))
-    story.append(Paragraph("팀원 5명 전원이 서명해야 한다. 아래 항목을 문서로 작성한다.", S["body"]))
+    story.append(Paragraph("팀원 3명 전원이 서명해야 한다. 아래 항목을 문서로 작성한다.", S["body"]))
     story.append(Spacer(1, 2 * mm))
 
     form_rows = [
         ["항목", "내용"],
         ["발명의 명칭(국문)", "비의료 이종 신호 교차검증 기반 감염병 조기경보 시스템 및 방법"],
         ["발명의 명칭(영문)", "Infectious Disease Early Warning System Based on\nCross-validation of Heterogeneous Non-medical Signals"],
-        ["발명자", "박진영·이경준·이우형·김나영·박정빈 (동신대학교 AI학과)"],
+        ["발명자", "박진영·윤재영·정욱현 (동신대학교 AI학과)"],
         ["발명 요약", "3계층 비의료 신호(OTC·하수·검색)를 XGBoost+Autoencoder로 앙상블하여\n임상 확진 평균 6.47주 선행 경보 발령.\n교차검증 게이트로 오경보율 65.8% 감소."],
-        ["공지 경위", "①2026-03 AI 공모전 수상  ②GitHub 최초 공개일(확인 필요)\n③2026-05-07 캡스톤 중간발표"],
-        ["서명란", "발명자 5명 서명·날인 / 작성일: 2026-05-10"],
+        ["공지 경위", "①2026-03 AI 공모전 수상  ②GitHub 최초 공개일(확인 필요)\n③2026-05-07 중간 점검 발표"],
+        ["서명란", "발명자 3명 서명·날인 / 작성일: 2026-05-10"],
     ]
     form_t = Table(form_rows, colWidths=[38 * mm, content_w - 38 * mm])
     form_t.setStyle(_table_style())
@@ -321,7 +321,7 @@ def build(output_path: Path):
         story.append(Paragraph(f"• {line}", S["bullet"]))
     story.append(Spacer(1, 4 * mm))
 
-    story.append(Paragraph("Step 3. KIPRIS 선행기술 조사 — 2주 이내 (박정빈 담당)", S["h2"]))
+    story.append(Paragraph("Step 3. KIPRIS 선행기술 조사 — 2주 이내 (박진영 담당)", S["h2"]))
     story.append(Paragraph("사이트: https://www.kipris.or.kr (한국특허정보원)", S["body"]))
     story.append(Spacer(1, 1 * mm))
     search_data = [
@@ -391,7 +391,7 @@ def build(output_path: Path):
          "★★"],
         ["전남대 의과대학\n감염내과/예방의학교실",
          "교수진 직접 이메일",
-         "캡스톤 자문 요청\nsurveillance_bulletin.pdf + model_card.md 첨부",
+         "자문 요청\nsurveillance_bulletin.pdf + model_card.md 첨부",
          "★★★ (가장 빠름)"],
         ["WHO 서태평양\n협력센터",
          "서울대병원\nWHO 협력센터 통해",
@@ -420,13 +420,13 @@ def build(output_path: Path):
 
     timeline_data = [
         ["시점", "담당", "해야 할 일"],
-        ["오늘 (5/10)", "박정빈", "GitHub PUBLIC/PRIVATE 확인, develop push, 삭제 파일 커밋"],
-        ["오늘 (5/10)", "이경준·김나영", "backend·frontend systemd 서비스 기동 확인"],
-        ["이번 주 (5/14까지)", "전원", "발명 공개 신고서 5명 서명 완료"],
-        ["2주 이내 (5/24까지)", "박진영·박정빈", "산학협력단 발명 신고, KIPRIS 선행기술 조사"],
+        ["오늘 (5/10)", "박진영", "GitHub PUBLIC/PRIVATE 확인, develop push, 삭제 파일 커밋"],
+        ["오늘 (5/10)", "윤재영·정욱현", "backend·frontend systemd 서비스 기동 확인"],
+        ["이번 주 (5/14까지)", "전원", "발명 공개 신고서 3명 서명 완료"],
+        ["2주 이내 (5/24까지)", "박진영", "산학협력단 발명 신고, KIPRIS 선행기술 조사"],
         ["2주 이내 (5/24까지)", "박진영", "KDCA 자문 공문 발송 (비공개 명시)"],
         ["5월 내", "박진영", "네이버 API 약관 서면 확인"],
-        ["5월 내", "박정빈", "커버리지 CI gate 45% 달성"],
+        ["5월 내", "박진영", "커버리지 CI gate 45% 달성"],
         ["최종발표 전 (6월 초)", "전원", "커버리지 60%, 전문가 검증 피드백 반영"],
         ["납품 목표", "전원", "커버리지 70%, K8s 배포 완료, ISMS-P 점검 완료"],
     ]

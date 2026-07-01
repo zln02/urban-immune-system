@@ -1,7 +1,7 @@
-# backend/ — 이경준
+# backend/ — 윤재영
 
 ## 담당자
-이경준 (Backend) · 박진영 PL 권한으로 직접 수정 가능
+윤재영 (Backend) · 박진영 PL 권한으로 직접 수정 가능
 
 ## 기술 스택
 - **FastAPI** + Uvicorn (ASGI)

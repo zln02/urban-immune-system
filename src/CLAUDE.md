@@ -1,8 +1,8 @@
 # src/ — Streamlit 대시보드 (D1·D2 공용)
 
 ## 담당자
-- **D1 김나영**: `app.py` API 분기, `tabs/` 실데이터 연동
-- **D2 박정빈**: `styles.py`, `map/`, `components/` 디자인·UX
+- **D1 정욱현**: `app.py` API 분기, `tabs/` 실데이터 연동
+- **D2 박진영**: `styles.py`, `map/`, `components/` 디자인·UX
 
 ## 기술 스택
 - Streamlit 1.30
@@ -28,7 +28,7 @@ LAYER_COLORS = {
 ```
 - **절대 규칙**: 컴포넌트에서 색상 직접 하드코딩 금지 — 반드시 `config.py` 참조
 
-## D1 김나영 작업 범위
+## D1 정욱현 작업 범위
 
 ### `app.py`
 - API 페이로드 유무에 따른 분기: `if data: 실데이터 렌더 else: 시뮬레이션 fallback`
@@ -41,7 +41,7 @@ LAYER_COLORS = {
 - `tabs/forecast.py` — ML 예측 결과
 - `tabs/report.py` — RAG-LLM 리포트
 
-## D2 박정빈 작업 범위
+## D2 박진영 작업 범위
 
 ### `styles.py`
 - `apply_custom_css()` — L1/L2/L3 색상 시스템 기반 글로벌 CSS

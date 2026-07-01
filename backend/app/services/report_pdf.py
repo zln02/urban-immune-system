@@ -8,7 +8,7 @@ ReportLab + matplotlib 로 5~6페이지 구성:
   5) AI 분석 본문 + RAG 인용
   6) 면책 + 데이터 출처
 
-폰트: NanumGothic (시스템 설치 가정 — 캡스톤 GCP VM에 기본 포함)
+폰트: NanumGothic (시스템 설치 가정 — 운영 GCP VM에 기본 포함)
 """
 
 # ruff: noqa: E501  -- ReportLab Paragraph 한국어 본문은 한 줄 유지가 가독성에 유리
@@ -670,7 +670,7 @@ async def _build_pdf_story(
     story.append(Spacer(1, 3 * mm))
     story.append(Paragraph(f"composite score: <b>{composite:.2f}</b> / 100", base))
     story.append(Spacer(1, 8 * mm))
-    story.append(Paragraph("발행 기관: Urban Immune System (UIS) — 캡스톤 프로젝트팀", small))
+    story.append(Paragraph("발행 기관: Urban Immune System (UIS) — 공모전 대상 수상팀", small))
     story.append(Paragraph(f"발행 일시: {now_kst}", small))
     story.append(Spacer(1, 4 * mm))
     story.append(
@@ -942,7 +942,7 @@ async def _build_pdf_story(
     story.append(Spacer(1, 4 * mm))
     story.append(
         Paragraph(
-            "UIS 캡스톤 프로젝트팀 — 팀원: 박진영(PM/ML) · 이경준(Backend) · 이우형(Data Engineer) · 김나영(Frontend) · 박정빈(DevOps/QA)",
+            "UIS 공모전 대상 수상팀 — 팀원: 박진영(PM/ML) · 윤재영(Data Engineer/Backend) · 정욱현(Frontend)",
             small,
         )
     )

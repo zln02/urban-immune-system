@@ -1,4 +1,4 @@
-# UIS 최종 시스템 평가 + 캡스톤 발표 시나리오
+# UIS 최종 시스템 평가 + 발표 시나리오
 
 > 초안: 2026-06-03 · **V12 갱신: 2026-06-08 (D-9, 6/17 발표 기준, PPT freeze 6/15)**
 > 작성자: 박진영 (PM/ML Lead) + Claude Opus 4.7
@@ -21,11 +21,11 @@
 | **테스트·CI** | 8.0 | 단위 113 + 통합 19, ruff/mypy/tsc/gitleaks 7잡 게이트. coverage ≥35% |
 | **문서·발표 자료** | 8.5 | architecture.md, V11.5 honesty, 회고·일지·sales-targets |
 
-**종합**: **8.5 / 10** (D-5 8.1 → D-9 +0.4) — V11.6 KDCA 재학습 + carry-forward audit + 슬라이드 V12 (S11B/S12A) 추가로 ML / 발표자료 점수 상승. 캡스톤 통과·B2G PoC 즉시 대화 가능.
+**종합**: **8.5 / 10** (D-5 8.1 → D-9 +0.4) — V11.6 KDCA 재학습 + carry-forward audit + 슬라이드 V12 (S11B/S12A) 추가로 ML / 발표자료 점수 상승. 공모전 심사 통과·B2G PoC 즉시 대화 가능.
 
 ---
 
-### 1.2 캡스톤 4대 평가 기준 충족도
+### 1.2 공모전 심사 기준 충족도
 
 | 기준 | 상태 | 근거 |
 |------|------|------|
@@ -53,7 +53,7 @@
 1. **인플루엔자 self-proxy F1=0.907 vs V11.6 KDCA F1=0.96** — 임상 라벨 기준 재학습 후 **+0.053 향상**, FAR=0 달성. 단 양성 imbalance 82% caveat (trivial 'always positive' F1≈0.85) → 모델 **진짜 gain 은 trivial L2 임계 (F1=0.29) 대비 +0.669**.
 2. **V11.5 정직성 (PR #76)** — self-proxy 와 KDCA ILI 일치율 29.5%, Cohen κ=0.058 (≈random). "두 라벨 정의가 달랐다" 라고 사전 공개.
 3. **V11.7 정직성 (PR #82)** — 운영 DB audit 결과 L2 데이터의 **60.7%가 같은 value 연속** (carry-forward 또는 PDF 픽셀 분석 일관성). meta JSONB 컬럼 부재로 분리 불가, Phase 3 후속.
-4. **노로 transition: ML이 trivial 대비 +13%p**, FAR=0.107 — 어려운 task 에서 ML 가치 입증 (캡스톤 기준 큰 폭 충족).
+4. **노로 transition: ML이 trivial 대비 +13%p**, FAR=0.107 — 어려운 task 에서 ML 가치 입증 (공모전 심사 기준 큰 폭 충족).
 
 ---
 

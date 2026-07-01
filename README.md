@@ -9,9 +9,9 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Next.js](https://img.shields.io/badge/Next.js%2015-000?logo=nextdotjs&logoColor=white)](https://nextjs.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Status: Capstone](https://img.shields.io/badge/status-capstone--final-blue)]()
+[![Award](https://img.shields.io/badge/🏆_AI_아이디어_공모전-대상(1등)-FFD700)]()
 
-🏆 **제1회 2026 데이터로 미래를 그리는 AI 아이디어 공모전 대상(1등)** — 한국능률협회
+🏆 **제1회 데이터로 미래를 그리는 AI 아이디어 공모전 — 대상 🏆** (한국능률협회 주최)
 
 [검증 결과](#-검증-결과) · [아키텍처](#-아키텍처) · [Quick Start](#-quick-start) · [한계와 정직성](#-한계와-정직성)
 
@@ -152,7 +152,7 @@ cd frontend && npm install && npm run dev
 pytest                                      # 598 passed · 4 skipped
 ruff check src/ backend/ pipeline/ ml/ tests/
 mypy src/ backend/
-python -m tests.benchmark_xgboost           # 캡스톤 목표값 PASS/FAIL
+python -m tests.benchmark_xgboost           # 공모전 검증 목표값 PASS/FAIL
 ```
 
 ## 📂 Repository Layout
@@ -191,23 +191,23 @@ urban-immune-system/
 
 - **표본 한계**: 시즌 단위 분석 — Granger 검정 통계적 유의성 제한적, 다음 시즌 데이터 누적 필수
 - **라벨 정직성 (V11.5)**: 인플루엔자 F1=0.907 은 OTC z-score 기반 self-target proxy 라벨. KDCA 4급 ILI ground truth 대비 Cohen κ=0.058, agreement 29.5% (n=61) — `analysis/outputs/label_validation_influenza.json`. 라벨 교체 재학습은 Phase 3 #63 진행 중.
-- **다질병 신호 편차**: 인플루엔자 F1=0.907, COVID F1=0.667, 노로 F1=0.756 — 질병별 OTC·검색 신호 강도 차이를 정직하게 노출 (캡스톤 평가 4번째 항목 ✅).
+- **다질병 신호 편차**: 인플루엔자 F1=0.907, COVID F1=0.667, 노로 F1=0.756 — 질병별 OTC·검색 신호 강도 차이를 정직하게 노출 (공모전 심사 '확장성' 항목 ✅).
 - **L2 약함**: 하수 신호 Granger p=0.267로 단독 유의성 부족 → 가중치 0.30으로 축소 검토 중
 - **TFT 위치**: 주모델은 XGBoost(walk-forward CV), TFT는 attention 기반 해석성 보조 (D-4 재학습 완료, prod 전환은 데이터 누적 후)
 - **L2 자동화**: KOWAS PDF 자동 다운로더 구현됐으나 일부 주차 carry-forward 적용 (`backtest_17regions.json` 참조)
 - **데이터 출처**: KCDC 확진 카운트는 내장 아카이브 기반(실시간 KCDC API 미연동)
 
-본 수치는 학부 캡스톤 산출물이며, BlueDot/CDC NWSS 같은 운영 시스템과 직접 비교 불가.
+본 수치는 공모전 대상 수상작(연구 프로토타입) 산출물이며, BlueDot/CDC NWSS 같은 운영 시스템과 직접 비교 불가.
 
 ## 👥 Team
 
+> 🏆 제1회 데이터로 미래를 그리는 AI 아이디어 공모전 **대상** 수상팀 (한국능률협회, 2026.03)
+
 | 이름 | 역할 | 담당 |
 |------|------|------|
-| 박진영 | PM / ML Lead | `ml/` · 전체 아키텍처 · `docs/business/` |
-| 이경준 | Backend | `backend/` |
-| 이우형 | Data Engineer | `pipeline/` |
-| 김나영 | Frontend | `frontend/` (Phase 2) · `src/` (Phase 1) |
-| 박정빈 | DevOps / QA | `infra/` · `.github/` · `tests/` |
+| 박진영 | PM / ML Lead | `ml/` · 전체 아키텍처 · `infra/` · `.github/` · `docs/business/` |
+| 윤재영 | Data Engineer / Backend | `pipeline/` · `backend/` |
+| 정욱현 | Frontend | `frontend/` (Phase 2) · `src/` (Phase 1) |
 
 ## 🤝 Contributing
 
