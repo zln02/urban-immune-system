@@ -68,7 +68,7 @@
 
 ## 3:50 ~ 5:00 · S10 라이브 데모 (S10A 흡수 — 관제실 흐름)
 
-[ 대시보드 열기 — http://REDACTED-HOST (또는 localhost:3000) ]
+[ 대시보드 열기 — http://${UIS_HOST} (또는 localhost:3000) ]
 *fail-safe: `docs/runbook/demo-backup-2026-06-08/02_dashboard_influenza.png`*
 
 > "라이브 데모입니다. **17개 시·도 지도**, 왼쪽 위 KPI 카드 4개.
@@ -188,10 +188,10 @@ curl -s http://localhost:3000/dashboard -o /dev/null -w "frontend %{http_code}\n
 curl -s http://localhost:8001/api/v1/health -o /dev/null -w "backend %{http_code}\n"
 
 # 2. 발표 노트북에 fail-safe PNG 다운로드 (사전 1회)
-scp -r wlsdud5035@REDACTED-HOST:~/urban-immune-system/docs/runbook/demo-backup-2026-06-08/*.png ./presentation_backup/
+scp -r wlsdud5035@${UIS_HOST}:~/urban-immune-system/docs/runbook/demo-backup-2026-06-08/*.png ./presentation_backup/
 
 # 3. 슬라이드 deck 사전 로딩
-http://REDACTED-HOST/slides → 첫 화면 (S01) 로딩 확인 — babel transform 1~2초
+http://${UIS_HOST}/slides → 첫 화면 (S01) 로딩 확인 — babel transform 1~2초
 
 # 4. pathogen 셀렉터 작동 테스트 (인플 → COVID → 노로 → 인플 복귀)
 ```

@@ -31,7 +31,7 @@
 |------|------|------|
 | ① **기술 완성도** | ✅ 충족 | 3계층 실데이터 수집 + ML 17지역 walk-forward + Next.js 대시보드 통합 |
 | ② **검증 결과** | ✅ 충족 (인플루엔자) / ✅ 충족 (다질병) | 인플루엔자 self-proxy **F1=0.907** / **V11.6 KDCA F1=0.96** / FAR=0.250 (목표 F1≥0.80 / FAR<0.30 충족). 다질병 COVID 0.68 / 노로 0.70 + 노로 transition ML 우위 +13%p |
-| ③ **서비스성** | ✅ 충족 | http://REDACTED-HOST/dashboard 외부 노출, 실시간 신호·AI 경보·PDF 다운로드 |
+| ③ **서비스성** | ✅ 충족 | http://${UIS_HOST}/dashboard 외부 노출, 실시간 신호·AI 경보·PDF 다운로드 |
 | ④ **확장성** | ✅ 충족 | 다질병(COVID·노로) 시연 + region-pooled 모델 + 카테고리 사전 일반화 |
 
 **4/4 충족** — 단, ② 평가는 인플루엔자 강하고 다질병은 정직 한계 명시.
@@ -96,7 +96,7 @@
 ### 2.2 핵심 데모 시퀀스 (슬라이드 6, 9)
 
 ```
-1. http://REDACTED-HOST/dashboard 열기 (Basic Auth)
+1. http://${UIS_HOST}/dashboard 열기 (Basic Auth)
 2. 인플루엔자 디폴트 → **F1=0.907 (V11.6 KDCA 0.96)**, Lead 6.76주 카드 강조
 3. 지도에서 서울·경기 클릭 → 시계열·SSE 경보 표시
 4. 병원체 셀렉터 → COVID-19 (β) 전환

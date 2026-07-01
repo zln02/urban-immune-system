@@ -48,7 +48,7 @@ curl -s -o /dev/null -w "/dashboard: %{http_code}\n" -u admin:PW http://127.0.0.
 `docker-compose.yml` 의 데이터 평면 포트가 loopback 바인딩이라 외부 직접 접속 불가.
 운영자는 SSH 포트 포워딩으로 접근:
 ```bash
-ssh -L 8080:127.0.0.1:8080 wlsdud5035@REDACTED-HOST   # kafka-ui
-ssh -L 5432:127.0.0.1:5432 wlsdud5035@REDACTED-HOST   # TimescaleDB
-ssh -L 6333:127.0.0.1:6333 wlsdud5035@REDACTED-HOST   # Qdrant
+ssh -L 8080:127.0.0.1:8080 wlsdud5035@${UIS_HOST}   # kafka-ui
+ssh -L 5432:127.0.0.1:5432 wlsdud5035@${UIS_HOST}   # TimescaleDB
+ssh -L 6333:127.0.0.1:6333 wlsdud5035@${UIS_HOST}   # Qdrant
 ```

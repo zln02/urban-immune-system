@@ -1,8 +1,8 @@
 # Architecture Overview
 
-> 마지막 갱신: 2026-06-08 · **최종발표 D-9 시점 (2026-06-17)** · PPT freeze 6/15
+> 마지막 갱신: 2026-06
 > Canonical 다이어그램: README.md Mermaid + 노션 PM Hub
-> 중간발표 (2026-05-07 ✅) 산출물 아카이브: `analysis/outputs/archive/midterm-2026-05-07/`
+> 중간 산출물 아카이브: `analysis/outputs/archive/midterm-2026-05-07/`
 
 ## Purpose
 
@@ -75,7 +75,7 @@ RED    : composite ≥ 75
 ## 인프라 / 배포
 
 - **개발**: `docker compose up -d` (Kafka KRaft + TimescaleDB + Qdrant + kafka-ui)
-- **운영(현재)**: GCP e2-standard-2 단일 노드 `${UIS_HOST}` (예: `REDACTED-HOST`, static IP `uis-prod-ip` 예약 완료 — 2026-05-04)
+- **운영(현재)**: GCP e2-standard-2 단일 노드 `${UIS_HOST}` (예: `${UIS_HOST}`, static IP `uis-prod-ip` 예약 완료 — 2026-05-04)
 - **K8s 매니페스트**: `infra/k8s/` 정의 완료, Phase 4 배포 예정
 - **CI**: `.github/workflows/ci.yml` 6잡 (backend-lint·test, pipeline-lint, ml-lint, frontend-lint(tsc), legacy-test) · coverage gate `--cov-fail-under=35`
 
@@ -101,6 +101,6 @@ RED    : composite ≥ 75
 |---|---|---|---|
 | 1 — Streamlit MVP | ✅ 완료 | 3-Layer 합성 PoC | 2026-03 |
 | 2 — Phase 2 통합 | ✅ 완료 | FastAPI + Kafka + TimescaleDB + Qdrant + Next.js + SSE/RAG + XGBoost 17지역 | 2026-04 |
-| 3 — 최종발표 (현재) | 🔧 진행중 | KDCA ILI 라벨 검증 ✅, multipath 라벨 교체 재학습 (#63), 다질병 (COVID/노로) ✅, OTC completeness 알람 ✅, KOWAS 자동 크롤링, HIRA OpenAPI | **2026-06-17** |
+| 3 — 고도화 | 🔧 진행중 | KDCA ILI 라벨 검증 ✅, multipath 라벨 교체 재학습, 다질병 (COVID/노로) ✅, OTC completeness 알람 ✅, KOWAS 자동 크롤링, HIRA OpenAPI | 2026-06 |
 | 4 — 운영화 | 📋 예정 | ISMS-P 풀 점검, 조달청 혁신제품 신청, 파일럿 기관 (KDCA·서울시·WHO 협력센터), TFT-real prod 전환 | 2026-07~ |
 | 5 — R&D | 📋 예정 | TFT → PatchTST/IPatch/TimeMixer 비교, Next.js 14→15.2, FastAPI Pydantic v2.7+, Kafka KRaft consumer 실연결 | 2026-Q3+ |

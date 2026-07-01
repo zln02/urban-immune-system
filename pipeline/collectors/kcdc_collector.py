@@ -276,7 +276,7 @@ async def _fetch_from_api(
     }
 
     try:
-        async with httpx.AsyncClient(timeout=15.0, verify=False) as client:
+        async with httpx.AsyncClient(timeout=15.0) as client:
             resp = await client.get(base_url, params=params)
             resp.raise_for_status()
         root = ET.fromstring(resp.text)

@@ -170,14 +170,14 @@ urban-immune-system/
 └── docs/             architecture · data-sources · business/
 ```
 
-## 🗺 현재 상태 (D-3, 2026-05-04)
+## 🗺 구현 현황
 
 - 17지역 baseline 산출 완료 (위 검증 결과 참조)
-- TFT D-4 재학습 완료 (encoder=12, pred=2, attention 해석 가능)
+- TFT 재학습 완료 (encoder=12, pred=2, attention 해석 가능)
 - FastAPI backend (port 8001) 라우트/CORS/보안 미들웨어 동작
 - Streamlit 대시보드 5탭 + Next.js 14 대시보드 동시 운영
 - docker compose 5서비스 e2e 헬스체크 통과
-- pytest tests 22개 통과
+- pytest 569개 통과 (coverage 74%)
 
 ### 알려진 한계 (Phase 5 이월)
 
