@@ -17,6 +17,13 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
+# TFT 서빙 테스트는 ml extras(torch·pytorch-forecasting) 필요 — 미설치 시 skip.
+# 또한 patch("ml.tft.train_synth...") 대상 서브모듈을 여기서 미리 등록해
+# 테스트 실행 순서와 무관하게 해석되도록 한다.
+pytest.importorskip("torch")
+pytest.importorskip("pytorch_forecasting")
+import ml.tft.train_synth  # noqa: E402,F401
+
 # ---------------------------------------------------------------------------
 # fixtures
 # ---------------------------------------------------------------------------
