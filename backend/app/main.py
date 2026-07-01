@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api import alerts, chat, predictions, signals
+from .api import alerts, chat, forecast, predictions, signals
 from .config import settings
 from .middleware import APIKeyAuthMiddleware, AuditLogMiddleware, RateLimitMiddleware, SecurityHeadersMiddleware
 from .tasks import broker
@@ -55,6 +55,7 @@ app.include_router(signals.router)
 app.include_router(predictions.router)
 app.include_router(alerts.router)
 app.include_router(chat.router)
+app.include_router(forecast.router)
 
 
 @app.get("/health")

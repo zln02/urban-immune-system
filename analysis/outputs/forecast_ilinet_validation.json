@@ -1,0 +1,204 @@
+{
+  "meta": {
+    "generated_at": "2026-06-19T12:20:46.295978+00:00",
+    "data_source": "CDC ILINet (Delphi Epidata fluview) — 실 임상 외래 표본감시 wILI",
+    "ground_truth": "wILI(가중 ILI%) — 임상 확진 대리 표준지표(CDC FluSight 동일)",
+    "regions": "nat + HHS 1-10 (11)",
+    "n_rows": 11847,
+    "seasons_total": [
+      2003,
+      2004,
+      2005,
+      2006,
+      2007,
+      2008,
+      2009,
+      2010,
+      2011,
+      2012,
+      2013,
+      2014,
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023
+    ],
+    "test_seasons": [
+      2010,
+      2011,
+      2012,
+      2013,
+      2014,
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2021,
+      2022,
+      2023
+    ],
+    "model": "XGBoost+LightGBM delta-ensemble (point) · XGBoost multi-quantile (interval) · XGBoost classifier (alarm)",
+    "validation": "season-holdout walk-forward (train season<S), baseline/climatology 누수 차단",
+    "honesty_note": "이전 self-target proxy 라벨(OTC z-score, KDCA 대비 Cohen κ=0.058)을 폐기하고 실제 임상 감시 지표(CDC ILINet wILI)를 ground truth 로 직접 검증. COVID 교란 시즌(2020-21)은 유행 미발생으로 리드타임 통계에서 자동 제외(onset 없음)."
+  },
+  "results": {
+    "regression": {
+      "h1": {
+        "mae": 0.196,
+        "rmse": 0.3413,
+        "mae_persistence": 0.243,
+        "mae_climatology": 0.7395,
+        "skill_vs_persistence": 0.1935,
+        "skill_vs_climatology": 0.735,
+        "n": 7920
+      },
+      "h2": {
+        "mae": 0.3015,
+        "rmse": 0.5312,
+        "mae_persistence": 0.3954,
+        "mae_climatology": 0.7541,
+        "skill_vs_persistence": 0.2377,
+        "skill_vs_climatology": 0.6002,
+        "n": 7909
+      },
+      "h3": {
+        "mae": 0.4007,
+        "rmse": 0.7064,
+        "mae_persistence": 0.5323,
+        "mae_climatology": 0.7768,
+        "skill_vs_persistence": 0.2473,
+        "skill_vs_climatology": 0.4842,
+        "n": 7898
+      },
+      "h4": {
+        "mae": 0.4852,
+        "rmse": 0.8437,
+        "mae_persistence": 0.6561,
+        "mae_climatology": 0.8056,
+        "skill_vs_persistence": 0.2605,
+        "skill_vs_climatology": 0.3977,
+        "n": 7887
+      }
+    },
+    "probabilistic": {
+      "h1": {
+        "wis": 0.1242,
+        "coverage_95": 0.9481
+      },
+      "h2": {
+        "wis": 0.1868,
+        "coverage_95": 0.9281
+      },
+      "h3": {
+        "wis": 0.241,
+        "coverage_95": 0.9171
+      },
+      "h4": {
+        "wis": 0.2854,
+        "coverage_95": 0.9083
+      }
+    },
+    "alarm_classification": {
+      "h1": {
+        "n": 7920,
+        "pos_rate": 0.4327,
+        "precision": 0.9427,
+        "recall": 0.9317,
+        "f1": 0.9372,
+        "mcc": 0.8898,
+        "auprc": 0.987,
+        "auprc_baseline": 0.4327
+      },
+      "h2": {
+        "n": 7909,
+        "pos_rate": 0.4333,
+        "precision": 0.9205,
+        "recall": 0.9022,
+        "f1": 0.9113,
+        "mcc": 0.8448,
+        "auprc": 0.9752,
+        "auprc_baseline": 0.4333
+      },
+      "h3": {
+        "n": 7898,
+        "pos_rate": 0.4339,
+        "precision": 0.9065,
+        "recall": 0.8739,
+        "f1": 0.8899,
+        "mcc": 0.8086,
+        "auprc": 0.9601,
+        "auprc_baseline": 0.4339
+      },
+      "h4": {
+        "n": 7887,
+        "pos_rate": 0.4345,
+        "precision": 0.8892,
+        "recall": 0.8477,
+        "f1": 0.8679,
+        "mcc": 0.7713,
+        "auprc": 0.9411,
+        "auprc_baseline": 0.4345
+      }
+    },
+    "onset_leadtime": {
+      "alarm_horizon_weeks": 2,
+      "n_region_seasons_with_epidemic": 138,
+      "detection_rate_before_onset": 0.9855,
+      "mean_lead_weeks": 1.957,
+      "median_lead_weeks": 1.0,
+      "n_no_onset_region_seasons": 16,
+      "false_alarm_rate_no_onset_seasons": 0.25
+    },
+    "per_season_h2_mae": {
+      "2010": {
+        "mae": 0.2784620874023725
+      },
+      "2011": {
+        "mae": 0.19553147088617814
+      },
+      "2012": {
+        "mae": 0.29127426545052154
+      },
+      "2013": {
+        "mae": 0.27160672472930797
+      },
+      "2014": {
+        "mae": 0.2822621068324928
+      },
+      "2015": {
+        "mae": 0.19872756079252726
+      },
+      "2016": {
+        "mae": 0.253646087477867
+      },
+      "2017": {
+        "mae": 0.36055369011645433
+      },
+      "2018": {
+        "mae": 0.2662538319656138
+      },
+      "2019": {
+        "mae": 0.5203291738630569
+      },
+      "2020": {
+        "mae": 0.21834926107897526
+      },
+      "2021": {
+        "mae": 0.3622759497237809
+      },
+      "2022": {
+        "mae": 0.38487165741061724
+      },
+      "2023": {
+        "mae": 0.34831433794345984
+      }
+    }
+  }
+}
