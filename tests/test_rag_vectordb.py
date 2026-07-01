@@ -14,6 +14,11 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 
+# RAG 임베딩용 optional 의존성. 미설치 환경(`pip install -e .` 만 한 경우)에서는
+# 이 모듈 테스트를 실패가 아닌 skip 처리 — clean clone 에서도 pytest 초록불 유지.
+# 전체 실행: `pip install -e ".[ml]"` (또는 `.[all]`).
+pytest.importorskip("sentence_transformers")
+
 # ──────────────────────────────────────────────────────────────────────────────
 # 헬퍼: 가짜 Qdrant 응답 객체
 # ──────────────────────────────────────────────────────────────────────────────
