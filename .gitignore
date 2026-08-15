@@ -142,8 +142,15 @@ admin/
 # Advisory package 빌드 산출물 (build_advisory_package.sh 가 재생성)
 docs/business/*.zip
 docs/business/advisory/*.tar.gz
-demo/
 .claude/
+
+# demo/ 는 합성 데이터 데모 앱의 소스라 추적한다.
+# (2026-05-14 ~ 2026-08-15 사이에는 산출물 디렉터리로 보고 통째로 무시했으나,
+#  실제로 추적된 파일이 없었고 지금은 앱 소스가 들어간다.)
+# 실행 중 생기는 산출물만 무시한다.
+demo/__pycache__/
+demo/output/
+demo/*.zip
 
 # ILINet 데이터 캐시 (런타임 생성 — 커밋 제외)
 ml/data_cache/

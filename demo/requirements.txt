@@ -1,0 +1,6 @@
+# Urban Immune System — 합성 데이터 데모 전용 의존성.
+# 저장소 루트의 pyproject.toml과 분리해 둔다. 데모는 DB·모델·크롤러가 필요 없다.
+streamlit==1.61.1
+pandas==2.3.3
+numpy==2.5.2
+plotly==5.24.1

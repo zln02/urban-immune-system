@@ -111,6 +111,26 @@ graph LR
 
 ## 🚀 Quick Start
 
+이 저장소는 **둘 중 무엇을 하려는지에 따라 경로가 갈린다.**
+
+| | 라이브 데모 (합성 데이터) | 전체 재현 (실데이터) |
+|---|---|---|
+| **목적** | 동작 방식을 3분 안에 확인 | 검증 결과 재현·개발 |
+| **필요한 것** | 없음 — 브라우저만 | Python·Node·Docker·API 키 4종 |
+| **보이는 것** | 3계층 신호, Gate B 교차검증, 17개 시·도 위험도 | 전체 파이프라인, 백테스트, 대시보드 2종 |
+| **데이터** | 고정 시드 합성 곡선 | 네이버 쇼핑인사이트·데이터랩, KDCA KOWAS 등 |
+| **성능 수치** | **주장하지 않음** | [검증 결과](#-검증-결과) 참조 |
+| **경로** | [`demo/`](demo/) — `streamlit run app.py` | 아래 [설치](#설치) 절 |
+
+> ⚠️ **데모의 수치는 전부 합성이다.** 실제 감염병 위험도가 아니며 방역·의료
+> 판단에 쓸 수 없다. 데모는 저장소의 운영 코드(`pipeline/`·`ml/`·`backend/`)를
+> import 하지 않고, DB·외부 API에도 접근하지 않는 독립 앱이다.
+> 자세한 건 [`demo/README.md`](demo/README.md) 참조.
+
+<!-- DEMO-LINK:START -->
+> 🌐 **라이브 데모**: 배포 후 이 자리에 링크가 들어갑니다.
+<!-- DEMO-LINK:END -->
+
 ### 사전 요구사항
 - Python 3.11+, Node.js 20+, Docker 24+
 - API 키: `NAVER_CLIENT_ID/SECRET` (쇼핑인사이트+데이터랩 공용), `ANTHROPIC_API_KEY`, `KMA_API_KEY`
@@ -161,6 +181,7 @@ python -m tests.benchmark_xgboost           # 공모전 검증 목표값 PASS/FA
 
 ```text
 urban-immune-system/
+├── demo/             합성 데이터 데모 (독립 실행 · 운영 코드 import 0건)
 ├── frontend/         Next.js 15 dashboard (Phase 2, canonical)
 ├── src/              Streamlit MVP (Phase 1 fallback)
 ├── backend/          FastAPI · SSE alerts · ReportLab PDF
