@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+import zlib
 from dataclasses import dataclass
 
 import numpy as np
@@ -100,7 +101,9 @@ def build_region_frame(region: str, cfg: DemoConfig | None = None) -> pd.DataFra
     """
     cfg = cfg or DemoConfig()
     # 지역명을 시드에 섞어 지역마다 다른 곡선이 나오되, 실행할 때마다는 같게 한다.
-    rng = np.random.default_rng(cfg.seed + (abs(hash(region)) % 10_000))
+    # 내장 hash()는 PYTHONHASHSEED로 프로세스마다 값이 달라져 재시작할 때마다
+    # 그림과 집계가 바뀐다. crc32는 프로세스·플랫폼과 무관하게 같은 값을 준다.
+    rng = np.random.default_rng(cfg.seed + zlib.crc32(region.encode("utf-8")) % 10_000)
     phase = rng.uniform(0, 2 * np.pi)
 
     clinical = _latent_outbreak(cfg.weeks, rng, phase)

@@ -107,7 +107,7 @@ graph LR
 | **LLM / RAG** | Claude Haiku · RAG (Qdrant) · multilingual MiniLM 임베딩 |
 | **Data** | TimescaleDB (PG 16) · 하이퍼테이블 weekly partition |
 | **Infra** | Docker Compose · Kubernetes (GKE) · GitHub Actions · pre-commit |
-| **Quality** | pytest (598 ✅ · 4 skip) · ruff · mypy --strict · detect-private-key |
+| **Quality** | pytest (596 ✅ · 6 skip · `[all]` 설치 기준) · ruff · mypy --strict · detect-private-key |
 
 ## 🚀 Quick Start
 
@@ -171,11 +171,18 @@ cd frontend && npm install && npm run dev
 ### 검증
 
 ```bash
-pytest                                      # 598 passed · 4 skipped
+pytest                                      # 596 passed · 6 skipped
 ruff check src/ backend/ pipeline/ ml/ tests/
 mypy src/ backend/
 python -m tests.benchmark_xgboost           # 공모전 검증 목표값 PASS/FAIL
 ```
+
+> 위 수치는 `pip install -e ".[all]"` 로 **선택 의존성까지 설치한 환경** 기준이다
+> (2026-08-16 실측, 전체 602개 수집).
+> **최소 의존성 환경에선 542 passed · 13 skipped** 로 나온다 — `pytorch-forecasting`
+> 미설치 시 `tests/test_ml_serve.py` 28개, `sentence-transformers` 미설치 시
+> `tests/test_rag_vectordb.py` 21개가 모듈 단위 `pytest.importorskip` 으로
+> 통째로 수집되지 않기 때문이다(합 49개).
 
 ## 📂 Repository Layout
 
@@ -189,7 +196,7 @@ urban-immune-system/
 ├── ml/               XGBoost · TFT · Autoencoder · RAG (Qdrant)
 ├── analysis/         공모전·재검증 백테스트 스크립트 + outputs/
 ├── infra/            K8s 매니페스트 · TimescaleDB init.sql
-├── tests/            598 pytest (Mock LLM · monkeypatch env)
+├── tests/            602 pytest 수집 (Mock LLM · monkeypatch env)
 └── docs/             architecture · data-sources · business/
 ```
 
